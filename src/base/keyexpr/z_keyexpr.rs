@@ -26,6 +26,16 @@ pub fn z_keyexpr_to_string(ke: &ZKeyExpr) -> String {
     ke.as_str().to_string()
 }
 
+/// Borrowed canonical string form of a key expression — zero-copy `&str` into
+/// the key expression's own storage. Used as an output-expansion accessor
+/// (`expand_output`) so the JNI layer converts `&str → jstring` in a single
+/// copy (no intermediate owned `String`). The owned [`z_keyexpr_to_string`]
+/// twin remains for the C / owned-`char*` tier.
+#[prebindgen]
+pub fn z_keyexpr_as_str(ke: &ZKeyExpr) -> &str {
+    ke.as_str()
+}
+
 #[prebindgen]
 pub fn z_keyexpr_autocanonize(s: String) -> Result<ZKeyExpr, Error> {
     let ke = ZKeyExpr::autocanonize(s)?;
