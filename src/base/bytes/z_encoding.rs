@@ -35,6 +35,13 @@ pub fn z_encoding_from_string(s: String) -> ZEncoding {
     ZEncoding::from(s)
 }
 
+/// Return a copy of `e` with `schema` attached (upstream `with_schema`). Zenoh
+/// leaves schema semantics to the application (e.g. `utf-8` for `text/plain`).
+#[prebindgen]
+pub fn z_encoding_with_schema(e: &ZEncoding, schema: String) -> ZEncoding {
+    e.clone().with_schema(schema)
+}
+
 // ── Predefined-constant accessors ─────────────────────────────────────────
 // Each predefined encoding is stored as a `static` backed by the upstream
 // `const` value so that callers receive a `&'static ZEncoding` — a permanent,

@@ -18,13 +18,11 @@ pub const MANIFEST_DIR: &str = prebindgen_proc_macro::manifest_dir!();
 
 pub(crate) mod base;
 pub(crate) mod error;
-pub(crate) mod expanded;
 pub(crate) mod util;
 
 // reexports to make all zenoh-flat API really flat
 pub use base::*;
 pub use error::*;
-pub use expanded::*;
 
 // reexports of zenoh types with Z prefix to distiguish them from zenoh-flat types
 pub type ZKeyExpr = zenoh::key_expr::KeyExpr<'static>;
