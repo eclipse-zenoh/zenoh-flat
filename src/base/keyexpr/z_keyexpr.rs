@@ -1,4 +1,4 @@
-use crate::Error;
+use crate::ZError;
 use crate::ZKeyExpr;
 use prebindgen_proc_macro::prebindgen;
 // `SetIntersectionLevel` mirrors `zenoh::key_expr::SetIntersectionLevel`, which
@@ -7,7 +7,7 @@ use prebindgen_proc_macro::prebindgen;
 use crate::SetIntersectionLevel;
 
 #[prebindgen]
-pub fn z_keyexpr_try_from(s: String) -> Result<ZKeyExpr, Error> {
+pub fn z_keyexpr_try_from(s: String) -> Result<ZKeyExpr, ZError> {
     let ke = ZKeyExpr::try_from(s)?;
     Ok(ke)
 }
@@ -37,7 +37,7 @@ pub fn z_keyexpr_as_str(ke: &ZKeyExpr) -> &str {
 }
 
 #[prebindgen]
-pub fn z_keyexpr_autocanonize(s: String) -> Result<ZKeyExpr, Error> {
+pub fn z_keyexpr_autocanonize(s: String) -> Result<ZKeyExpr, ZError> {
     let ke = ZKeyExpr::autocanonize(s)?;
     Ok(ke)
 }
@@ -59,11 +59,11 @@ pub fn z_keyexpr_relation_to(a: &ZKeyExpr, b: &ZKeyExpr) -> SetIntersectionLevel
 }
 
 #[prebindgen]
-pub fn z_keyexpr_join(a: &ZKeyExpr, b: String) -> Result<ZKeyExpr, Error> {
+pub fn z_keyexpr_join(a: &ZKeyExpr, b: String) -> Result<ZKeyExpr, ZError> {
     Ok(a.join(&b)?)
 }
 
 #[prebindgen]
-pub fn z_keyexpr_concat(a: &ZKeyExpr, b: String) -> Result<ZKeyExpr, Error> {
+pub fn z_keyexpr_concat(a: &ZKeyExpr, b: String) -> Result<ZKeyExpr, ZError> {
     Ok(a.concat(&b)?)
 }

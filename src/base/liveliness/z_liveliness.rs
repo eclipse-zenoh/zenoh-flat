@@ -1,5 +1,5 @@
 use crate::util::OnceDrop;
-use crate::{Error, ZKeyExpr, ZLivelinessToken, ZReply, ZSample, ZSession, ZSubscriber};
+use crate::{ZError, ZKeyExpr, ZLivelinessToken, ZReply, ZSample, ZSession, ZSubscriber};
 use prebindgen_proc_macro::prebindgen;
 use std::time::Duration;
 use zenoh::Wait;
@@ -10,12 +10,12 @@ use zenoh::Wait;
 pub fn z_liveliness_declare_token(
     session: &ZSession,
     key_expr: ZKeyExpr,
-) -> Result<ZLivelinessToken, Error> {
+) -> Result<ZLivelinessToken, ZError> {
     session
         .liveliness()
         .declare_token(key_expr)
         .wait()
-        .map_err(Error::from)
+
 }
 
 /// Query liveliness tokens matching `key_expr`, delivering each reply as an
@@ -28,7 +28,7 @@ pub fn z_liveliness_get(
     timeout_ms: i64,
     callback: impl Fn(ZReply) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
-) -> Result<(), Error> {
+) -> Result<(), ZError> {
     let on_close = OnceDrop::new(on_close);
     session
         .liveliness()
@@ -39,7 +39,7 @@ pub fn z_liveliness_get(
             callback(reply);
         })
         .wait()
-        .map_err(Error::from)
+
 }
 
 /// Declare a subscriber to liveliness changes matching `key_expr`, delivering
@@ -53,7 +53,7 @@ pub fn z_liveliness_declare_subscriber(
     history: bool,
     callback: impl Fn(ZSample) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
-) -> Result<ZSubscriber, Error> {
+) -> Result<ZSubscriber, ZError> {
     let on_close = OnceDrop::new(on_close);
     session
         .liveliness()
@@ -64,5 +64,5 @@ pub fn z_liveliness_declare_subscriber(
             callback(sample);
         })
         .wait()
-        .map_err(Error::from)
+
 }

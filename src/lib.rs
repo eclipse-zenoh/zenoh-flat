@@ -17,14 +17,16 @@ pub const FEATURES: &str = prebindgen_proc_macro::features!();
 pub const MANIFEST_DIR: &str = prebindgen_proc_macro::manifest_dir!();
 
 pub(crate) mod base;
-pub(crate) mod error;
 pub(crate) mod util;
 
 // reexports to make all zenoh-flat API really flat
 pub use base::*;
-pub use error::*;
 
 // reexports of zenoh types with Z prefix to distiguish them from zenoh-flat types
+// `ZError` is zenoh's native boxed error (`Box<dyn Error + Send + Sync>`), used
+// as the `E` of every fallible `z_*` `Result`; `z_error_message` (base/error)
+// converts it to a `String` for the JNI error callback.
+pub type ZError = zenoh::Error;
 pub type ZKeyExpr = zenoh::key_expr::KeyExpr<'static>;
 pub type ZConfig = zenoh::Config;
 pub type ZZenohId = zenoh::session::ZenohId;

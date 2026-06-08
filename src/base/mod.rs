@@ -1,5 +1,6 @@
 pub(crate) mod bytes;
 pub(crate) mod config;
+pub(crate) mod error;
 pub(crate) mod keyexpr;
 pub(crate) mod liveliness;
 pub(crate) mod logger;
@@ -13,6 +14,7 @@ pub(crate) mod time;
 
 pub use bytes::*;
 pub use config::*;
+pub use error::*;
 pub use keyexpr::*;
 pub use liveliness::*;
 pub use logger::*;

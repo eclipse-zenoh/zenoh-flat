@@ -1,5 +1,5 @@
 use crate::util::OnceDrop;
-use crate::{Error, ZConfig, ZHello, ZScout};
+use crate::{ZConfig, ZError, ZHello, ZScout};
 use prebindgen_proc_macro::prebindgen;
 use zenoh::Wait;
 use zenoh::config::WhatAmIMatcher;
@@ -24,13 +24,12 @@ pub fn z_scout(
     config: Option<&ZConfig>,
     callback: impl Fn(ZHello) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
-) -> Result<ZScout, Error> {
-    let bits = u8::try_from(whatami).map_err(|_| Error {
-        message: format!("invalid whatami bitfield: {whatami}"),
-    })?;
-    let matcher: WhatAmIMatcher = bits.try_into().map_err(|_| Error {
-        message: format!("invalid whatami bitfield: 0b{bits:b}"),
-    })?;
+) -> Result<ZScout, ZError> {
+    let bits = u8::try_from(whatami)
+        .map_err(|_| -> ZError { format!("invalid whatami bitfield: {whatami}").into() })?;
+    let matcher: WhatAmIMatcher = bits
+        .try_into()
+        .map_err(|_| -> ZError { format!("invalid whatami bitfield: 0b{bits:b}").into() })?;
     let config = config.cloned().unwrap_or_default();
     let on_close = OnceDrop::new(on_close);
     zenoh::scout(matcher, config)
@@ -39,5 +38,4 @@ pub fn z_scout(
             callback(hello);
         })
         .wait()
-        .map_err(Error::from)
 }

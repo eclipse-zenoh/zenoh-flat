@@ -1,4 +1,4 @@
-use crate::{Error, ZEncoding, ZKeyExpr, ZQuery, ZZBytes};
+use crate::{ZError, ZEncoding, ZKeyExpr, ZQuery, ZZBytes};
 #[cfg(feature = "unstable")]
 use crate::ReplyKeyExpr;
 use prebindgen_proc_macro::prebindgen;
@@ -54,7 +54,7 @@ pub fn z_query_reply_success(
     timestamp_ntp64: Option<i64>,
     attachment: Option<ZZBytes>,
     express: Option<bool>,
-) -> Result<(), Error> {
+) -> Result<(), ZError> {
     let mut b = query.reply(key_expr, payload);
     if let Some(enc) = encoding {
         b = b.encoding(enc.clone());
@@ -68,7 +68,7 @@ pub fn z_query_reply_success(
     if let Some(v) = express {
         b = b.express(v);
     }
-    b.wait().map_err(Error::from)
+    b.wait()
 }
 
 #[prebindgen]
@@ -76,12 +76,12 @@ pub fn z_query_reply_error(
     query: &ZQuery,
     payload: ZZBytes,
     encoding: Option<&ZEncoding>,
-) -> Result<(), Error> {
+) -> Result<(), ZError> {
     let mut b = query.reply_err(payload);
     if let Some(enc) = encoding {
         b = b.encoding(enc.clone());
     }
-    b.wait().map_err(Error::from)
+    b.wait()
 }
 
 #[prebindgen]
@@ -91,7 +91,7 @@ pub fn z_query_reply_delete(
     timestamp_ntp64: Option<i64>,
     attachment: Option<ZZBytes>,
     express: Option<bool>,
-) -> Result<(), Error> {
+) -> Result<(), ZError> {
     let mut b = query.reply_del(key_expr);
     if let Some(ntp) = timestamp_ntp64 {
         b = b.timestamp(Timestamp::new(NTP64(ntp as u64), TimestampId::rand()));
@@ -102,5 +102,5 @@ pub fn z_query_reply_delete(
     if let Some(v) = express {
         b = b.express(v);
     }
-    b.wait().map_err(Error::from)
+    b.wait()
 }

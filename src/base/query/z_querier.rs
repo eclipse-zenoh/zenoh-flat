@@ -1,5 +1,5 @@
 use crate::util::OnceDrop;
-use crate::{Error, ZEncoding, ZQuerier, ZReply, ZZBytes};
+use crate::{ZError, ZEncoding, ZQuerier, ZReply, ZZBytes};
 use prebindgen_proc_macro::prebindgen;
 use zenoh::Wait;
 
@@ -15,7 +15,7 @@ pub fn z_querier_get(
     attachment: Option<ZZBytes>,
     callback: impl Fn(ZReply) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
-) -> Result<(), Error> {
+) -> Result<(), ZError> {
     let on_close = OnceDrop::new(on_close);
     let mut builder = querier.get();
     if let Some(params) = parameters {
@@ -36,5 +36,5 @@ pub fn z_querier_get(
             callback(reply);
         })
         .wait()
-        .map_err(Error::from)
+
 }
