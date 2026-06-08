@@ -1,4 +1,4 @@
-use crate::{ZError, ZEncoding, ZKeyExpr, ZQuery, ZZBytes};
+use crate::{ZError, ZEncoding, ZKeyExpr, ZQuery, ZSample, ZZBytes};
 #[cfg(feature = "unstable")]
 use crate::ReplyKeyExpr;
 use prebindgen_proc_macro::prebindgen;
@@ -43,6 +43,18 @@ pub fn z_query_attachment(q: &ZQuery) -> Option<&ZZBytes> {
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn z_query_accepts_replies(q: &ZQuery) -> ReplyKeyExpr {
     q.accepts_replies().into()
+}
+
+/// Reply to a query with a fully-formed [`ZSample`] (key expression, payload,
+/// and encoding). The flat consumer of `z_sample_new`: its `sample` parameter
+/// is a by-value `ZSample`, so its canonical input (`z_sample_new`) recursively
+/// expands at the binding boundary — the recursive-input demonstration.
+#[prebindgen]
+pub fn z_query_reply_sample(query: &ZQuery, sample: ZSample) -> Result<(), ZError> {
+    query
+        .reply(sample.key_expr().clone(), sample.payload().clone())
+        .encoding(sample.encoding().clone())
+        .wait()
 }
 
 #[prebindgen]

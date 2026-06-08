@@ -2,6 +2,18 @@ use crate::{
     CongestionControl, Priority, SampleKind, ZEncoding, ZKeyExpr, ZSample, ZTimestamp, ZZBytes,
 };
 use prebindgen_proc_macro::prebindgen;
+use zenoh::sample::SampleBuilder;
+
+/// Build a Put [`ZSample`] from its key expression, payload, and encoding —
+/// the flat port of zenoh's `SampleBuilder`. Its parameters are themselves
+/// `ptr_class` types (`ZKeyExpr`, `ZZBytes`, `ZEncoding`), so wiring this as a
+/// `ptr_class_input` for `ZSample` exercises **recursive input**: a `ZSample`
+/// parameter expands to these three, each of which expands per its own
+/// canonical input (key-expr String|handle, bytes ByteArray, encoding String).
+#[prebindgen]
+pub fn z_sample_new(key_expr: ZKeyExpr, payload: ZZBytes, encoding: ZEncoding) -> ZSample {
+    SampleBuilder::put(key_expr, payload).encoding(encoding).into()
+}
 
 /// Key expression the sample was published on (borrowed; valid while `s` lives).
 #[prebindgen]
