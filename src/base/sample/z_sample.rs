@@ -12,7 +12,9 @@ use zenoh::sample::SampleBuilder;
 /// canonical input (key-expr String|handle, bytes ByteArray, encoding String).
 #[prebindgen]
 pub fn z_sample_new(key_expr: ZKeyExpr, payload: ZZBytes, encoding: ZEncoding) -> ZSample {
-    SampleBuilder::put(key_expr, payload).encoding(encoding).into()
+    SampleBuilder::put(key_expr, payload)
+        .encoding(encoding)
+        .into()
 }
 
 /// Key expression the sample was published on (borrowed; valid while `s` lives).

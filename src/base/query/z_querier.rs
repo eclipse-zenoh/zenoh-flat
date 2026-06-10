@@ -1,5 +1,5 @@
 use crate::util::OnceDrop;
-use crate::{ZError, ZEncoding, ZQuerier, ZReply, ZZBytes};
+use crate::{ZEncoding, ZError, ZQuerier, ZReply, ZZBytes};
 use prebindgen_proc_macro::prebindgen;
 use zenoh::Wait;
 
@@ -36,5 +36,4 @@ pub fn z_querier_get(
             callback(reply);
         })
         .wait()
-
 }

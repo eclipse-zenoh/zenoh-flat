@@ -1,6 +1,6 @@
-use crate::{ZError, ZEncoding, ZKeyExpr, ZQuery, ZSample, ZZBytes};
 #[cfg(feature = "unstable")]
 use crate::ReplyKeyExpr;
+use crate::{ZEncoding, ZError, ZKeyExpr, ZQuery, ZSample, ZZBytes};
 use prebindgen_proc_macro::prebindgen;
 use zenoh::{
     Wait,

@@ -11,11 +11,7 @@ pub fn z_liveliness_declare_token(
     session: &ZSession,
     key_expr: ZKeyExpr,
 ) -> Result<ZLivelinessToken, ZError> {
-    session
-        .liveliness()
-        .declare_token(key_expr)
-        .wait()
-
+    session.liveliness().declare_token(key_expr).wait()
 }
 
 /// Query liveliness tokens matching `key_expr`, delivering each reply as an
@@ -39,7 +35,6 @@ pub fn z_liveliness_get(
             callback(reply);
         })
         .wait()
-
 }
 
 /// Declare a subscriber to liveliness changes matching `key_expr`, delivering
@@ -64,5 +59,4 @@ pub fn z_liveliness_declare_subscriber(
             callback(sample);
         })
         .wait()
-
 }

@@ -10,9 +10,9 @@
 //
 use clap::Parser;
 use zenoh_flat::{
-    init_zenoh_logs_from_env_or, z_config_default, z_config_from_file, z_config_insert_json5,
-    z_keyexpr_try_from, z_open, z_publisher_put, z_session_declare_publisher, z_zbytes_clone,
-    z_zbytes_from_vec, CongestionControl, Priority, ZConfig,
+    CongestionControl, Priority, ZConfig, init_zenoh_logs_from_env_or, z_config_default,
+    z_config_from_file, z_config_insert_json5, z_keyexpr_try_from, z_open, z_publisher_put,
+    z_session_declare_publisher, z_zbytes_clone, z_zbytes_from_vec,
 };
 
 fn main() {
@@ -22,7 +22,11 @@ fn main() {
     let prio = args.priority.map(priority_from_u8);
     let payload_size = args.payload_size;
 
-    let data = z_zbytes_from_vec((0..payload_size).map(|i| (i % 10) as u8).collect::<Vec<u8>>());
+    let data = z_zbytes_from_vec(
+        (0..payload_size)
+            .map(|i| (i % 10) as u8)
+            .collect::<Vec<u8>>(),
+    );
 
     let session = z_open(build_config(&args.common)).unwrap_or_else(|e| panic!("{e}"));
 
@@ -40,7 +44,8 @@ fn main() {
     let mut count: usize = 0;
     let mut start = std::time::Instant::now();
     loop {
-        z_publisher_put(&publisher, z_zbytes_clone(&data), None, None).unwrap_or_else(|e| panic!("{e}"));
+        z_publisher_put(&publisher, z_zbytes_clone(&data), None, None)
+            .unwrap_or_else(|e| panic!("{e}"));
 
         if args.print {
             if count < args.number {
@@ -124,16 +129,20 @@ fn build_config(a: &CommonArgs) -> ZConfig {
         None => z_config_default(),
     };
     if let Some(m) = &a.mode {
-        z_config_insert_json5(&mut c, "mode", &format!("\"{m}\"")).unwrap_or_else(|e| panic!("{e}"));
+        z_config_insert_json5(&mut c, "mode", &format!("\"{m}\""))
+            .unwrap_or_else(|e| panic!("{e}"));
     }
     if !a.connect.is_empty() {
-        z_config_insert_json5(&mut c, "connect/endpoints", &json_list(&a.connect)).unwrap_or_else(|e| panic!("{e}"));
+        z_config_insert_json5(&mut c, "connect/endpoints", &json_list(&a.connect))
+            .unwrap_or_else(|e| panic!("{e}"));
     }
     if !a.listen.is_empty() {
-        z_config_insert_json5(&mut c, "listen/endpoints", &json_list(&a.listen)).unwrap_or_else(|e| panic!("{e}"));
+        z_config_insert_json5(&mut c, "listen/endpoints", &json_list(&a.listen))
+            .unwrap_or_else(|e| panic!("{e}"));
     }
     if a.no_multicast_scouting {
-        z_config_insert_json5(&mut c, "scouting/multicast/enabled", "false").unwrap_or_else(|e| panic!("{e}"));
+        z_config_insert_json5(&mut c, "scouting/multicast/enabled", "false")
+            .unwrap_or_else(|e| panic!("{e}"));
     }
     for kv in &a.cfg {
         let (k, v) = kv.split_once(':').expect("--cfg expects KEY:VALUE");

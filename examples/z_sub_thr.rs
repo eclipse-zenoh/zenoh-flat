@@ -8,14 +8,14 @@
 // that the C examples don't pay. The callback ignores the `ZSample` (no
 // expansion / no field access), matching the C and native thr subscribers.
 //
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering::Relaxed};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering::Relaxed};
 use std::time::Instant;
 
 use clap::Parser;
 use zenoh_flat::{
-    init_zenoh_logs_from_env_or, z_config_default, z_config_from_file, z_config_insert_json5,
-    z_keyexpr_try_from, z_open, z_session_declare_subscriber, ZConfig, ZSample,
+    ZConfig, ZSample, init_zenoh_logs_from_env_or, z_config_default, z_config_from_file,
+    z_config_insert_json5, z_keyexpr_try_from, z_open, z_session_declare_subscriber,
 };
 
 struct Stats {
@@ -65,13 +65,9 @@ fn main() {
 
     let stats = Arc::new(Stats::new(args.number, args.samples));
     let s = stats.clone();
-    let _subscriber = z_session_declare_subscriber(
-        &session,
-        ke,
-        move |_sample: ZSample| s.increment(),
-        || {},
-    )
-    .unwrap_or_else(|e| panic!("{e}"));
+    let _subscriber =
+        z_session_declare_subscriber(&session, ke, move |_sample: ZSample| s.increment(), || {})
+            .unwrap_or_else(|e| panic!("{e}"));
 
     println!("Press CTRL-C to quit...");
     std::thread::park();
@@ -125,16 +121,20 @@ fn build_config(a: &CommonArgs) -> ZConfig {
         None => z_config_default(),
     };
     if let Some(m) = &a.mode {
-        z_config_insert_json5(&mut c, "mode", &format!("\"{m}\"")).unwrap_or_else(|e| panic!("{e}"));
+        z_config_insert_json5(&mut c, "mode", &format!("\"{m}\""))
+            .unwrap_or_else(|e| panic!("{e}"));
     }
     if !a.connect.is_empty() {
-        z_config_insert_json5(&mut c, "connect/endpoints", &json_list(&a.connect)).unwrap_or_else(|e| panic!("{e}"));
+        z_config_insert_json5(&mut c, "connect/endpoints", &json_list(&a.connect))
+            .unwrap_or_else(|e| panic!("{e}"));
     }
     if !a.listen.is_empty() {
-        z_config_insert_json5(&mut c, "listen/endpoints", &json_list(&a.listen)).unwrap_or_else(|e| panic!("{e}"));
+        z_config_insert_json5(&mut c, "listen/endpoints", &json_list(&a.listen))
+            .unwrap_or_else(|e| panic!("{e}"));
     }
     if a.no_multicast_scouting {
-        z_config_insert_json5(&mut c, "scouting/multicast/enabled", "false").unwrap_or_else(|e| panic!("{e}"));
+        z_config_insert_json5(&mut c, "scouting/multicast/enabled", "false")
+            .unwrap_or_else(|e| panic!("{e}"));
     }
     for kv in &a.cfg {
         let (k, v) = kv.split_once(':').expect("--cfg expects KEY:VALUE");

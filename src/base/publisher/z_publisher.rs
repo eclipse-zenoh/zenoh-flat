@@ -1,4 +1,4 @@
-use crate::{ZError, ZEncoding, ZPublisher, ZZBytes};
+use crate::{ZEncoding, ZError, ZPublisher, ZZBytes};
 use prebindgen_proc_macro::prebindgen;
 use zenoh::Wait;
 

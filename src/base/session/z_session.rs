@@ -2,8 +2,8 @@
 use crate::Reliability;
 use crate::util::OnceDrop;
 use crate::{
-    CongestionControl, ConsolidationMode, ZError, Priority, QueryTarget, ReplyKeyExpr, ZConfig,
-    ZEncoding, ZKeyExpr, ZPublisher, ZQuerier, ZQuery, ZQueryable, ZReply, ZSample, ZSession,
+    CongestionControl, ConsolidationMode, Priority, QueryTarget, ReplyKeyExpr, ZConfig, ZEncoding,
+    ZError, ZKeyExpr, ZPublisher, ZQuerier, ZQuery, ZQueryable, ZReply, ZSample, ZSession,
     ZSubscriber, ZZBytes, ZZenohId,
 };
 use prebindgen_proc_macro::prebindgen;
@@ -138,7 +138,6 @@ pub fn z_session_declare_subscriber(
             callback(sample);
         })
         .wait()
-
 }
 
 #[prebindgen]
@@ -201,15 +200,11 @@ pub fn z_session_declare_queryable(
             callback(query);
         })
         .wait()
-
 }
 
 #[prebindgen]
 pub fn z_session_declare_keyexpr(session: &ZSession, key_expr: String) -> Result<ZKeyExpr, ZError> {
-    session
-        .declare_keyexpr(key_expr)
-        .wait()
-
+    session.declare_keyexpr(key_expr).wait()
 }
 
 #[prebindgen]
@@ -278,7 +273,6 @@ pub fn z_session_get(
             callback(reply);
         })
         .wait()
-
 }
 
 #[prebindgen]
