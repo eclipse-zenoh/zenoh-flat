@@ -1,6 +1,6 @@
-use crate::ZConfig;
-use crate::ZError;
 use prebindgen_proc_macro::prebindgen;
+
+use crate::{ZConfig, ZError};
 
 /// Build a default configuration.
 #[prebindgen]

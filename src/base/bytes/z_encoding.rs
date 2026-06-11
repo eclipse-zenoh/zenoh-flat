@@ -1,5 +1,6 @@
-use crate::ZEncoding;
 use prebindgen_proc_macro::prebindgen;
+
+use crate::ZEncoding;
 
 /// Numeric id of the encoding (u16 widened to i32 for JVM).
 #[prebindgen]

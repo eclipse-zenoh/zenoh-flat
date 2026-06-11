@@ -1,11 +1,12 @@
-#[cfg(feature = "unstable")]
-use crate::ReplyKeyExpr;
-use crate::{ZEncoding, ZError, ZKeyExpr, ZQuery, ZSample, ZZBytes};
 use prebindgen_proc_macro::prebindgen;
 use zenoh::{
     Wait,
     time::{NTP64, Timestamp, TimestampId},
 };
+
+#[cfg(feature = "unstable")]
+use crate::ReplyKeyExpr;
+use crate::{ZEncoding, ZError, ZKeyExpr, ZQuery, ZSample, ZZBytes};
 
 /// Key expression the query targets (borrowed; valid while `q` lives).
 #[prebindgen]
@@ -45,16 +46,17 @@ pub fn z_query_accepts_replies(q: &ZQuery) -> ReplyKeyExpr {
     q.accepts_replies().into()
 }
 
-/// Reply to a query with a fully-formed [`ZSample`] (key expression, payload,
-/// and encoding). The flat consumer of `z_sample_new`: its `sample` parameter
-/// is a by-value `ZSample`, so its canonical input (`z_sample_new`) recursively
-/// expands at the binding boundary — the recursive-input demonstration.
+/// Reply to a query with a fully-formed [`ZSample`] — the flat port of zenoh's
+/// `Query::reply_sample`. The sample is sent as-is, preserving its kind (Put or
+/// Delete) and all carried metadata (payload, encoding, timestamp, attachment,
+/// QoS, source info).
+///
+/// The flat consumer of `z_sample_put`: its `sample` parameter is a by-value
+/// `ZSample`, so its canonical input (`z_sample_put`) recursively expands at the
+/// binding boundary — the recursive-input demonstration.
 #[prebindgen]
 pub fn z_query_reply_sample(query: &ZQuery, sample: ZSample) -> Result<(), ZError> {
-    query
-        .reply(sample.key_expr().clone(), sample.payload().clone())
-        .encoding(sample.encoding().clone())
-        .wait()
+    query.reply_sample(sample).wait()
 }
 
 #[prebindgen]

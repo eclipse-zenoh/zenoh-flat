@@ -1,7 +1,7 @@
-use crate::util::OnceDrop;
-use crate::{ZEncoding, ZError, ZQuerier, ZReply, ZZBytes};
 use prebindgen_proc_macro::prebindgen;
 use zenoh::Wait;
+
+use crate::{ZEncoding, ZError, ZQuerier, ZReply, ZZBytes, util::OnceDrop};
 
 /// Perform a GET through a querier, delivering each reply as an opaque
 /// [`ZReply`] handle (thin surface — cheap-FFI bindings pull fields via the

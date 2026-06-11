@@ -1,5 +1,6 @@
-use crate::ZTimestamp;
 use prebindgen_proc_macro::prebindgen;
+
+use crate::ZTimestamp;
 
 /// NTP64 time component of the timestamp.
 #[prebindgen]

@@ -1,7 +1,8 @@
+use prebindgen_proc_macro::prebindgen;
+
 #[cfg(feature = "unstable")]
 use crate::ZZenohId;
 use crate::{ZEncoding, ZReply, ZReplyError, ZSample, ZZBytes};
-use prebindgen_proc_macro::prebindgen;
 
 /// Zenoh id of the node that answered, or `None` when unknown (owned handle).
 ///

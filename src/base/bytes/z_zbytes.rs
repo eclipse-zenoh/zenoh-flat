@@ -1,5 +1,6 @@
-use crate::ZZBytes;
 use prebindgen_proc_macro::prebindgen;
+
+use crate::ZZBytes;
 
 /// Read the payload bytes carried by a native [`ZZBytes`]. Performs one
 /// copy if the underlying buffer is non-contiguous (mirrors

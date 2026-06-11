@@ -1,5 +1,6 @@
-use crate::{WhatAmI, ZHello, ZZenohId};
 use prebindgen_proc_macro::prebindgen;
+
+use crate::{WhatAmI, ZHello, ZZenohId};
 
 /// Node type that emitted this hello message.
 #[prebindgen]

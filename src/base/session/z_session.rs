@@ -1,14 +1,15 @@
+use std::time::Duration;
+
+use prebindgen_proc_macro::prebindgen;
+use zenoh::{Wait, query::Selector};
+
 #[cfg(feature = "unstable")]
 use crate::Reliability;
-use crate::util::OnceDrop;
 use crate::{
     CongestionControl, ConsolidationMode, Priority, QueryTarget, ReplyKeyExpr, ZConfig, ZEncoding,
     ZError, ZKeyExpr, ZPublisher, ZQuerier, ZQuery, ZQueryable, ZReply, ZSample, ZSession,
-    ZSubscriber, ZZBytes, ZZenohId,
+    ZSubscriber, ZZBytes, ZZenohId, util::OnceDrop,
 };
-use prebindgen_proc_macro::prebindgen;
-use std::time::Duration;
-use zenoh::{Wait, query::Selector};
 
 /// Open a session with the given configuration. The config is consumed by value
 /// (matching native `zenoh::open`); C callers that need to keep it should

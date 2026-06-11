@@ -8,9 +8,13 @@
 // that the C examples don't pay. The callback ignores the `ZSample` (no
 // expansion / no field access), matching the C and native thr subscribers.
 //
-use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering::Relaxed};
-use std::time::Instant;
+use std::{
+    sync::{
+        Arc,
+        atomic::{AtomicU64, AtomicUsize, Ordering::Relaxed},
+    },
+    time::Instant,
+};
 
 use clap::Parser;
 use zenoh_flat::{

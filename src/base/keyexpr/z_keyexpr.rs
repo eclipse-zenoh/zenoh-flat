@@ -1,10 +1,10 @@
-use crate::ZError;
-use crate::ZKeyExpr;
 use prebindgen_proc_macro::prebindgen;
+
 // `SetIntersectionLevel` mirrors `zenoh::key_expr::SetIntersectionLevel`, which
 // is `#[cfg(feature = "unstable")]` — gate the relation API behind `unstable`.
 #[cfg(feature = "unstable")]
 use crate::SetIntersectionLevel;
+use crate::{ZError, ZKeyExpr};
 
 #[prebindgen]
 pub fn z_keyexpr_try_from(s: String) -> Result<ZKeyExpr, ZError> {

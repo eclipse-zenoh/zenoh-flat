@@ -1,8 +1,11 @@
-use crate::util::OnceDrop;
-use crate::{ZError, ZKeyExpr, ZLivelinessToken, ZReply, ZSample, ZSession, ZSubscriber};
-use prebindgen_proc_macro::prebindgen;
 use std::time::Duration;
+
+use prebindgen_proc_macro::prebindgen;
 use zenoh::Wait;
+
+use crate::{
+    ZError, ZKeyExpr, ZLivelinessToken, ZReply, ZSample, ZSession, ZSubscriber, util::OnceDrop,
+};
 
 /// Declare a [`ZLivelinessToken`] on `key_expr`. The token keeps the liveliness
 /// alive until its handle is dropped, which undeclares it.

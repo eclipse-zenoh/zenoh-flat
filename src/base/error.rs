@@ -1,5 +1,6 @@
-use crate::ZError;
 use prebindgen_proc_macro::prebindgen;
+
+use crate::ZError;
 
 /// Format a zenoh error as its display string.
 ///

@@ -1,5 +1,6 @@
-use crate::ZZenohId;
 use prebindgen_proc_macro::prebindgen;
+
+use crate::ZZenohId;
 
 /// Serialize a Zenoh node identifier as raw bytes (16 bytes, little-endian).
 #[prebindgen]

@@ -1,8 +1,7 @@
-use crate::util::OnceDrop;
-use crate::{ZConfig, ZError, ZHello, ZScout};
 use prebindgen_proc_macro::prebindgen;
-use zenoh::Wait;
-use zenoh::config::WhatAmIMatcher;
+use zenoh::{Wait, config::WhatAmIMatcher};
+
+use crate::{ZConfig, ZError, ZHello, ZScout, util::OnceDrop};
 
 /// Start a scout, invoking `callback` for each hello message received.
 ///
