@@ -1,6 +1,6 @@
 #[cfg(feature = "unstable")]
 use crate::ZZenohId;
-use crate::{ZEncoding, ZReply, ZSample, ZZBytes};
+use crate::{ZEncoding, ZReply, ZReplyError, ZSample, ZZBytes};
 use prebindgen_proc_macro::prebindgen;
 
 /// Zenoh id of the node that answered, or `None` when unknown (owned handle).
@@ -33,14 +33,21 @@ pub fn z_reply_sample(r: &ZReply) -> Option<&ZSample> {
     r.result().ok()
 }
 
-/// The error payload on failure (borrowed bytes), `None` on success.
+/// The reply's error on failure (borrowed; valid while `r` lives), `None` on
+/// success.
 #[prebindgen]
-pub fn z_reply_error_payload(r: &ZReply) -> Option<&ZZBytes> {
-    r.result().err().map(|e| e.payload())
+pub fn z_reply_err(r: &ZReply) -> Option<&ZReplyError> {
+    r.result().err()
 }
 
-/// The error encoding on failure (borrowed), `None` on success.
+/// The error's payload (borrowed bytes).
 #[prebindgen]
-pub fn z_reply_error_encoding(r: &ZReply) -> Option<&ZEncoding> {
-    r.result().err().map(|e| e.encoding())
+pub fn z_reply_error_payload(e: &ZReplyError) -> &ZZBytes {
+    e.payload()
+}
+
+/// The error's encoding (borrowed).
+#[prebindgen]
+pub fn z_reply_error_encoding(e: &ZReplyError) -> &ZEncoding {
+    e.encoding()
 }

@@ -41,6 +41,7 @@ pub type ZQuerier = zenoh::query::Querier<'static>;
 pub type ZQuery = zenoh::query::Query;
 pub type ZSample = zenoh::sample::Sample;
 pub type ZReply = zenoh::query::Reply;
+pub type ZReplyError = zenoh::query::ReplyError;
 pub type ZTimestamp = zenoh::time::Timestamp;
 pub type ZSession = zenoh::Session;
 pub type ZLivelinessToken = zenoh::liveliness::LivelinessToken;
