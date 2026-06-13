@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use prebindgen_proc_macro::prebindgen;
 
 use crate::ZZBytes;
@@ -8,6 +10,15 @@ use crate::ZZBytes;
 #[prebindgen]
 pub fn z_zbytes_to_bytes(z: &ZZBytes) -> Vec<u8> {
     z.to_bytes().into_owned()
+}
+
+/// Borrow the payload bytes carried by a native [`ZZBytes`] — borrowed (no
+/// copy) when the underlying buffer is contiguous, owned otherwise. The
+/// zero-copy sibling of [`z_zbytes_to_bytes`] for adapters that copy the
+/// bytes onward exactly once anyway (e.g. into a JVM array).
+#[prebindgen]
+pub fn z_zbytes_as_bytes(z: &ZZBytes) -> Cow<'_, [u8]> {
+    z.to_bytes()
 }
 
 /// Construct a native [`ZZBytes`] from a borrowed byte slice. Copies the

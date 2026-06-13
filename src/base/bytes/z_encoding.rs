@@ -36,6 +36,14 @@ pub fn z_encoding_from_string(s: String) -> ZEncoding {
     ZEncoding::from(s)
 }
 
+/// Build a [`ZEncoding`] from its numeric id + optional schema (upstream
+/// `Encoding::new`) — the inverse of [`z_encoding_id`] / [`z_encoding_schema`],
+/// for adapters that carry encodings as `(id, schema)` pairs.
+#[prebindgen]
+pub fn z_encoding_from_id(id: i32, schema: Option<String>) -> ZEncoding {
+    ZEncoding::new(id as u16, schema.map(|s| s.into_bytes().into()))
+}
+
 /// Return a copy of `e` with `schema` attached (upstream `with_schema`). Zenoh
 /// leaves schema semantics to the application (e.g. `utf-8` for `text/plain`).
 #[prebindgen]
