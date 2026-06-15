@@ -3,7 +3,7 @@ use prebindgen_proc_macro::prebindgen;
 /// Mirrors `zenoh::key_expr::SetIntersectionLevel` with a stable FFI surface.
 ///
 /// Unstable: the underlying `zenoh::key_expr::SetIntersectionLevel` is
-/// `#[cfg(feature = "unstable")]`. Returned by [`crate::z_keyexpr_relation_to`].
+/// `#[cfg(feature = "unstable")]`. Returned by [`crate::keyexpr_relation_to`].
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub enum SetIntersectionLevel {

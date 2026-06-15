@@ -1,21 +1,21 @@
 use prebindgen_proc_macro::prebindgen;
 
-use crate::{WhatAmI, ZHello, ZZenohId};
+use crate::{WhatAmI, Hello, ZenohId};
 
 /// Node type that emitted this hello message.
 #[prebindgen]
-pub fn z_hello_whatami(h: &ZHello) -> WhatAmI {
+pub fn hello_whatami(h: &Hello) -> WhatAmI {
     h.whatami().into()
 }
 
 /// Zenoh id of the node that emitted this hello message.
 #[prebindgen]
-pub fn z_hello_zid(h: &ZHello) -> ZZenohId {
+pub fn hello_zid(h: &Hello) -> ZenohId {
     h.zid()
 }
 
 /// Locators advertised in this hello message.
 #[prebindgen]
-pub fn z_hello_locators(h: &ZHello) -> Vec<String> {
+pub fn hello_locators(h: &Hello) -> Vec<String> {
     h.locators().iter().map(|l| l.to_string()).collect()
 }

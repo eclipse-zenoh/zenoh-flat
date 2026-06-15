@@ -1,7 +1,7 @@
 use prebindgen_proc_macro::prebindgen;
 use zenoh::{Wait, config::WhatAmIMatcher};
 
-use crate::{ZConfig, ZError, ZHello, ZScout, util::OnceDrop};
+use crate::{Config, Error, Hello, Scout, util::OnceDrop};
 
 /// Start a scout, invoking `callback` for each hello message received.
 ///
@@ -12,23 +12,23 @@ use crate::{ZConfig, ZError, ZHello, ZScout, util::OnceDrop};
 /// used.
 ///
 /// `on_close` is dropped — and therefore invoked — when the returned
-/// [`ZScout`] is dropped: callers wanting to be notified of scout
+/// [`Scout`] is dropped: callers wanting to be notified of scout
 /// teardown should attach behavior to that drop.
 ///
 /// Returns an opaque scout handle whose lifetime owns the running scout;
 /// dropping it stops the scout and triggers `on_close`.
 #[prebindgen]
-pub fn z_scout(
+pub fn scout(
     whatami: i32,
-    config: Option<&ZConfig>,
-    callback: impl Fn(ZHello) + Send + Sync + 'static,
+    config: Option<&Config>,
+    callback: impl Fn(Hello) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
-) -> Result<ZScout, ZError> {
+) -> Result<Scout, Error> {
     let bits = u8::try_from(whatami)
-        .map_err(|_| -> ZError { format!("invalid whatami bitfield: {whatami}").into() })?;
+        .map_err(|_| -> Error { format!("invalid whatami bitfield: {whatami}").into() })?;
     let matcher: WhatAmIMatcher = bits
         .try_into()
-        .map_err(|_| -> ZError { format!("invalid whatami bitfield: 0b{bits:b}").into() })?;
+        .map_err(|_| -> Error { format!("invalid whatami bitfield: 0b{bits:b}").into() })?;
     let config = config.cloned().unwrap_or_default();
     let on_close = OnceDrop::new(on_close);
     zenoh::scout(matcher, config)

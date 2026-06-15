@@ -1,3 +1,3 @@
-pub(crate) mod z_timestamp;
+pub(crate) mod timestamp;
 
-pub use z_timestamp::*;
+pub use timestamp::*;

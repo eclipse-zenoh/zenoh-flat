@@ -1,16 +1,16 @@
 use prebindgen_proc_macro::prebindgen;
 
-use crate::ZTimestamp;
+use crate::Timestamp;
 
 /// NTP64 time component of the timestamp.
 #[prebindgen]
-pub fn z_timestamp_ntp64(t: &ZTimestamp) -> i64 {
+pub fn timestamp_ntp64(t: &Timestamp) -> i64 {
     t.get_time().as_u64() as i64
 }
 
 /// Raw bytes of the originating `TimestampId`.
 #[prebindgen]
-pub fn z_timestamp_id(t: &ZTimestamp) -> Vec<u8> {
+pub fn timestamp_id(t: &Timestamp) -> Vec<u8> {
     let id = t.get_id();
     id.to_le_bytes()[..id.size()].to_vec()
 }

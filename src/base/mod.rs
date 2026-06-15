@@ -10,6 +10,7 @@ pub(crate) mod query;
 pub(crate) mod sample;
 pub(crate) mod scouting;
 pub(crate) mod session;
+pub(crate) mod subscriber;
 pub(crate) mod time;
 
 pub use bytes::*;
@@ -24,4 +25,5 @@ pub use query::*;
 pub use sample::*;
 pub use scouting::*;
 pub use session::*;
+pub use subscriber::*;
 pub use time::*;
