@@ -24,7 +24,7 @@ pub fn zbytes_as_bytes(z: &ZBytes) -> Cow<'_, [u8]> {
 /// Construct a native [`ZBytes`] from a borrowed byte slice. Copies the
 /// bytes; this is the C-facing constructor (`const uint8_t* + size`).
 #[prebindgen]
-pub fn zbytes_from_slice(bytes: &[u8]) -> ZBytes {
+pub fn zbytes_new_from_slice(bytes: &[u8]) -> ZBytes {
     ZBytes::from(bytes.to_vec())
 }
 
@@ -33,7 +33,7 @@ pub fn zbytes_from_slice(bytes: &[u8]) -> ZBytes {
 /// Use it to hand the same payload to a consuming call repeatedly (e.g. a
 /// throughput publisher loop) without re-encoding from a buffer each time.
 #[prebindgen]
-pub fn zbytes_clone(z: &ZBytes) -> ZBytes {
+pub fn zbytes_new_clone(z: &ZBytes) -> ZBytes {
     z.clone()
 }
 
@@ -41,6 +41,6 @@ pub fn zbytes_clone(z: &ZBytes) -> ZBytes {
 /// without copying. Not exported to the C layer — it exists for completeness
 /// and to accept zenoh-flat's `ZBytes` payload without cloning.
 #[prebindgen]
-pub fn zbytes_from_vec(bytes: Vec<u8>) -> ZBytes {
+pub fn zbytes_new_from_vec(bytes: Vec<u8>) -> ZBytes {
     ZBytes::from(bytes)
 }

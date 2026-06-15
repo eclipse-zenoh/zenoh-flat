@@ -23,7 +23,7 @@ pub fn query_get_keyexpr(q: &Query) -> &KeyExpr {
 
 /// Query selector parameters as an owned string (empty when none).
 #[prebindgen]
-pub fn query_parameters(q: &Query) -> String {
+pub fn query_get_parameters(q: &Query) -> String {
     q.parameters().as_str().to_string()
 }
 
@@ -49,7 +49,7 @@ pub fn query_get_attachment(q: &Query) -> Option<&ZBytes> {
 /// Unstable: `zenoh::query::Query::accepts_replies` is `#[cfg(feature = "unstable")]`.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn query_accepts_replies(q: &Query) -> ReplyKeyExpr {
+pub fn query_get_accepts_replies(q: &Query) -> ReplyKeyExpr {
     q.accepts_replies().into()
 }
 
@@ -58,8 +58,8 @@ pub fn query_accepts_replies(q: &Query) -> ReplyKeyExpr {
 /// Delete) and all carried metadata (payload, encoding, timestamp, attachment,
 /// QoS, source info).
 ///
-/// The flat consumer of `sample_put`: its `sample` parameter is a by-value
-/// `Sample`, so its canonical input (`sample_put`) recursively expands at the
+/// The flat consumer of `sample_new_put`: its `sample` parameter is a by-value
+/// `Sample`, so its canonical input (`sample_new_put`) recursively expands at the
 /// binding boundary — the recursive-input demonstration.
 #[prebindgen]
 pub fn query_reply_sample(query: &Query, sample: Sample) -> Result<(), Error> {

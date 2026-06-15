@@ -58,7 +58,7 @@ pub fn querier_undeclare(querier: Querier) -> Result<(), Error> {
 /// Unstable: `zenoh::query::Querier::id` is an `#[unstable]` zenoh API.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn querier_zid(querier: &Querier) -> ZenohId {
+pub fn querier_get_zid(querier: &Querier) -> ZenohId {
     querier.id().zid()
 }
 
@@ -67,6 +67,6 @@ pub fn querier_zid(querier: &Querier) -> ZenohId {
 /// Unstable: `zenoh::query::Querier::id` is an `#[unstable]` zenoh API.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn querier_eid(querier: &Querier) -> i32 {
+pub fn querier_get_eid(querier: &Querier) -> i32 {
     querier.id().eid() as i32
 }

@@ -59,7 +59,7 @@ pub fn publisher_undeclare(publisher: Publisher) -> Result<(), Error> {
 /// Unstable: `zenoh::pubsub::Publisher::id` is an `#[unstable]` zenoh API.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn publisher_zid(publisher: &Publisher) -> ZenohId {
+pub fn publisher_get_zid(publisher: &Publisher) -> ZenohId {
     publisher.id().zid()
 }
 
@@ -68,6 +68,6 @@ pub fn publisher_zid(publisher: &Publisher) -> ZenohId {
 /// Unstable: `zenoh::pubsub::Publisher::id` is an `#[unstable]` zenoh API.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn publisher_eid(publisher: &Publisher) -> i32 {
+pub fn publisher_get_eid(publisher: &Publisher) -> i32 {
     publisher.id().eid() as i32
 }

@@ -7,34 +7,34 @@ use crate::{Config, Error};
 
 /// Build a default configuration.
 #[prebindgen]
-pub fn config_default() -> Config {
+pub fn config_new_default() -> Config {
     Config::default()
 }
 
 /// Clone a configuration handle. Use this before passing a config to a
 /// consuming call (`open`) when the caller needs to keep the original.
 #[prebindgen]
-pub fn config_clone(c: &Config) -> Config {
+pub fn config_new_clone(c: &Config) -> Config {
     c.clone()
 }
 
 /// Load a configuration from a file path. The file extension determines
 /// the format (JSON, JSON5, or YAML).
 #[prebindgen]
-pub fn config_from_file(path: &str) -> Result<Config, Error> {
+pub fn config_new_from_file(path: &str) -> Result<Config, Error> {
     Ok(Config::from_file(path)?)
 }
 
 /// Parse a configuration from a JSON-formatted string. JSON is a subset
 /// of JSON5, so routing through the JSON5 deserializer is sufficient.
 #[prebindgen]
-pub fn config_from_json(s: &str) -> Result<Config, Error> {
-    config_from_json5(s)
+pub fn config_new_from_json(s: &str) -> Result<Config, Error> {
+    config_new_from_json5(s)
 }
 
 /// Parse a configuration from a JSON5-formatted string.
 #[prebindgen]
-pub fn config_from_json5(s: &str) -> Result<Config, Error> {
+pub fn config_new_from_json5(s: &str) -> Result<Config, Error> {
     // Stable serde path (`Config: Deserialize`), matching zenoh-c's
     // `json5::from_str`. (`Config::from_deserializer` is an `#[unstable]` API.)
     json5::from_str::<Config>(s).map_err(|e| format!("JSON error: {e}").into())
@@ -42,7 +42,7 @@ pub fn config_from_json5(s: &str) -> Result<Config, Error> {
 
 /// Parse a configuration from a YAML-formatted string.
 #[prebindgen]
-pub fn config_from_yaml(s: &str) -> Result<Config, Error> {
+pub fn config_new_from_yaml(s: &str) -> Result<Config, Error> {
     serde_yaml::from_str::<Config>(s).map_err(|e| format!("YAML error: {e}").into())
 }
 

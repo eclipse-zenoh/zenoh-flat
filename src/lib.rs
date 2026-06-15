@@ -25,7 +25,7 @@
 //! The surface is **callback-based**: subscribers, queryables, queriers, scouts,
 //! and liveliness subscribers deliver their items through `impl Fn(..)` callbacks
 //! plus an `on_close` hook, rather than channels. Fallible operations return
-//! `Result<T, `[`Error`]`>`; [`error_message`] renders the error for callers that
+//! `Result<T, `[`Error`]`>`; [`error_get_message`] renders the error for callers that
 //! cannot carry a Rust error across the boundary.
 //!
 //! Feature flags forward to `zenoh`; `unstable` additionally enables the
@@ -44,7 +44,7 @@ pub(crate) mod util;
 // so the captured FFI surface mirrors zenoh's own names one-to-one.
 //
 // `Error` is zenoh's native boxed error (`Box<dyn Error + Send + Sync>`), used
-// as the `E` of every fallible `Result`; `error_message` (base/error) converts
+// as the `E` of every fallible `Result`; `error_get_message` (base/error) converts
 // it to a `String` for the JNI error callback.
 pub type Error = zenoh::Error;
 pub type KeyExpr = zenoh::key_expr::KeyExpr<'static>;
@@ -79,60 +79,68 @@ pub use crate::base::keyexpr::keyexpr_relation_to;
 #[cfg(feature = "unstable")]
 pub use crate::base::keyexpr::set_intersection_level::SetIntersectionLevel;
 #[cfg(feature = "unstable")]
-pub use crate::base::publisher::{publisher_eid, publisher_zid};
+pub use crate::base::publisher::{publisher_get_eid, publisher_get_zid};
 #[cfg(feature = "unstable")]
 pub use crate::base::qos::reliability::Reliability;
 #[cfg(feature = "unstable")]
-pub use crate::base::query::querier::{querier_eid, querier_zid};
+pub use crate::base::query::querier::{querier_get_eid, querier_get_zid};
 #[cfg(feature = "unstable")]
-pub use crate::base::query::query_accepts_replies;
+pub use crate::base::query::query_get_accepts_replies;
 #[cfg(feature = "unstable")]
-pub use crate::base::query::queryable::{queryable_eid, queryable_zid};
+pub use crate::base::query::queryable::{queryable_get_eid, queryable_get_zid};
 #[cfg(feature = "unstable")]
-pub use crate::base::query::reply::{reply_replier_eid, reply_replier_zid};
+pub use crate::base::query::reply::{reply_get_replier_eid, reply_get_replier_zid};
 #[cfg(feature = "unstable")]
 pub use crate::base::sample::{
-    sample_reliability, sample_source_eid, sample_source_sn, sample_source_zid,
+    sample_get_reliability, sample_get_source_eid, sample_get_source_sn, sample_get_source_zid,
 };
 #[cfg(feature = "unstable")]
-pub use crate::base::subscriber::{subscriber_eid, subscriber_zid};
+pub use crate::base::subscriber::{subscriber_get_eid, subscriber_get_zid};
 pub use crate::base::{
     bytes::{
         encoding::{
-            encoding_application_cbor, encoding_application_cdr, encoding_application_coap_payload,
-            encoding_application_java_serialized_object, encoding_application_json,
-            encoding_application_json_patch_json, encoding_application_json_seq,
-            encoding_application_jsonpath, encoding_application_jwt, encoding_application_mp4,
-            encoding_application_octet_stream, encoding_application_openmetrics_text,
-            encoding_application_protobuf, encoding_application_python_serialized_object,
-            encoding_application_soap_xml, encoding_application_sql,
-            encoding_application_x_www_form_urlencoded, encoding_application_xml,
-            encoding_application_yaml, encoding_application_yang, encoding_audio_aac,
-            encoding_audio_flac, encoding_audio_mp4, encoding_audio_ogg, encoding_audio_vorbis,
-            encoding_clone, encoding_from_id, encoding_from_string, encoding_id,
-            encoding_image_bmp, encoding_image_gif, encoding_image_jpeg, encoding_image_png,
-            encoding_image_webp, encoding_schema, encoding_text_css, encoding_text_csv,
-            encoding_text_html, encoding_text_javascript, encoding_text_json, encoding_text_json5,
-            encoding_text_markdown, encoding_text_plain, encoding_text_xml, encoding_text_yaml,
-            encoding_to_string, encoding_video_h261, encoding_video_h263, encoding_video_h264,
-            encoding_video_h265, encoding_video_h266, encoding_video_mp4, encoding_video_ogg,
-            encoding_video_raw, encoding_video_vp8, encoding_video_vp9, encoding_with_schema,
-            encoding_zenoh_bytes, encoding_zenoh_serialized, encoding_zenoh_string,
+            encoding_const_application_cbor, encoding_const_application_cdr,
+            encoding_const_application_coap_payload,
+            encoding_const_application_java_serialized_object, encoding_const_application_json,
+            encoding_const_application_json_patch_json, encoding_const_application_json_seq,
+            encoding_const_application_jsonpath, encoding_const_application_jwt,
+            encoding_const_application_mp4, encoding_const_application_octet_stream,
+            encoding_const_application_openmetrics_text, encoding_const_application_protobuf,
+            encoding_const_application_python_serialized_object,
+            encoding_const_application_soap_xml, encoding_const_application_sql,
+            encoding_const_application_x_www_form_urlencoded, encoding_const_application_xml,
+            encoding_const_application_yaml, encoding_const_application_yang,
+            encoding_const_audio_aac, encoding_const_audio_flac, encoding_const_audio_mp4,
+            encoding_const_audio_ogg, encoding_const_audio_vorbis, encoding_const_image_bmp,
+            encoding_const_image_gif, encoding_const_image_jpeg, encoding_const_image_png,
+            encoding_const_image_webp, encoding_const_text_css, encoding_const_text_csv,
+            encoding_const_text_html, encoding_const_text_javascript, encoding_const_text_json,
+            encoding_const_text_json5, encoding_const_text_markdown, encoding_const_text_plain,
+            encoding_const_text_xml, encoding_const_text_yaml, encoding_const_video_h261,
+            encoding_const_video_h263, encoding_const_video_h264, encoding_const_video_h265,
+            encoding_const_video_h266, encoding_const_video_mp4, encoding_const_video_ogg,
+            encoding_const_video_raw, encoding_const_video_vp8, encoding_const_video_vp9,
+            encoding_const_zenoh_bytes, encoding_const_zenoh_serialized,
+            encoding_const_zenoh_string, encoding_get_id, encoding_get_schema, encoding_new_clone,
+            encoding_new_from_id, encoding_new_from_string, encoding_new_with_schema,
+            encoding_to_string,
         },
         zbytes::{
-            zbytes_as_bytes, zbytes_clone, zbytes_from_slice, zbytes_from_vec, zbytes_to_bytes,
+            zbytes_as_bytes, zbytes_new_clone, zbytes_new_from_slice, zbytes_new_from_vec,
+            zbytes_to_bytes,
         },
     },
     config::{
-        config_clone, config_default, config_from_file, config_from_json, config_from_json5,
-        config_from_yaml, config_get_json, config_insert_json5,
+        config_get_json, config_insert_json5, config_new_clone, config_new_default,
+        config_new_from_file, config_new_from_json, config_new_from_json5, config_new_from_yaml,
         whatami::WhatAmI,
         zenoh_id::{zenoh_id_to_bytes, zenoh_id_to_string},
     },
-    error::error_message,
+    error::error_get_message,
     keyexpr::{
-        keyexpr_get_str, keyexpr_autocanonize, keyexpr_clone, keyexpr_concat, keyexpr_includes,
-        keyexpr_intersects, keyexpr_join, keyexpr_to_string, keyexpr_try_from,
+        keyexpr_get_str, keyexpr_includes, keyexpr_intersects, keyexpr_new_autocanonize,
+        keyexpr_new_clone, keyexpr_new_concat, keyexpr_new_join, keyexpr_new_try_from,
+        keyexpr_to_string,
     },
     liveliness::{
         liveliness_declare_subscriber, liveliness_declare_token, liveliness_get,
@@ -144,28 +152,34 @@ pub use crate::base::{
     query::{
         consolidation_mode::ConsolidationMode,
         querier::{querier_get, querier_get_keyexpr, querier_undeclare},
-        query_get_attachment, query_get_encoding, query_get_keyexpr, query_parameters, query_get_payload,
-        query_reply_delete, query_reply_error, query_reply_sample, query_reply_success,
+        query_get_attachment, query_get_encoding, query_get_keyexpr, query_get_parameters,
+        query_get_payload, query_reply_delete, query_reply_error, query_reply_sample,
+        query_reply_success,
         query_target::QueryTarget,
         queryable::{queryable_get_keyexpr, queryable_undeclare},
-        reply::{reply_get_err, reply_error_get_encoding, reply_error_get_payload, reply_is_ok, reply_get_sample},
+        reply::{
+            reply_error_get_encoding, reply_error_get_payload, reply_get_err, reply_get_sample,
+            reply_is_ok,
+        },
         reply_key_expr::ReplyKeyExpr,
     },
     sample::{
-        sample_get_attachment, sample_congestion_control, sample_delete, sample_get_encoding,
-        sample_express, sample_get_key_expr, sample_kind, sample_kind::SampleKind, sample_get_payload,
-        sample_priority, sample_put, sample_get_timestamp,
+        sample_get_attachment, sample_get_congestion_control, sample_get_encoding,
+        sample_get_express, sample_get_key_expr, sample_get_kind, sample_get_payload,
+        sample_get_priority, sample_get_timestamp, sample_kind::SampleKind, sample_new_delete,
+        sample_new_put,
     },
     scouting::{
-        hello::{hello_locators, hello_whatami, hello_zid},
+        hello::{hello_get_locators, hello_get_whatami, hello_get_zid},
         scout::scout,
     },
     session::{
         open, session_close, session_declare_keyexpr, session_declare_publisher,
         session_declare_querier, session_declare_queryable, session_declare_subscriber,
-        session_delete, session_get, session_is_closed, session_new_timestamp, session_peers_zid,
-        session_put, session_routers_zid, session_undeclare_keyexpr, session_zid,
+        session_delete, session_get, session_get_peers_zid, session_get_routers_zid,
+        session_get_zid, session_is_closed, session_new_timestamp, session_put,
+        session_undeclare_keyexpr,
     },
     subscriber::{subscriber_get_keyexpr, subscriber_undeclare},
-    time::timestamp::{timestamp_id, timestamp_ntp64},
+    time::timestamp::{timestamp_get_id, timestamp_get_ntp64},
 };

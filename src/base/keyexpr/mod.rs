@@ -11,9 +11,9 @@ use crate::{Error, KeyExpr};
 
 /// Validate `s` as a key expression and build an owned handle, returning an
 /// error if it is not canonical (the flat port of `KeyExpr::try_from`). Use
-/// [`keyexpr_autocanonize`] to accept and canonicalize non-canonical input.
+/// [`keyexpr_new_autocanonize`] to accept and canonicalize non-canonical input.
 #[prebindgen]
-pub fn keyexpr_try_from(s: String) -> Result<KeyExpr, Error> {
+pub fn keyexpr_new_try_from(s: String) -> Result<KeyExpr, Error> {
     let ke = KeyExpr::try_from(s)?;
     Ok(ke)
 }
@@ -22,7 +22,7 @@ pub fn keyexpr_try_from(s: String) -> Result<KeyExpr, Error> {
 /// consuming call (e.g. `session_declare_publisher`) when the caller needs to
 /// keep the original. Cheap (Arc bump for owned key expressions).
 #[prebindgen]
-pub fn keyexpr_clone(ke: &KeyExpr) -> KeyExpr {
+pub fn keyexpr_new_clone(ke: &KeyExpr) -> KeyExpr {
     ke.clone()
 }
 
@@ -43,11 +43,11 @@ pub fn keyexpr_get_str(ke: &KeyExpr) -> &str {
 }
 
 /// Canonicalize `s` and build an owned key-expression handle (the flat port of
-/// `KeyExpr::autocanonize`). Unlike [`keyexpr_try_from`], this rewrites
+/// `KeyExpr::autocanonize`). Unlike [`keyexpr_new_try_from`], this rewrites
 /// redundant wildcards into canonical form instead of rejecting them; it still
 /// errors on input that is not a valid key expression at all.
 #[prebindgen]
-pub fn keyexpr_autocanonize(s: String) -> Result<KeyExpr, Error> {
+pub fn keyexpr_new_autocanonize(s: String) -> Result<KeyExpr, Error> {
     let ke = KeyExpr::autocanonize(s)?;
     Ok(ke)
 }
@@ -81,7 +81,7 @@ pub fn keyexpr_relation_to(a: &KeyExpr, b: &KeyExpr) -> SetIntersectionLevel {
 /// expression (the flat port of `keyexpr::join`). Errors if the result is not a
 /// valid key expression.
 #[prebindgen]
-pub fn keyexpr_join(a: &KeyExpr, b: String) -> Result<KeyExpr, Error> {
+pub fn keyexpr_new_join(a: &KeyExpr, b: String) -> Result<KeyExpr, Error> {
     Ok(a.join(&b)?)
 }
 
@@ -89,6 +89,6 @@ pub fn keyexpr_join(a: &KeyExpr, b: String) -> Result<KeyExpr, Error> {
 /// owned key expression (the flat port of `keyexpr::concat`). Errors if the
 /// result is not a valid key expression.
 #[prebindgen]
-pub fn keyexpr_concat(a: &KeyExpr, b: String) -> Result<KeyExpr, Error> {
+pub fn keyexpr_new_concat(a: &KeyExpr, b: String) -> Result<KeyExpr, Error> {
     Ok(a.concat(&b)?)
 }

@@ -26,7 +26,7 @@ pub fn queryable_undeclare(queryable: Queryable) -> Result<(), Error> {
 /// Unstable: `zenoh::query::Queryable::id` is an `#[unstable]` zenoh API.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn queryable_zid(queryable: &Queryable) -> ZenohId {
+pub fn queryable_get_zid(queryable: &Queryable) -> ZenohId {
     queryable.id().zid()
 }
 
@@ -35,6 +35,6 @@ pub fn queryable_zid(queryable: &Queryable) -> ZenohId {
 /// Unstable: `zenoh::query::Queryable::id` is an `#[unstable]` zenoh API.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn queryable_eid(queryable: &Queryable) -> i32 {
+pub fn queryable_get_eid(queryable: &Queryable) -> i32 {
     queryable.id().eid() as i32
 }

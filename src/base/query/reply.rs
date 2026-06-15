@@ -9,7 +9,7 @@ use crate::{Encoding, Reply, ReplyError, Sample, ZBytes};
 /// Unstable: `Reply::replier_id` is an `#[unstable]` zenoh API.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn reply_replier_zid(r: &Reply) -> Option<ZenohId> {
+pub fn reply_get_replier_zid(r: &Reply) -> Option<ZenohId> {
     r.replier_id().map(|id| id.zid())
 }
 
@@ -18,7 +18,7 @@ pub fn reply_replier_zid(r: &Reply) -> Option<ZenohId> {
 /// Unstable: `Reply::replier_id` is an `#[unstable]` zenoh API.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn reply_replier_eid(r: &Reply) -> i32 {
+pub fn reply_get_replier_eid(r: &Reply) -> i32 {
     r.replier_id().map(|id| id.eid() as i32).unwrap_or(0)
 }
 

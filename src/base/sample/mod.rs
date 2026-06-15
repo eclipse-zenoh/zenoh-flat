@@ -25,7 +25,7 @@ use crate::{Reliability, ZenohId};
 /// knobs. `reliability` is unstable and only present with the `unstable` feature.
 #[prebindgen]
 #[allow(clippy::too_many_arguments)]
-pub fn sample_put(
+pub fn sample_new_put(
     key_expr: KeyExpr,
     payload: ZBytes,
     encoding: Option<&Encoding>,
@@ -66,9 +66,9 @@ pub fn sample_put(
 
 /// Build a **Delete** [`Sample`] from its key expression and optional metadata —
 /// the flat port of zenoh's `SampleBuilder::delete`. A delete sample carries no
-/// payload or encoding; the remaining fields mirror [`sample_put`].
+/// payload or encoding; the remaining fields mirror [`sample_new_put`].
 #[prebindgen]
-pub fn sample_delete(
+pub fn sample_new_delete(
     key_expr: KeyExpr,
     timestamp_ntp64: Option<i64>,
     attachment: Option<ZBytes>,
@@ -122,7 +122,7 @@ pub fn sample_get_encoding(s: &Sample) -> &Encoding {
 
 /// Whether the sample is a PUT or a DELETE.
 #[prebindgen]
-pub fn sample_kind(s: &Sample) -> SampleKind {
+pub fn sample_get_kind(s: &Sample) -> SampleKind {
     s.kind().into()
 }
 
@@ -134,19 +134,19 @@ pub fn sample_get_timestamp(s: &Sample) -> Option<&Timestamp> {
 
 /// QoS express flag.
 #[prebindgen]
-pub fn sample_express(s: &Sample) -> bool {
+pub fn sample_get_express(s: &Sample) -> bool {
     s.express()
 }
 
 /// QoS priority.
 #[prebindgen]
-pub fn sample_priority(s: &Sample) -> Priority {
+pub fn sample_get_priority(s: &Sample) -> Priority {
     s.priority().into()
 }
 
 /// QoS congestion-control policy.
 #[prebindgen]
-pub fn sample_congestion_control(s: &Sample) -> CongestionControl {
+pub fn sample_get_congestion_control(s: &Sample) -> CongestionControl {
     s.congestion_control().into()
 }
 
@@ -161,7 +161,7 @@ pub fn sample_get_attachment(s: &Sample) -> Option<&ZBytes> {
 /// Unstable: `zenoh::sample::Sample::reliability` is an `#[unstable]` zenoh API.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn sample_reliability(s: &Sample) -> Reliability {
+pub fn sample_get_reliability(s: &Sample) -> Reliability {
     s.reliability().into()
 }
 
@@ -171,7 +171,7 @@ pub fn sample_reliability(s: &Sample) -> Reliability {
 /// Unstable: `zenoh::sample::Sample::source_info` is an `#[unstable]` zenoh API.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn sample_source_zid(s: &Sample) -> Option<ZenohId> {
+pub fn sample_get_source_zid(s: &Sample) -> Option<ZenohId> {
     s.source_info().map(|si| si.source_id().zid())
 }
 
@@ -180,7 +180,7 @@ pub fn sample_source_zid(s: &Sample) -> Option<ZenohId> {
 /// Unstable: `zenoh::sample::Sample::source_info` is an `#[unstable]` zenoh API.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn sample_source_eid(s: &Sample) -> i32 {
+pub fn sample_get_source_eid(s: &Sample) -> i32 {
     s.source_info()
         .map(|si| si.source_id().eid() as i32)
         .unwrap_or(0)
@@ -192,6 +192,6 @@ pub fn sample_source_eid(s: &Sample) -> i32 {
 /// Unstable: `zenoh::sample::Sample::source_info` is an `#[unstable]` zenoh API.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn sample_source_sn(s: &Sample) -> i64 {
+pub fn sample_get_source_sn(s: &Sample) -> i64 {
     s.source_info().map(|si| si.source_sn() as i64).unwrap_or(0)
 }

@@ -26,7 +26,7 @@ pub fn subscriber_undeclare(subscriber: Subscriber) -> Result<(), Error> {
 /// Unstable: `zenoh::pubsub::Subscriber::id` is an `#[unstable]` zenoh API.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn subscriber_zid(subscriber: &Subscriber) -> ZenohId {
+pub fn subscriber_get_zid(subscriber: &Subscriber) -> ZenohId {
     subscriber.id().zid()
 }
 
@@ -35,6 +35,6 @@ pub fn subscriber_zid(subscriber: &Subscriber) -> ZenohId {
 /// Unstable: `zenoh::pubsub::Subscriber::id` is an `#[unstable]` zenoh API.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn subscriber_eid(subscriber: &Subscriber) -> i32 {
+pub fn subscriber_get_eid(subscriber: &Subscriber) -> i32 {
     subscriber.id().eid() as i32
 }

@@ -9,6 +9,6 @@ use crate::Error;
 /// accessor converts it to a `String` for the JNI error callback (declared as a
 /// `.convert_error` / `.default()` converter in the binding crate's `build.rs`).
 #[prebindgen]
-pub fn error_message(e: &Error) -> String {
+pub fn error_get_message(e: &Error) -> String {
     e.to_string()
 }

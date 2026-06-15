@@ -13,7 +13,7 @@ use crate::{
 
 /// Open a session with the given configuration. The config is consumed by value
 /// (matching native `zenoh::open`); C callers that need to keep it should
-/// `config_clone` first.
+/// `config_new_clone` first.
 #[prebindgen]
 pub fn open(config: Config) -> Result<Session, Error> {
     zenoh::open(config).wait()
@@ -301,21 +301,21 @@ pub fn session_get(
 
 /// This session's own Zenoh id (the flat port of `SessionInfo::zid`).
 #[prebindgen]
-pub fn session_zid(session: &Session) -> ZenohId {
+pub fn session_get_zid(session: &Session) -> ZenohId {
     session.info().zid().wait()
 }
 
 /// Zenoh ids of the peers currently connected to this session (the flat port of
 /// `SessionInfo::peers_zid`).
 #[prebindgen]
-pub fn session_peers_zid(session: &Session) -> Vec<ZenohId> {
+pub fn session_get_peers_zid(session: &Session) -> Vec<ZenohId> {
     session.info().peers_zid().wait().collect()
 }
 
 /// Zenoh ids of the routers this session is connected to (the flat port of
 /// `SessionInfo::routers_zid`).
 #[prebindgen]
-pub fn session_routers_zid(session: &Session) -> Vec<ZenohId> {
+pub fn session_get_routers_zid(session: &Session) -> Vec<ZenohId> {
     session.info().routers_zid().wait().collect()
 }
 
