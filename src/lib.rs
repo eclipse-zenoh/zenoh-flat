@@ -14,19 +14,41 @@
 
 //! Flat, FFI-friendly facade over the [`zenoh`] crate.
 //!
-//! `zenoh-flat` re-exports the zenoh types this crate operates on under their own
-//! Rust names (e.g. [`Session`], [`KeyExpr`], [`ZBytes`], [`Sample`]) and exposes
-//! the whole API as free functions whose names mirror the type they act on
-//! (`session_put`, `keyexpr_intersects`, `publisher_undeclare`, …). Every public
-//! function is annotated with `#[prebindgen]`, so [`prebindgen`] can capture this
-//! surface and generate idiomatic bindings for other languages (C, Kotlin/JNI, …)
-//! without a hand-written FFI layer per target.
+//! # Purpose
 //!
-//! The surface is **callback-based**: subscribers, queryables, queriers, scouts,
-//! and liveliness subscribers deliver their items through `impl Fn(..)` callbacks
-//! plus an `on_close` hook, rather than channels. Fallible operations return
-//! `Result<T, `[`Error`]`>`; [`error_get_message`] renders the error for callers that
-//! cannot carry a Rust error across the boundary.
+//! `zenoh-flat` flattens zenoh's generic, builder-based Rust API into plain free
+//! functions over opaque handles. Every public function is annotated with
+//! `#[prebindgen]`, so [`prebindgen`] captures this surface and generates
+//! idiomatic bindings for other languages (C, Kotlin/JNI, …) — no hand-written
+//! FFI layer per target. The surface is **callback-based**: subscribers,
+//! queryables, queriers, scouts and liveliness subscribers deliver items through
+//! an `impl Fn(..)` callback plus an `on_close` hook (no channels), keeping it
+//! trivially FFI-exportable. Fallible calls return `Result<T, `[`Error`]`>`;
+//! [`error_get_message`] renders the error message as a `String`.
+//!
+//! # Structure
+//!
+//! Types are re-exported under their own zenoh Rust names ([`Session`],
+//! [`KeyExpr`], [`ZBytes`], [`Sample`], …). Functions
+//! grouped by type in the sources (keyexpr, config, bytes, session, publisher, subscriber,
+//! query, sample, scouting, liveliness, time, qos) but exported flatly at the crate root, 
+//! so the FFI surface is a single namespace.
+//!
+//! # Naming
+//!
+//! A function name encodes both its receiver type and its role:
+//!
+//! - `<type>_<op>` — an operation (`session_put`, `publisher_undeclare`,
+//!   `keyexpr_intersects`, `open`).
+//! - `<type>_get_<member>` — read a value from an instance, by reference or value
+//!   (`sample_get_payload`, `sample_get_kind`, `session_get_zid`).
+//! - `<type>_new_<member>` — construct a new instance (`sample_new_put`,
+//!   `config_new_default`, `keyexpr_new_try_from`).
+//! - `encoding_const_<name>` — a predefined constant ([`Encoding`] presets).
+//!
+//! Conversions keep their verb (`keyexpr_to_string`, `zbytes_to_bytes`).
+//!
+//! # Features
 //!
 //! Feature flags forward to `zenoh`; `unstable` additionally enables the
 //! `#[unstable]` slices of the API (`Reliability`, entity-id accessors, key
