@@ -45,7 +45,10 @@ fn from_string_with_id_and_schema() {
 /// `test_constants`: predefined constants render to their canonical names.
 #[test]
 fn constants_render_canonically() {
-    assert_eq!(encoding_to_string(encoding_const_zenoh_bytes()), "zenoh/bytes");
+    assert_eq!(
+        encoding_to_string(encoding_const_zenoh_bytes()),
+        "zenoh/bytes"
+    );
     assert_eq!(
         encoding_to_string(encoding_const_zenoh_string()),
         "zenoh/string"

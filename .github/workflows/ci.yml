@@ -1,0 +1,265 @@
+#
+# Copyright (c) 2026 ZettaScale Technology
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+# which is available at https://www.apache.org/licenses/LICENSE-2.0.
+#
+# SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+#
+# Contributors:
+#   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
+#
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+env:
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+  CARGO_PROFILE_DEV_DEBUG: false
+  RUSTUP_WINDOWS_PATH_ADD_BIN: 1
+  # Nightly toolchain identifier used by cargo invocations (rustfmt only).
+  NIGHTLY_TOOLCHAIN: "nightly"
+  # `zenoh-flat` depends on `prebindgen` through a relative path
+  # (`../prebindgen/prebindgen`), so CI must check it out as a sibling directory.
+  # `PREBINDGEN_REF` must track the `prebindgen` branch this `zenoh-flat` branch
+  # builds against (it is not yet published to crates.io).
+  PREBINDGEN_REPO: milyin/prebindgen
+  PREBINDGEN_REF: prebindgen-ext-unexpand
+
+jobs:
+  determine-runner:
+    runs-on: ubuntu-latest
+    outputs:
+      runner: ${{ steps.set-runner.outputs.runner }}
+    steps:
+      - name: Clone this repository
+        uses: actions/checkout@v4
+
+      - name: Determine which runner to use
+        id: set-runner
+        run: |
+          if [[ -f ci/runners.json ]]; then
+            echo "runner=$(cat ci/runners.json)" >> $GITHUB_OUTPUT
+          else
+            echo "runner=['ubuntu-latest', 'windows-latest', 'macos-latest']" >> $GITHUB_OUTPUT
+          fi
+
+  check:
+    needs: determine-runner
+    name: Lints and doc tests on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(needs.determine-runner.outputs.runner) }}
+    defaults:
+      run:
+        working-directory: zenoh-flat
+
+    steps:
+      - name: Clone this repository
+        uses: actions/checkout@v4
+        with:
+          path: zenoh-flat
+
+      - name: Clone prebindgen (path dependency)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.PREBINDGEN_REPO }}
+          ref: ${{ env.PREBINDGEN_REF }}
+          path: prebindgen
+
+      - name: Update Stable Rust toolchain
+        run: rustup update stable
+
+      - name: Make sure necessary tools are installed
+        run: |
+          rustup toolchain install ${{ env.NIGHTLY_TOOLCHAIN }}
+          rustup component add clippy --toolchain stable
+          rustup component add rustfmt --toolchain ${{ env.NIGHTLY_TOOLCHAIN }}
+
+      - name: Setup rust-cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-bin: false
+          workspaces: zenoh-flat
+
+      - name: Install latest cargo-deny
+        uses: taiki-e/install-action@cargo-deny
+
+      - name: Install latest cargo-machete
+        uses: taiki-e/install-action@cargo-machete
+
+      - name: Install latest taplo
+        uses: taiki-e/install-action@taplo
+
+      - name: Code format check
+        shell: bash
+        run: rustfmt +${{ env.NIGHTLY_TOOLCHAIN }} --check --config "unstable_features=true,imports_granularity=Crate,group_imports=StdExternalCrate,skip_children=true" $(git ls-files '*.rs')
+
+      - name: Clippy no-default-features
+        run: cargo +stable clippy --all-targets --no-default-features -- --deny warnings
+
+      - name: Clippy default
+        run: cargo +stable clippy --all-targets -- --deny warnings
+
+      - name: Clippy unstable
+        run: cargo +stable clippy --all-targets --features unstable -- --deny warnings
+
+      - name: Run doctests
+        run: cargo test --doc
+
+      - name: Build doc
+        run: cargo doc --no-deps --features unstable
+        env:
+          RUSTDOCFLAGS: -Dwarnings
+
+      - name: Check licenses
+        run: cargo deny check licenses
+
+      - name: Check unused dependencies
+        run: cargo machete
+
+      - name: Check TOML formatting
+        if: ${{ !contains(matrix.os, 'windows') }}
+        run: taplo fmt --check --diff
+
+  test:
+    needs: determine-runner
+    name: Unit tests on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(needs.determine-runner.outputs.runner) }}
+    defaults:
+      run:
+        working-directory: zenoh-flat
+
+    steps:
+      - name: Clone this repository
+        uses: actions/checkout@v4
+        with:
+          path: zenoh-flat
+
+      - name: Clone prebindgen (path dependency)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.PREBINDGEN_REPO }}
+          ref: ${{ env.PREBINDGEN_REF }}
+          path: prebindgen
+
+      - name: Install latest Rust toolchain
+        run: rustup show
+
+      - name: Setup rust-cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-bin: false
+          workspaces: zenoh-flat
+
+      - name: Set rustflags
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: bash
+        run: echo "RUSTFLAGS=-Clink-arg=/DEBUG:NONE" >> $GITHUB_ENV
+
+      - name: Install latest nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: Run tests (sudo macos)
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: sudo cargo nextest run
+
+      - name: Run tests
+        if: ${{ matrix.os != 'macos-latest' }}
+        run: cargo nextest run
+
+  test_unstable:
+    needs: determine-runner
+    name: Unit tests on ${{ matrix.os }} (unstable)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(needs.determine-runner.outputs.runner) }}
+    defaults:
+      run:
+        working-directory: zenoh-flat
+
+    steps:
+      - name: Clone this repository
+        uses: actions/checkout@v4
+        with:
+          path: zenoh-flat
+
+      - name: Clone prebindgen (path dependency)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.PREBINDGEN_REPO }}
+          ref: ${{ env.PREBINDGEN_REF }}
+          path: prebindgen
+
+      - name: Install latest Rust toolchain
+        run: rustup show
+
+      - name: Setup rust-cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-bin: false
+          workspaces: zenoh-flat
+
+      - name: Set rustflags
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: bash
+        run: echo "RUSTFLAGS=-Clink-arg=/DEBUG:NONE" >> $GITHUB_ENV
+
+      - name: Install latest nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: Run tests with unstable (sudo macos)
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: sudo cargo nextest run --features unstable
+
+      - name: Run tests with unstable
+        if: ${{ matrix.os != 'macos-latest' }}
+        run: cargo nextest run --features unstable
+
+  typos:
+    name: Typos Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone this repository
+        uses: actions/checkout@v4
+
+      - name: Check spelling
+        uses: crate-ci/typos@master
+
+  markdown_lint:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DavidAnson/markdownlint-cli2-action@v18
+        with:
+          config: ".markdownlint.yaml"
+          globs: "**/README.md"
+
+  # NOTE: In GitHub repository settings, the "Require status checks to pass
+  # before merging" branch protection rule ensures that commits are only merged
+  # from branches where specific status checks have passed. These checks are
+  # specified manually as a list of workflow job names. Thus we use this extra
+  # job to signal whether all CI checks have passed.
+  ci:
+    name: CI status checks
+    runs-on: ubuntu-latest
+    needs: [check, test, test_unstable, typos, markdown_lint]
+    if: always()
+    steps:
+      - name: Check whether all jobs pass
+        run: echo '${{ toJson(needs) }}' | jq -e 'all(.result == "success")'

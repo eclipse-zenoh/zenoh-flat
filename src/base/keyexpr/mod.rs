@@ -82,7 +82,7 @@ pub fn keyexpr_relation_to(a: &KeyExpr, b: &KeyExpr) -> SetIntersectionLevel {
 /// valid key expression.
 #[prebindgen]
 pub fn keyexpr_new_join(a: &KeyExpr, b: String) -> Result<KeyExpr, Error> {
-    Ok(a.join(&b)?)
+    a.join(&b)
 }
 
 /// Concatenate `b` onto `a` verbatim (no separator inserted), returning a new
@@ -90,5 +90,5 @@ pub fn keyexpr_new_join(a: &KeyExpr, b: String) -> Result<KeyExpr, Error> {
 /// result is not a valid key expression.
 #[prebindgen]
 pub fn keyexpr_new_concat(a: &KeyExpr, b: String) -> Result<KeyExpr, Error> {
-    Ok(a.concat(&b)?)
+    a.concat(&b)
 }

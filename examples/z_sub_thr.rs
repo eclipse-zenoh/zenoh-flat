@@ -48,7 +48,7 @@ impl Stats {
 
     fn increment(&self) {
         let n = self.count.fetch_add(1, Relaxed) + 1;
-        if n % self.round_size == 0 {
+        if n.is_multiple_of(self.round_size) {
             let now = self.base.elapsed().as_nanos() as u64;
             let prev = self.round_start_nanos.swap(now, Relaxed);
             let elapsed = now.saturating_sub(prev) as f64 / 1e9;

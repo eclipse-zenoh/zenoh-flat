@@ -1,17 +1,28 @@
 [package]
-name = "zenoh-flat"
-version = "1.9.0"
 edition = "2024"
+license = "EPL-2.0 OR Apache-2.0"
+name = "zenoh-flat"
 readme = "README.md"
+version = "1.9.0"
+
+# `tracing` is pulled in only to enable its `log` feature: that bridges zenoh's
+# internal `tracing` events to the `log` facade consumed by `android_logd_logger`
+# (see `init_android_logs`). It has no direct code reference, so `cargo machete`
+# would otherwise flag it as unused.
+[package.metadata.cargo-machete]
+ignored = ["tracing"]
 
 [dependencies]
-zenoh = { version = "1.9.0", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", features = ["internal"], default-features = false }
 android-logd-logger = "0.4.0"
-tracing = { version = "0.1" , features = ["log"] }
-prebindgen = { path = "../prebindgen/prebindgen" }
-prebindgen-proc-macro = { path = "../prebindgen/prebindgen-proc-macro", features = ["inline"] }
 json5 = "0.4.1"
+prebindgen-proc-macro = { path = "../prebindgen/prebindgen-proc-macro", features = [
+  "inline",
+] }
 serde_yaml = "0.9.19"
+tracing = { version = "0.1", features = ["log"] }
+zenoh = { version = "1.9.0", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", features = [
+  "internal",
+], default-features = false }
 
 [build-dependencies]
 prebindgen = { path = "../prebindgen/prebindgen" }
@@ -20,36 +31,36 @@ prebindgen = { path = "../prebindgen/prebindgen" }
 # with zenoh-c's exact default set. `unstable` / `shared-memory` are OFF by
 # default, matching zenoh-c; `unstable` gates the `Reliability` QoS surface.
 [features]
-shared-memory = ["zenoh/shared-memory"]
-unstable = ["zenoh/unstable"]
 auth_pubkey = ["zenoh/auth_pubkey"]
 auth_usrpwd = ["zenoh/auth_usrpwd"]
-transport_multilink = ["zenoh/transport_multilink"]
+default = [
+  "auth_pubkey",
+  "auth_usrpwd",
+  "transport_compression",
+  "transport_multilink",
+  "transport_quic",
+  "transport_quic_datagram",
+  "transport_tcp",
+  "transport_tls",
+  "transport_udp",
+  "transport_unixsock-stream",
+  "transport_ws",
+]
+shared-memory = ["zenoh/shared-memory"]
+stats = ["zenoh/stats"]
 transport_compression = ["zenoh/transport_compression"]
+transport_multilink = ["zenoh/transport_multilink"]
 transport_quic = ["zenoh/transport_quic"]
+transport_quic_datagram = ["zenoh/transport_quic_datagram"]
 transport_serial = ["zenoh/transport_serial"]
-transport_unixpipe = ["zenoh/transport_unixpipe"]
 transport_tcp = ["zenoh/transport_tcp"]
 transport_tls = ["zenoh/transport_tls"]
 transport_udp = ["zenoh/transport_udp"]
+transport_unixpipe = ["zenoh/transport_unixpipe"]
 transport_unixsock-stream = ["zenoh/transport_unixsock-stream"]
-transport_ws = ["zenoh/transport_ws"]
 transport_vsock = ["zenoh/transport_vsock"]
-transport_quic_datagram = ["zenoh/transport_quic_datagram"]
-stats = ["zenoh/stats"]
-default = [
-    "auth_pubkey",
-    "auth_usrpwd",
-    "transport_multilink",
-    "transport_compression",
-    "transport_quic",
-    "transport_tcp",
-    "transport_tls",
-    "transport_udp",
-    "transport_unixsock-stream",
-    "transport_ws",
-    "transport_quic_datagram",
-]
+transport_ws = ["zenoh/transport_ws"]
+unstable = ["zenoh/unstable"]
 
 [dev-dependencies]
 clap = { version = "4", features = ["derive"] }
@@ -60,7 +71,7 @@ clap = { version = "4", features = ["derive"] }
 # inlined across the crate boundary, which shows up as fake "wrapping overhead".
 [profile.release]
 codegen-units = 1
+debug = false
 lto = "fat"
 opt-level = 3
 panic = "abort"
-debug = false

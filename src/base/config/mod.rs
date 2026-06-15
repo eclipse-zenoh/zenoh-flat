@@ -22,7 +22,7 @@ pub fn config_new_clone(c: &Config) -> Config {
 /// the format (JSON, JSON5, or YAML).
 #[prebindgen]
 pub fn config_new_from_file(path: &str) -> Result<Config, Error> {
-    Ok(Config::from_file(path)?)
+    Config::from_file(path)
 }
 
 /// Parse a configuration from a JSON-formatted string. JSON is a subset
@@ -49,7 +49,7 @@ pub fn config_new_from_yaml(s: &str) -> Result<Config, Error> {
 /// Return the JSON value associated with `key` in the configuration.
 #[prebindgen]
 pub fn config_get_json(c: &Config, key: &str) -> Result<String, Error> {
-    Ok(c.get_json(key)?)
+    c.get_json(key)
 }
 
 /// Insert a JSON5-formatted value at `key` in the configuration.

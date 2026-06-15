@@ -62,7 +62,11 @@ fn zid_has_string_and_byte_form() {
     let bytes = zenoh_id_to_bytes(&zid);
 
     assert!(!s.is_empty(), "zid string form must not be empty");
-    assert_eq!(bytes.len(), 16, "zid byte form is fixed 16-byte little-endian");
+    assert_eq!(
+        bytes.len(),
+        16,
+        "zid byte form is fixed 16-byte little-endian"
+    );
     assert!(
         bytes.iter().any(|&b| b != 0),
         "a real zid is not all zeroes"
