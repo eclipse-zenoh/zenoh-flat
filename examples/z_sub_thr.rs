@@ -2,10 +2,10 @@
 // Throughput subscriber for the zenoh-flat *native Rust* API.
 //
 // Structural mirror of eclipse-zenoh/zenoh `examples/examples/z_sub_thr.rs`,
-// rewritten against zenoh-flat's `z_*` API. The flat subscriber callback is
-// `impl Fn(ZSample) + Send + Sync` (not `FnMut`), so the per-message counter is
+// rewritten against zenoh-flat's flat API. The flat subscriber callback is
+// `impl Fn(Sample) + Send + Sync` (not `FnMut`), so the per-message counter is
 // kept **lock-free** (atomics) to avoid charging the native baseline a mutex
-// that the C examples don't pay. The callback ignores the `ZSample` (no
+// that the C examples don't pay. The callback ignores the `Sample` (no
 // expansion / no field access), matching the C and native thr subscribers.
 //
 use std::{
@@ -18,9 +18,12 @@ use std::{
 
 use clap::Parser;
 use zenoh_flat::{
-    ZConfig, ZSample, init_zenoh_logs_from_env_or, z_config_default, z_config_from_file,
-    z_config_insert_json5, z_keyexpr_try_from, z_open, z_session_declare_subscriber,
+    Sample, init_zenoh_logs_from_env_or, keyexpr_new_try_from, open, session_declare_subscriber,
 };
+
+#[path = "common/mod.rs"]
+mod common;
+use common::CommonArgs;
 
 struct Stats {
     base: Instant,
@@ -64,13 +67,13 @@ fn main() {
     init_zenoh_logs_from_env_or("error");
     let args = Args::parse();
 
-    let session = z_open(build_config(&args.common)).unwrap_or_else(|e| panic!("{e}"));
-    let ke = z_keyexpr_try_from("test/thr".to_string()).unwrap_or_else(|e| panic!("{e}"));
+    let session = open(args.common.into()).unwrap_or_else(|e| panic!("{e}"));
+    let ke = keyexpr_new_try_from("test/thr".to_string()).unwrap_or_else(|e| panic!("{e}"));
 
     let stats = Arc::new(Stats::new(args.number, args.samples));
     let s = stats.clone();
     let _subscriber =
-        z_session_declare_subscriber(&session, ke, move |_sample: ZSample| s.increment(), || {})
+        session_declare_subscriber(&session, ke, move |_sample: Sample| s.increment(), || {})
             .unwrap_or_else(|e| panic!("{e}"));
 
     println!("Press CTRL-C to quit...");
@@ -87,62 +90,4 @@ struct Args {
     number: usize,
     #[command(flatten)]
     common: CommonArgs,
-}
-
-// --- Minimal `CommonArgs` equivalent (mode / connect / listen / config), with
-// the same flag names and config keys as the zenoh-flat-c examples' parse_args.h
-// and the upstream zenoh `CommonArgs`. ---
-#[derive(Parser, Clone, Debug)]
-struct CommonArgs {
-    /// A configuration file
-    #[arg(short = 'c', long)]
-    config: Option<String>,
-    /// The zenoh session mode [peer|client|router]
-    #[arg(short = 'm', long)]
-    mode: Option<String>,
-    /// Endpoint to connect to (repeatable)
-    #[arg(short = 'e', long)]
-    connect: Vec<String>,
-    /// Locator to listen on (repeatable)
-    #[arg(short = 'l', long)]
-    listen: Vec<String>,
-    /// Disable multicast scouting
-    #[arg(long = "no-multicast-scouting")]
-    no_multicast_scouting: bool,
-    /// Arbitrary config changes as KEY:VALUE (repeatable)
-    #[arg(long = "cfg")]
-    cfg: Vec<String>,
-}
-
-fn json_list(items: &[String]) -> String {
-    let quoted: Vec<String> = items.iter().map(|e| format!("\"{e}\"")).collect();
-    format!("[{}]", quoted.join(","))
-}
-
-fn build_config(a: &CommonArgs) -> ZConfig {
-    let mut c = match &a.config {
-        Some(path) => z_config_from_file(path).unwrap_or_else(|e| panic!("{e}")),
-        None => z_config_default(),
-    };
-    if let Some(m) = &a.mode {
-        z_config_insert_json5(&mut c, "mode", &format!("\"{m}\""))
-            .unwrap_or_else(|e| panic!("{e}"));
-    }
-    if !a.connect.is_empty() {
-        z_config_insert_json5(&mut c, "connect/endpoints", &json_list(&a.connect))
-            .unwrap_or_else(|e| panic!("{e}"));
-    }
-    if !a.listen.is_empty() {
-        z_config_insert_json5(&mut c, "listen/endpoints", &json_list(&a.listen))
-            .unwrap_or_else(|e| panic!("{e}"));
-    }
-    if a.no_multicast_scouting {
-        z_config_insert_json5(&mut c, "scouting/multicast/enabled", "false")
-            .unwrap_or_else(|e| panic!("{e}"));
-    }
-    for kv in &a.cfg {
-        let (k, v) = kv.split_once(':').expect("--cfg expects KEY:VALUE");
-        z_config_insert_json5(&mut c, k, v).unwrap_or_else(|e| panic!("{e}"));
-    }
-    c
 }

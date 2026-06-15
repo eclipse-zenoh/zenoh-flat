@@ -12,12 +12,12 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-//! Round-trip regression test for `z_query_reply_sample`.
+//! Round-trip regression test for `query_reply_sample`.
 //!
-//! `z_query_reply_sample` takes a fully-formed [`ZSample`] and answers a query
-//! with it. This is the only consumer of an owned `ZSample`, and it is dead code
-//! from the managed-language SDKs' point of view (they reply via the flat-param
-//! `z_query_reply_success` / `_delete`), so a regression here was previously
+//! `query_reply_sample` takes a fully-formed [`Sample`] and answers a query with
+//! it. This is the only consumer of an owned `Sample`, and it is dead code from
+//! the managed-language SDKs' point of view (they reply via the flat-param
+//! `query_reply_success` / `_delete`), so a regression here was previously
 //! invisible: the function silently turned a Delete sample into a Put reply and
 //! dropped the timestamp/attachment. This test exercises it directly through a
 //! single local session (a queryable answers the session's own `get`).
@@ -28,11 +28,11 @@ use std::{
 };
 
 use zenoh_flat::{
-    SampleKind, ZKeyExpr, ZReply, ZSample, ZSession, ZZBytes, z_config_default, z_keyexpr_try_from,
-    z_open, z_query_reply_sample, z_reply_is_ok, z_reply_sample, z_sample_attachment,
-    z_sample_delete, z_sample_kind, z_sample_payload, z_sample_put, z_sample_timestamp,
-    z_session_declare_queryable, z_session_get, z_timestamp_ntp64, z_zbytes_from_vec,
-    z_zbytes_to_bytes,
+    KeyExpr, Reply, Sample, SampleKind, Session, ZBytes, config_new_default, keyexpr_new_try_from,
+    open, query_reply_sample, reply_get_sample, reply_is_ok, sample_get_attachment, sample_get_kind,
+    sample_get_payload, sample_get_timestamp, sample_new_delete, sample_new_put,
+    session_declare_queryable, session_get, timestamp_get_ntp64, zbytes_new_from_vec,
+    zbytes_to_bytes,
 };
 
 /// What the `get` callback extracted from the received reply.
@@ -47,10 +47,10 @@ struct Received {
 // The `reliability` parameter of the sample constructors only exists with the
 // `unstable` feature; wrap the calls so the test body stays feature-agnostic.
 
-fn make_put(key_expr: ZKeyExpr, payload: ZZBytes, ntp64: i64, attachment: ZZBytes) -> ZSample {
+fn make_put(key_expr: KeyExpr, payload: ZBytes, ntp64: i64, attachment: ZBytes) -> Sample {
     #[cfg(not(feature = "unstable"))]
     {
-        z_sample_put(
+        sample_new_put(
             key_expr,
             payload,
             None,
@@ -63,7 +63,7 @@ fn make_put(key_expr: ZKeyExpr, payload: ZZBytes, ntp64: i64, attachment: ZZByte
     }
     #[cfg(feature = "unstable")]
     {
-        z_sample_put(
+        sample_new_put(
             key_expr,
             payload,
             None,
@@ -77,10 +77,10 @@ fn make_put(key_expr: ZKeyExpr, payload: ZZBytes, ntp64: i64, attachment: ZZByte
     }
 }
 
-fn make_delete(key_expr: ZKeyExpr, ntp64: i64, attachment: ZZBytes) -> ZSample {
+fn make_delete(key_expr: KeyExpr, ntp64: i64, attachment: ZBytes) -> Sample {
     #[cfg(not(feature = "unstable"))]
     {
-        z_sample_delete(
+        sample_new_delete(
             key_expr,
             Some(ntp64),
             Some(attachment),
@@ -91,7 +91,7 @@ fn make_delete(key_expr: ZKeyExpr, ntp64: i64, attachment: ZZBytes) -> ZSample {
     }
     #[cfg(feature = "unstable")]
     {
-        z_sample_delete(
+        sample_new_delete(
             key_expr,
             Some(ntp64),
             Some(attachment),
@@ -103,11 +103,11 @@ fn make_delete(key_expr: ZKeyExpr, ntp64: i64, attachment: ZZBytes) -> ZSample {
     }
 }
 
-/// Declare a queryable on `key` that answers each query via
-/// `z_query_reply_sample` with a Put or Delete sample, then `get` the same key
-/// and return what the reply carried.
+/// Declare a queryable on `key` that answers each query via `query_reply_sample`
+/// with a Put or Delete sample, then `get` the same key and return what the
+/// reply carried.
 fn round_trip(
-    session: &ZSession,
+    session: &Session,
     key: &str,
     is_delete: bool,
     ntp64: i64,
@@ -121,19 +121,19 @@ fn round_trip(
     let payload_owned = payload.to_vec();
     let attachment_owned = attachment.to_vec();
 
-    let _queryable = z_session_declare_queryable(
+    let _queryable = session_declare_queryable(
         session,
-        z_keyexpr_try_from(key.to_string()).expect("queryable key expr"),
+        keyexpr_new_try_from(key.to_string()).expect("queryable key expr"),
         None,
         move |query| {
-            let ke = z_keyexpr_try_from(key_owned.clone()).expect("reply key expr");
-            let att = z_zbytes_from_vec(attachment_owned.clone());
+            let ke = keyexpr_new_try_from(key_owned.clone()).expect("reply key expr");
+            let att = zbytes_new_from_vec(attachment_owned.clone());
             let sample = if is_delete {
                 make_delete(ke, ntp64, att)
             } else {
-                make_put(ke, z_zbytes_from_vec(payload_owned.clone()), ntp64, att)
+                make_put(ke, zbytes_new_from_vec(payload_owned.clone()), ntp64, att)
             };
-            let _ = z_query_reply_sample(&query, sample);
+            let _ = query_reply_sample(&query, sample);
         },
         || {},
     )
@@ -142,9 +142,9 @@ fn round_trip(
     // Give the queryable a moment to be registered before querying.
     std::thread::sleep(Duration::from_millis(500));
 
-    let ke_get = z_keyexpr_try_from(key.to_string()).expect("get key expr");
+    let ke_get = keyexpr_new_try_from(key.to_string()).expect("get key expr");
     let slot_cb = slot.clone();
-    z_session_get(
+    session_get(
         session,
         &ke_get,
         None,
@@ -158,19 +158,19 @@ fn round_trip(
         None,
         None,
         None,
-        move |reply: ZReply| {
+        move |reply: Reply| {
             let mut rec = Received {
-                ok: z_reply_is_ok(&reply),
+                ok: reply_is_ok(&reply),
                 kind: None,
                 payload: Vec::new(),
                 ntp64: None,
                 attachment: None,
             };
-            if let Some(sample) = z_reply_sample(&reply) {
-                rec.kind = Some(z_sample_kind(sample));
-                rec.payload = z_zbytes_to_bytes(z_sample_payload(sample));
-                rec.ntp64 = z_sample_timestamp(sample).map(z_timestamp_ntp64);
-                rec.attachment = z_sample_attachment(sample).map(z_zbytes_to_bytes);
+            if let Some(sample) = reply_get_sample(&reply) {
+                rec.kind = Some(sample_get_kind(sample));
+                rec.payload = zbytes_to_bytes(sample_get_payload(sample));
+                rec.ntp64 = sample_get_timestamp(sample).map(timestamp_get_ntp64);
+                rec.attachment = sample_get_attachment(sample).map(zbytes_to_bytes);
             }
             let (lock, cv) = &*slot_cb;
             *lock.lock().unwrap() = Some(rec);
@@ -196,7 +196,7 @@ fn round_trip(
 
 #[test]
 fn put_sample_round_trip_preserves_metadata() {
-    let session = z_open(z_config_default()).expect("open session");
+    let session = open(config_new_default()).expect("open session");
 
     let ntp64: i64 = 0x0123_4567_89ab_cdef;
     let payload = b"hello put sample";
@@ -221,18 +221,18 @@ fn put_sample_round_trip_preserves_metadata() {
     assert_eq!(
         rec.ntp64,
         Some(ntp64),
-        "timestamp NTP64 must be forwarded by z_query_reply_sample"
+        "timestamp NTP64 must be forwarded by query_reply_sample"
     );
     assert_eq!(
         rec.attachment.as_deref(),
         Some(&attachment[..]),
-        "attachment must be forwarded by z_query_reply_sample"
+        "attachment must be forwarded by query_reply_sample"
     );
 }
 
 #[test]
 fn delete_sample_round_trip_preserves_kind() {
-    let session = z_open(z_config_default()).expect("open session");
+    let session = open(config_new_default()).expect("open session");
 
     let ntp64: i64 = 0x0011_2233_4455_6677;
     let attachment = b"delete-attachment";

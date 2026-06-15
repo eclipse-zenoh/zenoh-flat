@@ -2,18 +2,21 @@
 // Throughput publisher for the zenoh-flat *native Rust* API.
 //
 // Structural mirror of eclipse-zenoh/zenoh `examples/examples/z_pub_thr.rs`,
-// rewritten against zenoh-flat's `z_*` API so it measures the flat API's own
+// rewritten against zenoh-flat's flat API so it measures the flat API's own
 // overhead (no C/FFI boundary, no boxing). Built once, the master payload is
-// cheaply `z_zbytes_clone`d each iteration (refcount bump), since
-// `z_publisher_put` consumes the payload it is given — matching the native
+// cheaply `zbytes_new_clone`d each iteration (refcount bump), since
+// `publisher_put` consumes the payload it is given — matching the native
 // example's `publisher.put(data.clone())`.
 //
 use clap::Parser;
 use zenoh_flat::{
-    CongestionControl, Priority, ZConfig, init_zenoh_logs_from_env_or, z_config_default,
-    z_config_from_file, z_config_insert_json5, z_keyexpr_try_from, z_open, z_publisher_put,
-    z_session_declare_publisher, z_zbytes_clone, z_zbytes_from_vec,
+    CongestionControl, Priority, init_zenoh_logs_from_env_or, keyexpr_new_try_from, open,
+    publisher_put, session_declare_publisher, zbytes_new_clone, zbytes_new_from_vec,
 };
+
+#[path = "common/mod.rs"]
+mod common;
+use common::CommonArgs;
 
 fn main() {
     init_zenoh_logs_from_env_or("error");
@@ -22,21 +25,23 @@ fn main() {
     let prio = args.priority.map(priority_from_u8);
     let payload_size = args.payload_size;
 
-    let data = z_zbytes_from_vec(
+    let data = zbytes_new_from_vec(
         (0..payload_size)
             .map(|i| (i % 10) as u8)
             .collect::<Vec<u8>>(),
     );
 
-    let session = z_open(build_config(&args.common)).unwrap_or_else(|e| panic!("{e}"));
+    let session = open(args.common.into()).unwrap_or_else(|e| panic!("{e}"));
 
-    let ke = z_keyexpr_try_from("test/thr".to_string()).unwrap_or_else(|e| panic!("{e}"));
-    let publisher = z_session_declare_publisher(
+    let ke = keyexpr_new_try_from("test/thr".to_string()).unwrap_or_else(|e| panic!("{e}"));
+    let publisher = session_declare_publisher(
         &session,
         ke,
         Some(CongestionControl::Block),
         prio,
         Some(args.express),
+        #[cfg(feature = "unstable")]
+        None,
     )
     .unwrap_or_else(|e| panic!("{e}"));
 
@@ -44,7 +49,7 @@ fn main() {
     let mut count: usize = 0;
     let mut start = std::time::Instant::now();
     loop {
-        z_publisher_put(&publisher, z_zbytes_clone(&data), None, None)
+        publisher_put(&publisher, zbytes_new_clone(&data), None, None)
             .unwrap_or_else(|e| panic!("{e}"));
 
         if args.print {
@@ -91,62 +96,4 @@ struct Args {
     payload_size: usize,
     #[command(flatten)]
     common: CommonArgs,
-}
-
-// --- Minimal `CommonArgs` equivalent (mode / connect / listen / config), with
-// the same flag names and config keys as the zenoh-flat-c examples' parse_args.h
-// and the upstream zenoh `CommonArgs`. ---
-#[derive(Parser, Clone, Debug)]
-struct CommonArgs {
-    /// A configuration file
-    #[arg(short = 'c', long)]
-    config: Option<String>,
-    /// The zenoh session mode [peer|client|router]
-    #[arg(short = 'm', long)]
-    mode: Option<String>,
-    /// Endpoint to connect to (repeatable)
-    #[arg(short = 'e', long)]
-    connect: Vec<String>,
-    /// Locator to listen on (repeatable)
-    #[arg(short = 'l', long)]
-    listen: Vec<String>,
-    /// Disable multicast scouting
-    #[arg(long = "no-multicast-scouting")]
-    no_multicast_scouting: bool,
-    /// Arbitrary config changes as KEY:VALUE (repeatable)
-    #[arg(long = "cfg")]
-    cfg: Vec<String>,
-}
-
-fn json_list(items: &[String]) -> String {
-    let quoted: Vec<String> = items.iter().map(|e| format!("\"{e}\"")).collect();
-    format!("[{}]", quoted.join(","))
-}
-
-fn build_config(a: &CommonArgs) -> ZConfig {
-    let mut c = match &a.config {
-        Some(path) => z_config_from_file(path).unwrap_or_else(|e| panic!("{e}")),
-        None => z_config_default(),
-    };
-    if let Some(m) = &a.mode {
-        z_config_insert_json5(&mut c, "mode", &format!("\"{m}\""))
-            .unwrap_or_else(|e| panic!("{e}"));
-    }
-    if !a.connect.is_empty() {
-        z_config_insert_json5(&mut c, "connect/endpoints", &json_list(&a.connect))
-            .unwrap_or_else(|e| panic!("{e}"));
-    }
-    if !a.listen.is_empty() {
-        z_config_insert_json5(&mut c, "listen/endpoints", &json_list(&a.listen))
-            .unwrap_or_else(|e| panic!("{e}"));
-    }
-    if a.no_multicast_scouting {
-        z_config_insert_json5(&mut c, "scouting/multicast/enabled", "false")
-            .unwrap_or_else(|e| panic!("{e}"));
-    }
-    for kv in &a.cfg {
-        let (k, v) = kv.split_once(':').expect("--cfg expects KEY:VALUE");
-        z_config_insert_json5(&mut c, k, v).unwrap_or_else(|e| panic!("{e}"));
-    }
-    c
 }
