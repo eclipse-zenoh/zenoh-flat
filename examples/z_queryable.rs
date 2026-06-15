@@ -16,22 +16,23 @@
 
 use clap::Parser;
 use zenoh_flat::{
-    init_zenoh_logs_from_env_or, keyexpr_new_try_from, open, query_get_parameters, query_get_payload,
-    query_reply_success, session_declare_queryable, zbytes_new_from_slice, zbytes_to_bytes,
+    init_zenoh_logs_from_env_or, keyexpr_new_try_from, open, query_get_parameters,
+    query_get_payload, query_reply_success, session_declare_queryable, zbytes_new_from_slice,
+    zbytes_to_bytes,
 };
 
 #[path = "common/mod.rs"]
 mod common;
 use common::CommonArgs;
 
-fn main() {
+fn main() -> Result<(), zenoh_flat::Error> {
     init_zenoh_logs_from_env_or("error");
     let args = Args::parse();
 
     println!("Opening session...");
-    let session = open(args.common.into()).unwrap_or_else(|e| panic!("{e}"));
+    let session = open(args.common.try_into()?)?;
 
-    let ke = keyexpr_new_try_from(args.key.clone()).unwrap_or_else(|e| panic!("{e}"));
+    let ke = keyexpr_new_try_from(args.key.clone())?;
     println!("Declaring Queryable on '{}'...", args.key);
 
     let key = args.key.clone();
@@ -42,7 +43,10 @@ fn main() {
         Some(args.complete),
         move |query| {
             match query_get_payload(&query) {
-                None => println!(">> [Queryable] Received Query '{}'", query_get_parameters(&query)),
+                None => println!(
+                    ">> [Queryable] Received Query '{}'",
+                    query_get_parameters(&query)
+                ),
                 Some(p) => println!(
                     ">> [Queryable] Received Query (params: '{}') with payload '{}'",
                     query_get_parameters(&query),
@@ -63,11 +67,12 @@ fn main() {
             .unwrap_or_else(|e| println!(">> [Queryable] Error sending reply: {e}"));
         },
         || {},
-    )
-    .unwrap_or_else(|e| panic!("{e}"));
+    )?;
 
     println!("Press CTRL-C to quit...");
     std::thread::park();
+
+    Ok(())
 }
 
 #[derive(Parser, Clone, Debug)]

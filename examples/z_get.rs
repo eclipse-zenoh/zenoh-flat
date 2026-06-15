@@ -30,7 +30,7 @@ use zenoh_flat::{
 mod common;
 use common::CommonArgs;
 
-fn main() {
+fn main() -> Result<(), zenoh_flat::Error> {
     init_zenoh_logs_from_env_or("error");
     let args = Args::parse();
 
@@ -41,9 +41,9 @@ fn main() {
     };
 
     println!("Opening session...");
-    let session = open(args.common.into()).unwrap_or_else(|e| panic!("{e}"));
+    let session = open(args.common.try_into()?)?;
 
-    let ke = keyexpr_new_try_from(key).unwrap_or_else(|e| panic!("{e}"));
+    let ke = keyexpr_new_try_from(key)?;
     println!("Sending Query '{}'...", args.selector);
 
     let (tx, rx) = mpsc::channel::<()>();
@@ -79,11 +79,12 @@ fn main() {
         move || {
             let _ = tx.send(());
         },
-    )
-    .unwrap_or_else(|e| panic!("{e}"));
+    )?;
 
     // Block until the reply stream is exhausted.
     let _ = rx.recv();
+
+    Ok(())
 }
 
 #[derive(clap::ValueEnum, Clone, Copy, Debug)]

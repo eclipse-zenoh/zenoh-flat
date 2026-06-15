@@ -31,7 +31,7 @@
 //! Types are re-exported under their own zenoh Rust names ([`Session`],
 //! [`KeyExpr`], [`ZBytes`], [`Sample`], …). Functions
 //! grouped by type in the sources (keyexpr, config, bytes, session, publisher, subscriber,
-//! query, sample, scouting, liveliness, time, qos) but exported flatly at the crate root, 
+//! query, sample, scouting, liveliness, time, qos) but exported flatly at the crate root,
 //! so the FFI surface is a single namespace.
 //!
 //! # Naming

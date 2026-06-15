@@ -63,21 +63,22 @@ impl Stats {
     }
 }
 
-fn main() {
+fn main() -> Result<(), zenoh_flat::Error> {
     init_zenoh_logs_from_env_or("error");
     let args = Args::parse();
 
-    let session = open(args.common.into()).unwrap_or_else(|e| panic!("{e}"));
-    let ke = keyexpr_new_try_from("test/thr".to_string()).unwrap_or_else(|e| panic!("{e}"));
+    let session = open(args.common.try_into()?)?;
+    let ke = keyexpr_new_try_from("test/thr".to_string())?;
 
     let stats = Arc::new(Stats::new(args.number, args.samples));
     let s = stats.clone();
     let _subscriber =
-        session_declare_subscriber(&session, ke, move |_sample: Sample| s.increment(), || {})
-            .unwrap_or_else(|e| panic!("{e}"));
+        session_declare_subscriber(&session, ke, move |_sample: Sample| s.increment(), || {})?;
 
     println!("Press CTRL-C to quit...");
     std::thread::park();
+
+    Ok(())
 }
 
 #[derive(Parser, Clone, Debug)]

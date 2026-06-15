@@ -26,14 +26,14 @@ use zenoh_flat::{
 mod common;
 use common::CommonArgs;
 
-fn main() {
+fn main() -> Result<(), zenoh_flat::Error> {
     init_zenoh_logs_from_env_or("error");
     let args = Args::parse();
 
     println!("Opening session...");
-    let session = open(args.common.into()).unwrap_or_else(|e| panic!("{e}"));
+    let session = open(args.common.try_into()?)?;
 
-    let ke = keyexpr_new_try_from(args.key.clone()).unwrap_or_else(|e| panic!("{e}"));
+    let ke = keyexpr_new_try_from(args.key.clone())?;
     println!("Sending Liveliness Query '{}'...", args.key);
 
     let (tx, rx) = mpsc::channel::<()>();
@@ -43,7 +43,10 @@ fn main() {
         args.timeout as i64,
         |reply| {
             if let Some(sample) = reply_get_sample(&reply) {
-                println!(">> Alive token ('{}')", keyexpr_get_str(sample_get_key_expr(sample)));
+                println!(
+                    ">> Alive token ('{}')",
+                    keyexpr_get_str(sample_get_key_expr(sample))
+                );
             } else if let Some(err) = reply_get_err(&reply) {
                 let bytes = zbytes_to_bytes(reply_error_get_payload(err));
                 println!(">> Received (ERROR: '{}')", String::from_utf8_lossy(&bytes));
@@ -52,10 +55,11 @@ fn main() {
         move || {
             let _ = tx.send(());
         },
-    )
-    .unwrap_or_else(|e| panic!("{e}"));
+    )?;
 
     let _ = rx.recv();
+
+    Ok(())
 }
 
 #[derive(Parser, Clone, Debug)]

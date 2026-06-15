@@ -50,31 +50,32 @@ fn json_list(items: &[String]) -> String {
     format!("[{}]", quoted.join(","))
 }
 
-impl From<CommonArgs> for Config {
-    fn from(a: CommonArgs) -> Config {
+impl TryFrom<CommonArgs> for Config {
+    type Error = zenoh_flat::Error;
+
+    fn try_from(a: CommonArgs) -> Result<Config, Self::Error> {
         let mut c = match &a.config {
-            Some(path) => config_new_from_file(path).unwrap_or_else(|e| panic!("{e}")),
+            Some(path) => config_new_from_file(path)?,
             None => config_new_default(),
         };
         if let Some(m) = &a.mode {
-            config_insert_json5(&mut c, "mode", &format!("\"{m}\"")).unwrap_or_else(|e| panic!("{e}"));
+            config_insert_json5(&mut c, "mode", &format!("\"{m}\""))?;
         }
         if !a.connect.is_empty() {
-            config_insert_json5(&mut c, "connect/endpoints", &json_list(&a.connect))
-                .unwrap_or_else(|e| panic!("{e}"));
+            config_insert_json5(&mut c, "connect/endpoints", &json_list(&a.connect))?;
         }
         if !a.listen.is_empty() {
-            config_insert_json5(&mut c, "listen/endpoints", &json_list(&a.listen))
-                .unwrap_or_else(|e| panic!("{e}"));
+            config_insert_json5(&mut c, "listen/endpoints", &json_list(&a.listen))?;
         }
         if a.no_multicast_scouting {
-            config_insert_json5(&mut c, "scouting/multicast/enabled", "false")
-                .unwrap_or_else(|e| panic!("{e}"));
+            config_insert_json5(&mut c, "scouting/multicast/enabled", "false")?;
         }
         for kv in &a.cfg {
-            let (k, v) = kv.split_once(':').expect("--cfg expects KEY:VALUE");
-            config_insert_json5(&mut c, k, v).unwrap_or_else(|e| panic!("{e}"));
+            let (k, v) = kv.split_once(':').ok_or_else(|| -> zenoh_flat::Error {
+                format!("--cfg expects KEY:VALUE, got {kv:?}").into()
+            })?;
+            config_insert_json5(&mut c, k, v)?;
         }
-        c
+        Ok(c)
     }
 }

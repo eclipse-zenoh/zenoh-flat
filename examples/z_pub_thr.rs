@@ -18,7 +18,7 @@ use zenoh_flat::{
 mod common;
 use common::CommonArgs;
 
-fn main() {
+fn main() -> Result<(), zenoh_flat::Error> {
     init_zenoh_logs_from_env_or("error");
     let args = Args::parse();
 
@@ -31,9 +31,9 @@ fn main() {
             .collect::<Vec<u8>>(),
     );
 
-    let session = open(args.common.into()).unwrap_or_else(|e| panic!("{e}"));
+    let session = open(args.common.try_into()?)?;
 
-    let ke = keyexpr_new_try_from("test/thr".to_string()).unwrap_or_else(|e| panic!("{e}"));
+    let ke = keyexpr_new_try_from("test/thr".to_string())?;
     let publisher = session_declare_publisher(
         &session,
         ke,
@@ -42,15 +42,13 @@ fn main() {
         Some(args.express),
         #[cfg(feature = "unstable")]
         None,
-    )
-    .unwrap_or_else(|e| panic!("{e}"));
+    )?;
 
     println!("Press CTRL-C to quit...");
     let mut count: usize = 0;
     let mut start = std::time::Instant::now();
     loop {
-        publisher_put(&publisher, zbytes_new_clone(&data), None, None)
-            .unwrap_or_else(|e| panic!("{e}"));
+        publisher_put(&publisher, zbytes_new_clone(&data), None, None)?;
 
         if args.print {
             if count < args.number {

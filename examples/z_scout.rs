@@ -21,7 +21,7 @@ use zenoh_flat::{
     scout, zenoh_id_to_string,
 };
 
-fn main() {
+fn main() -> Result<(), zenoh_flat::Error> {
     init_zenoh_logs_from_env_or("error");
 
     println!("Scouting...");
@@ -39,9 +39,10 @@ fn main() {
             );
         },
         || {},
-    )
-    .unwrap_or_else(|e| panic!("{e}"));
+    )?;
 
     // Scout for one second, then stop (dropping the handle).
     sleep(Duration::from_secs(1));
+
+    Ok(())
 }

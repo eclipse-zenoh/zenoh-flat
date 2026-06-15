@@ -26,14 +26,14 @@ use zenoh_flat::{
 mod common;
 use common::CommonArgs;
 
-fn main() {
+fn main() -> Result<(), zenoh_flat::Error> {
     init_zenoh_logs_from_env_or("error");
     let args = Args::parse();
 
     println!("Opening session...");
-    let session = open(args.common.into()).unwrap_or_else(|e| panic!("{e}"));
+    let session = open(args.common.try_into()?)?;
 
-    let ke = keyexpr_new_try_from(args.key.clone()).unwrap_or_else(|e| panic!("{e}"));
+    let ke = keyexpr_new_try_from(args.key.clone())?;
     println!("Declaring Publisher on '{}'...", args.key);
     let publisher = session_declare_publisher(
         &session,
@@ -43,23 +43,26 @@ fn main() {
         None,
         #[cfg(feature = "unstable")]
         None,
-    )
-    .unwrap_or_else(|e| panic!("{e}"));
+    )?;
 
     println!("Press CTRL-C to quit...");
     for idx in 0..u32::MAX {
         sleep(Duration::from_secs(1));
         let buf = format!("[{idx:4}] {}", args.payload);
         println!("Putting Data ('{}': '{}')...", args.key, buf);
-        let attachment = args.attach.as_ref().map(|a| zbytes_new_from_slice(a.as_bytes()));
+        let attachment = args
+            .attach
+            .as_ref()
+            .map(|a| zbytes_new_from_slice(a.as_bytes()));
         publisher_put(
             &publisher,
             zbytes_new_from_slice(buf.as_bytes()),
             Some(encoding_const_text_plain()),
             attachment,
-        )
-        .unwrap_or_else(|e| panic!("{e}"));
+        )?;
     }
+
+    Ok(())
 }
 
 #[derive(Parser, Clone, Debug)]

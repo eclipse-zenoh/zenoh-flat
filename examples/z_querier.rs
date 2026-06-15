@@ -27,7 +27,7 @@ use zenoh_flat::{
 mod common;
 use common::CommonArgs;
 
-fn main() {
+fn main() -> Result<(), zenoh_flat::Error> {
     init_zenoh_logs_from_env_or("error");
     let args = Args::parse();
 
@@ -37,9 +37,9 @@ fn main() {
     };
 
     println!("Opening session...");
-    let session = open(args.common.into()).unwrap_or_else(|e| panic!("{e}"));
+    let session = open(args.common.try_into()?)?;
 
-    let ke = keyexpr_new_try_from(key).unwrap_or_else(|e| panic!("{e}"));
+    let ke = keyexpr_new_try_from(key)?;
     println!("Declaring Querier on '{}'...", args.selector);
     let querier = session_declare_querier(
         &session,
@@ -51,8 +51,7 @@ fn main() {
         None,
         Some(args.timeout as i64),
         None,
-    )
-    .unwrap_or_else(|e| panic!("{e}"));
+    )?;
 
     println!("Press CTRL-C to quit...");
     for idx in 0..u32::MAX {
@@ -84,10 +83,11 @@ fn main() {
             move || {
                 let _ = tx.send(());
             },
-        )
-        .unwrap_or_else(|e| panic!("{e}"));
+        )?;
         let _ = rx.recv();
     }
+
+    Ok(())
 }
 
 #[derive(clap::ValueEnum, Clone, Copy, Debug)]

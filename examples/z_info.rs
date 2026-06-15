@@ -27,12 +27,12 @@ use zenoh_flat::{
 mod common;
 use common::CommonArgs;
 
-fn main() {
+fn main() -> Result<(), zenoh_flat::Error> {
     init_zenoh_logs_from_env_or("error");
     let args = Args::parse();
 
     println!("Opening session...");
-    let session = open(args.common.into()).unwrap_or_else(|e| panic!("{e}"));
+    let session = open(args.common.try_into()?)?;
 
     println!("zid: {}", zenoh_id_to_string(&session_get_zid(&session)));
     let routers: Vec<String> = session_get_routers_zid(&session)
@@ -45,6 +45,8 @@ fn main() {
         .map(zenoh_id_to_string)
         .collect();
     println!("peers zid: {peers:?}");
+
+    Ok(())
 }
 
 #[derive(Parser, Clone, Debug)]

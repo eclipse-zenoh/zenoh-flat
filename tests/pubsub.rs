@@ -21,7 +21,7 @@ use std::{
 };
 
 use zenoh_flat::{
-    SampleKind, Sample, config_new_default, keyexpr_get_str, keyexpr_new_try_from, open,
+    Sample, SampleKind, config_new_default, keyexpr_get_str, keyexpr_new_try_from, open,
     sample_get_key_expr, sample_get_kind, sample_get_payload, session_declare_subscriber,
     session_put, zbytes_new_from_slice, zbytes_to_bytes,
 };

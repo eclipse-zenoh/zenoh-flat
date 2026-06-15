@@ -15,20 +15,22 @@
 //! Flat-API port of eclipse-zenoh/zenoh `examples/examples/z_delete.rs`.
 
 use clap::Parser;
-use zenoh_flat::{init_zenoh_logs_from_env_or, keyexpr_new_try_from, open, session_close, session_delete};
+use zenoh_flat::{
+    init_zenoh_logs_from_env_or, keyexpr_new_try_from, open, session_close, session_delete,
+};
 
 #[path = "common/mod.rs"]
 mod common;
 use common::CommonArgs;
 
-fn main() {
+fn main() -> Result<(), zenoh_flat::Error> {
     init_zenoh_logs_from_env_or("error");
     let args = Args::parse();
 
     println!("Opening session...");
-    let session = open(args.common.into()).unwrap_or_else(|e| panic!("{e}"));
+    let session = open(args.common.try_into()?)?;
 
-    let ke = keyexpr_new_try_from(args.key.clone()).unwrap_or_else(|e| panic!("{e}"));
+    let ke = keyexpr_new_try_from(args.key.clone())?;
     println!("Deleting resources matching '{}'...", args.key);
     session_delete(
         &session,
@@ -39,10 +41,11 @@ fn main() {
         None,
         #[cfg(feature = "unstable")]
         None,
-    )
-    .unwrap_or_else(|e| panic!("{e}"));
+    )?;
 
-    session_close(&session).unwrap_or_else(|e| panic!("{e}"));
+    session_close(&session)?;
+
+    Ok(())
 }
 
 #[derive(Parser, Clone, Debug)]

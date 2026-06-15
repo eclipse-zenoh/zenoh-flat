@@ -24,14 +24,14 @@ use zenoh_flat::{
 mod common;
 use common::CommonArgs;
 
-fn main() {
+fn main() -> Result<(), zenoh_flat::Error> {
     init_zenoh_logs_from_env_or("error");
     let args = Args::parse();
 
     println!("Opening session...");
-    let session = open(args.common.into()).unwrap_or_else(|e| panic!("{e}"));
+    let session = open(args.common.try_into()?)?;
 
-    let ke = keyexpr_new_try_from(args.key.clone()).unwrap_or_else(|e| panic!("{e}"));
+    let ke = keyexpr_new_try_from(args.key.clone())?;
     println!("Declaring Liveliness Subscriber on '{}'...", args.key);
     let _subscriber = liveliness_declare_subscriber(
         &session,
@@ -49,11 +49,12 @@ fn main() {
             }
         },
         || {},
-    )
-    .unwrap_or_else(|e| panic!("{e}"));
+    )?;
 
     println!("Press CTRL-C to quit...");
     std::thread::park();
+
+    Ok(())
 }
 
 #[derive(Parser, Clone, Debug)]
