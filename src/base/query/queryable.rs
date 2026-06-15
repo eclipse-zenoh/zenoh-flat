@@ -8,7 +8,7 @@ use crate::{Error, KeyExpr, Queryable};
 /// Key expression the queryable answers on (borrowed; valid while `queryable`
 /// lives).
 #[prebindgen]
-pub fn queryable_keyexpr(queryable: &Queryable) -> &KeyExpr {
+pub fn queryable_get_keyexpr(queryable: &Queryable) -> &KeyExpr {
     queryable.key_expr()
 }
 

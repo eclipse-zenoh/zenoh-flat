@@ -17,7 +17,7 @@ use crate::{Encoding, Error, KeyExpr, Query, Sample, ZBytes};
 
 /// Key expression the query targets (borrowed; valid while `q` lives).
 #[prebindgen]
-pub fn query_keyexpr(q: &Query) -> &KeyExpr {
+pub fn query_get_keyexpr(q: &Query) -> &KeyExpr {
     q.key_expr()
 }
 
@@ -29,19 +29,19 @@ pub fn query_parameters(q: &Query) -> String {
 
 /// Query payload (borrowed bytes), or `None` when the query carries none.
 #[prebindgen]
-pub fn query_payload(q: &Query) -> Option<&ZBytes> {
+pub fn query_get_payload(q: &Query) -> Option<&ZBytes> {
     q.payload()
 }
 
 /// Encoding of the query payload (borrowed), or `None`.
 #[prebindgen]
-pub fn query_encoding(q: &Query) -> Option<&Encoding> {
+pub fn query_get_encoding(q: &Query) -> Option<&Encoding> {
     q.encoding()
 }
 
 /// Attachment carried by the query (borrowed bytes), or `None`.
 #[prebindgen]
-pub fn query_attachment(q: &Query) -> Option<&ZBytes> {
+pub fn query_get_attachment(q: &Query) -> Option<&ZBytes> {
     q.attachment()
 }
 

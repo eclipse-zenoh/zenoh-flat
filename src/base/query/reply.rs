@@ -30,25 +30,25 @@ pub fn reply_is_ok(r: &Reply) -> bool {
 
 /// The reply's sample on success (borrowed; valid while `r` lives), `None` on error.
 #[prebindgen]
-pub fn reply_sample(r: &Reply) -> Option<&Sample> {
+pub fn reply_get_sample(r: &Reply) -> Option<&Sample> {
     r.result().ok()
 }
 
 /// The reply's error on failure (borrowed; valid while `r` lives), `None` on
 /// success.
 #[prebindgen]
-pub fn reply_err(r: &Reply) -> Option<&ReplyError> {
+pub fn reply_get_err(r: &Reply) -> Option<&ReplyError> {
     r.result().err()
 }
 
 /// The error's payload (borrowed bytes).
 #[prebindgen]
-pub fn reply_error_payload(e: &ReplyError) -> &ZBytes {
+pub fn reply_error_get_payload(e: &ReplyError) -> &ZBytes {
     e.payload()
 }
 
 /// The error's encoding (borrowed).
 #[prebindgen]
-pub fn reply_error_encoding(e: &ReplyError) -> &Encoding {
+pub fn reply_error_get_encoding(e: &ReplyError) -> &Encoding {
     e.encoding()
 }

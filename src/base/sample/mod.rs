@@ -104,19 +104,19 @@ pub fn sample_delete(
 
 /// Key expression the sample was published on (borrowed; valid while `s` lives).
 #[prebindgen]
-pub fn sample_key_expr(s: &Sample) -> &KeyExpr {
+pub fn sample_get_key_expr(s: &Sample) -> &KeyExpr {
     s.key_expr()
 }
 
 /// Sample payload (borrowed bytes; valid while `s` lives).
 #[prebindgen]
-pub fn sample_payload(s: &Sample) -> &ZBytes {
+pub fn sample_get_payload(s: &Sample) -> &ZBytes {
     s.payload()
 }
 
 /// Encoding of the payload (borrowed; valid while `s` lives).
 #[prebindgen]
-pub fn sample_encoding(s: &Sample) -> &Encoding {
+pub fn sample_get_encoding(s: &Sample) -> &Encoding {
     s.encoding()
 }
 
@@ -128,7 +128,7 @@ pub fn sample_kind(s: &Sample) -> SampleKind {
 
 /// Timestamp (borrowed), or `None` when the sample carries no timestamp.
 #[prebindgen]
-pub fn sample_timestamp(s: &Sample) -> Option<&Timestamp> {
+pub fn sample_get_timestamp(s: &Sample) -> Option<&Timestamp> {
     s.timestamp()
 }
 
@@ -152,7 +152,7 @@ pub fn sample_congestion_control(s: &Sample) -> CongestionControl {
 
 /// Optional user attachment (borrowed bytes), or `None`.
 #[prebindgen]
-pub fn sample_attachment(s: &Sample) -> Option<&ZBytes> {
+pub fn sample_get_attachment(s: &Sample) -> Option<&ZBytes> {
     s.attachment()
 }
 

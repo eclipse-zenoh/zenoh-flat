@@ -131,7 +131,7 @@ pub use crate::base::{
     },
     error::error_message,
     keyexpr::{
-        keyexpr_as_str, keyexpr_autocanonize, keyexpr_clone, keyexpr_concat, keyexpr_includes,
+        keyexpr_get_str, keyexpr_autocanonize, keyexpr_clone, keyexpr_concat, keyexpr_includes,
         keyexpr_intersects, keyexpr_join, keyexpr_to_string, keyexpr_try_from,
     },
     liveliness::{
@@ -139,22 +139,22 @@ pub use crate::base::{
         liveliness_undeclare_token,
     },
     logger::{init_android_logs, init_zenoh_logs_from_env_or, try_init_zenoh_logs_from_env},
-    publisher::{publisher_delete, publisher_keyexpr, publisher_put, publisher_undeclare},
+    publisher::{publisher_delete, publisher_get_keyexpr, publisher_put, publisher_undeclare},
     qos::{congestion_control::CongestionControl, priority::Priority},
     query::{
         consolidation_mode::ConsolidationMode,
-        querier::{querier_get, querier_keyexpr, querier_undeclare},
-        query_attachment, query_encoding, query_keyexpr, query_parameters, query_payload,
+        querier::{querier_get, querier_get_keyexpr, querier_undeclare},
+        query_get_attachment, query_get_encoding, query_get_keyexpr, query_parameters, query_get_payload,
         query_reply_delete, query_reply_error, query_reply_sample, query_reply_success,
         query_target::QueryTarget,
-        queryable::{queryable_keyexpr, queryable_undeclare},
-        reply::{reply_err, reply_error_encoding, reply_error_payload, reply_is_ok, reply_sample},
+        queryable::{queryable_get_keyexpr, queryable_undeclare},
+        reply::{reply_get_err, reply_error_get_encoding, reply_error_get_payload, reply_is_ok, reply_get_sample},
         reply_key_expr::ReplyKeyExpr,
     },
     sample::{
-        sample_attachment, sample_congestion_control, sample_delete, sample_encoding,
-        sample_express, sample_key_expr, sample_kind, sample_kind::SampleKind, sample_payload,
-        sample_priority, sample_put, sample_timestamp,
+        sample_get_attachment, sample_congestion_control, sample_delete, sample_get_encoding,
+        sample_express, sample_get_key_expr, sample_kind, sample_kind::SampleKind, sample_get_payload,
+        sample_priority, sample_put, sample_get_timestamp,
     },
     scouting::{
         hello::{hello_locators, hello_whatami, hello_zid},
@@ -166,6 +166,6 @@ pub use crate::base::{
         session_delete, session_get, session_is_closed, session_new_timestamp, session_peers_zid,
         session_put, session_routers_zid, session_undeclare_keyexpr, session_zid,
     },
-    subscriber::{subscriber_keyexpr, subscriber_undeclare},
+    subscriber::{subscriber_get_keyexpr, subscriber_undeclare},
     time::timestamp::{timestamp_id, timestamp_ntp64},
 };

@@ -38,7 +38,7 @@ pub fn keyexpr_to_string(ke: &KeyExpr) -> String {
 /// copy (no intermediate owned `String`). The owned [`keyexpr_to_string`]
 /// twin remains for the C / owned-`char*` tier.
 #[prebindgen]
-pub fn keyexpr_as_str(ke: &KeyExpr) -> &str {
+pub fn keyexpr_get_str(ke: &KeyExpr) -> &str {
     ke.as_str()
 }
 

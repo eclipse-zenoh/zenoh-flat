@@ -42,7 +42,7 @@ pub fn publisher_delete(publisher: &Publisher, attachment: Option<ZBytes>) -> Re
 /// Key expression the publisher publishes on (borrowed; valid while `publisher`
 /// lives).
 #[prebindgen]
-pub fn publisher_keyexpr(publisher: &Publisher) -> &KeyExpr {
+pub fn publisher_get_keyexpr(publisher: &Publisher) -> &KeyExpr {
     publisher.key_expr()
 }
 

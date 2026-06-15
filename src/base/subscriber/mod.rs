@@ -8,7 +8,7 @@ use crate::{Error, KeyExpr, Subscriber};
 /// Key expression the subscriber listens on (borrowed; valid while `subscriber`
 /// lives).
 #[prebindgen]
-pub fn subscriber_keyexpr(subscriber: &Subscriber) -> &KeyExpr {
+pub fn subscriber_get_keyexpr(subscriber: &Subscriber) -> &KeyExpr {
     subscriber.key_expr()
 }
 

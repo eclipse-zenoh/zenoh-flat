@@ -42,7 +42,7 @@ pub fn querier_get(
 
 /// Key expression the querier queries on (borrowed; valid while `querier` lives).
 #[prebindgen]
-pub fn querier_keyexpr(querier: &Querier) -> &KeyExpr {
+pub fn querier_get_keyexpr(querier: &Querier) -> &KeyExpr {
     querier.key_expr()
 }
 
