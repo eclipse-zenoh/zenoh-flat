@@ -163,8 +163,7 @@ pub fn encoding_application_java_serialized_object() -> &'static Encoding {
     &ENCODING_APPLICATION_JAVA_SERIALIZED_OBJECT
 }
 
-pub static ENCODING_APPLICATION_OPENMETRICS_TEXT: Encoding =
-    Encoding::APPLICATION_OPENMETRICS_TEXT;
+pub static ENCODING_APPLICATION_OPENMETRICS_TEXT: Encoding = Encoding::APPLICATION_OPENMETRICS_TEXT;
 /// Predefined `APPLICATION_OPENMETRICS_TEXT` encoding (borrowed static; shared, never freed).
 #[prebindgen]
 pub fn encoding_application_openmetrics_text() -> &'static Encoding {
@@ -277,8 +276,7 @@ pub fn encoding_application_coap_payload() -> &'static Encoding {
     &ENCODING_APPLICATION_COAP_PAYLOAD
 }
 
-pub static ENCODING_APPLICATION_JSON_PATCH_JSON: Encoding =
-    Encoding::APPLICATION_JSON_PATCH_JSON;
+pub static ENCODING_APPLICATION_JSON_PATCH_JSON: Encoding = Encoding::APPLICATION_JSON_PATCH_JSON;
 /// Predefined `APPLICATION_JSON_PATCH_JSON` encoding (borrowed static; shared, never freed).
 #[prebindgen]
 pub fn encoding_application_json_patch_json() -> &'static Encoding {

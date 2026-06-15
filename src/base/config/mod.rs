@@ -1,7 +1,5 @@
 pub(crate) mod whatami;
 pub(crate) mod zenoh_id;
-pub use whatami::*;
-pub use zenoh_id::*;
 
 use prebindgen_proc_macro::prebindgen;
 

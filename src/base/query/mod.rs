@@ -4,12 +4,6 @@ pub(crate) mod query_target;
 pub(crate) mod queryable;
 pub(crate) mod reply;
 pub(crate) mod reply_key_expr;
-pub use consolidation_mode::*;
-pub use querier::*;
-pub use query_target::*;
-pub use queryable::*;
-pub use reply::*;
-pub use reply_key_expr::*;
 
 use prebindgen_proc_macro::prebindgen;
 use zenoh::{
@@ -17,6 +11,8 @@ use zenoh::{
     time::{NTP64, Timestamp, TimestampId},
 };
 
+#[cfg(feature = "unstable")]
+use self::reply_key_expr::ReplyKeyExpr;
 use crate::{Encoding, Error, KeyExpr, Query, Sample, ZBytes};
 
 /// Key expression the query targets (borrowed; valid while `q` lives).

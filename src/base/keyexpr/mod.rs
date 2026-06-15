@@ -1,12 +1,12 @@
 #[cfg(feature = "unstable")]
 pub(crate) mod set_intersection_level;
-#[cfg(feature = "unstable")]
-pub use set_intersection_level::*;
 
 use prebindgen_proc_macro::prebindgen;
 
-// `SetIntersectionLevel` (the relation API's return type) is re-exported above
-// under the same `unstable` gate as `zenoh::key_expr::SetIntersectionLevel`.
+// `SetIntersectionLevel` (the relation API's return type) mirrors
+// `zenoh::key_expr::SetIntersectionLevel`, gated behind `unstable`.
+#[cfg(feature = "unstable")]
+use self::set_intersection_level::SetIntersectionLevel;
 use crate::{Error, KeyExpr};
 
 /// Validate `s` as a key expression and build an owned handle, returning an

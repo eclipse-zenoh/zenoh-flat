@@ -31,10 +31,7 @@ pub fn publisher_put(
 /// port of `zenoh::pubsub::Publisher::delete`. Subscribers receive it as a
 /// `SampleKind::Delete` sample. `attachment` carries optional user metadata.
 #[prebindgen]
-pub fn publisher_delete(
-    publisher: &Publisher,
-    attachment: Option<ZBytes>,
-) -> Result<(), Error> {
+pub fn publisher_delete(publisher: &Publisher, attachment: Option<ZBytes>) -> Result<(), Error> {
     let mut delete = publisher.delete();
     if let Some(att) = attachment {
         delete = delete.attachment(att);

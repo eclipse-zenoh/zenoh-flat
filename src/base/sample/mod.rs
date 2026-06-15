@@ -1,5 +1,4 @@
 pub(crate) mod sample_kind;
-pub use sample_kind::*;
 
 use prebindgen_proc_macro::prebindgen;
 use zenoh::{
@@ -7,6 +6,7 @@ use zenoh::{
     time::{NTP64, TimestampId},
 };
 
+use self::sample_kind::SampleKind;
 use crate::{CongestionControl, Encoding, KeyExpr, Priority, Sample, Timestamp, ZBytes};
 #[cfg(feature = "unstable")]
 use crate::{Reliability, ZenohId};

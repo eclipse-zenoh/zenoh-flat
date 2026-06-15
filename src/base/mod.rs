@@ -13,17 +13,6 @@ pub(crate) mod session;
 pub(crate) mod subscriber;
 pub(crate) mod time;
 
-pub use bytes::*;
-pub use config::*;
-pub use error::*;
-pub use keyexpr::*;
-pub use liveliness::*;
-pub use logger::*;
-pub use publisher::*;
-pub use qos::*;
-pub use query::*;
-pub use sample::*;
-pub use scouting::*;
-pub use session::*;
-pub use subscriber::*;
-pub use time::*;
+// No glob re-exports: the crate's public surface is declared explicitly in
+// `lib.rs`. These modules carry the `#[prebindgen]` items; `lib.rs` re-exports
+// each one by name.

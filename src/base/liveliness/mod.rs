@@ -3,9 +3,7 @@ use std::time::Duration;
 use prebindgen_proc_macro::prebindgen;
 use zenoh::Wait;
 
-use crate::{
-    Error, KeyExpr, LivelinessToken, Reply, Sample, Session, Subscriber, util::OnceDrop,
-};
+use crate::{Error, KeyExpr, LivelinessToken, Reply, Sample, Session, Subscriber, util::OnceDrop};
 
 /// Declare a [`LivelinessToken`] on `key_expr`. The token keeps the liveliness
 /// alive until its handle is dropped, which undeclares it.

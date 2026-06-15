@@ -6,9 +6,9 @@ use zenoh::{Wait, query::Selector};
 #[cfg(feature = "unstable")]
 use crate::Reliability;
 use crate::{
-    CongestionControl, ConsolidationMode, Priority, QueryTarget, ReplyKeyExpr, Config, Encoding,
-    Error, KeyExpr, Publisher, Querier, Query, Queryable, Reply, Sample, Session,
-    Subscriber, Timestamp, ZBytes, ZenohId, util::OnceDrop,
+    Config, CongestionControl, ConsolidationMode, Encoding, Error, KeyExpr, Priority, Publisher,
+    Querier, Query, QueryTarget, Queryable, Reply, ReplyKeyExpr, Sample, Session, Subscriber,
+    Timestamp, ZBytes, ZenohId, util::OnceDrop,
 };
 
 /// Open a session with the given configuration. The config is consumed by value
