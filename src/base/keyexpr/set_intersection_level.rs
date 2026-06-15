@@ -6,6 +6,7 @@ use prebindgen_proc_macro::prebindgen;
 /// `#[cfg(feature = "unstable")]`. Returned by [`crate::keyexpr_relation_to`].
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SetIntersectionLevel {
     Disjoint = 0,
     Intersects = 1,
