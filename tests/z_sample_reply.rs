@@ -31,8 +31,8 @@ use zenoh_flat::{
     KeyExpr, Reply, Sample, SampleKind, Session, ZBytes, config_new_default, keyexpr_new_try_from,
     open, query_reply_sample, reply_get_sample, reply_is_ok, sample_get_attachment,
     sample_get_kind, sample_get_payload, sample_get_timestamp, sample_new_delete, sample_new_put,
-    session_declare_queryable, session_get, timestamp_get_ntp64, zbytes_new_from_vec,
-    zbytes_to_bytes,
+    session_declare_queryable, session_get, timestamp_get_ntp64, zbytes_as_bytes,
+    zbytes_new_from_vec,
 };
 
 /// What the `get` callback extracted from the received reply.
@@ -168,9 +168,10 @@ fn round_trip(
             };
             if let Some(sample) = reply_get_sample(&reply) {
                 rec.kind = Some(sample_get_kind(sample));
-                rec.payload = zbytes_to_bytes(sample_get_payload(sample));
+                rec.payload = zbytes_as_bytes(sample_get_payload(sample)).into_owned();
                 rec.ntp64 = sample_get_timestamp(sample).map(timestamp_get_ntp64);
-                rec.attachment = sample_get_attachment(sample).map(zbytes_to_bytes);
+                rec.attachment =
+                    sample_get_attachment(sample).map(|z| zbytes_as_bytes(z).into_owned());
             }
             let (lock, cv) = &*slot_cb;
             *lock.lock().unwrap() = Some(rec);

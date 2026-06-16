@@ -46,7 +46,7 @@
 //!   `config_new_default`, `keyexpr_new_try_from`).
 //! - `encoding_const_<name>` — a predefined constant ([`Encoding`] presets).
 //!
-//! Conversions keep their verb (`keyexpr_to_string`, `zbytes_to_bytes`).
+//! Conversions keep their verb (`keyexpr_to_string`).
 //!
 //! # Features
 //!
@@ -87,6 +87,26 @@ pub type ReplyError = zenoh::query::ReplyError;
 pub type Timestamp = zenoh::time::Timestamp;
 pub type Session = zenoh::Session;
 pub type LivelinessToken = zenoh::liveliness::LivelinessToken;
+
+pub type ZError = Error;
+pub type ZKeyExpr = KeyExpr;
+pub type ZConfig = Config;
+pub type ZZenohId = ZenohId;
+pub type ZHello = Hello;
+pub type ZScout = Scout;
+pub type ZZBytes = ZBytes;
+pub type ZEncoding = Encoding;
+pub type ZPublisher = Publisher;
+pub type ZSubscriber = Subscriber;
+pub type ZQueryable = Queryable;
+pub type ZQuerier = Querier;
+pub type ZQuery = Query;
+pub type ZSample = Sample;
+pub type ZReply = Reply;
+pub type ZReplyError = ReplyError;
+pub type ZTimestamp = Timestamp;
+pub type ZSession = Session;
+pub type ZLivelinessToken = LivelinessToken;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public API surface — the single source of truth for what `zenoh-flat` exports.
@@ -148,8 +168,8 @@ pub use crate::base::{
             encoding_to_string,
         },
         zbytes::{
-            zbytes_as_bytes, zbytes_new_clone, zbytes_new_from_slice, zbytes_new_from_vec,
-            zbytes_to_bytes,
+            z_zbytes_as_bytes, zbytes_as_bytes, zbytes_new_clone, zbytes_new_from_slice,
+            zbytes_new_from_vec,
         },
     },
     config::{
