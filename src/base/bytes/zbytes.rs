@@ -2,19 +2,13 @@ use std::borrow::Cow;
 
 use prebindgen_proc_macro::prebindgen;
 
-use crate::{ZBytes, ZZBytes};
+use crate::ZBytes;
 
 /// Borrow the payload bytes carried by a native [`ZBytes`] — borrowed (no
 /// copy) when the underlying buffer is contiguous, owned otherwise.
 #[prebindgen]
 pub fn zbytes_as_bytes(z: &ZBytes) -> Cow<'_, [u8]> {
     z.to_bytes()
-}
-
-/// C-tier byte accessor over the Z-prefixed opaque alias.
-#[prebindgen]
-pub fn z_zbytes_as_bytes(z: &ZZBytes) -> Cow<'_, [u8]> {
-    zbytes_as_bytes(z)
 }
 
 /// Construct a native [`ZBytes`] from a borrowed byte slice. Copies the

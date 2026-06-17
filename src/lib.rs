@@ -167,10 +167,7 @@ pub use crate::base::{
             encoding_new_from_id, encoding_new_from_string, encoding_new_with_schema,
             encoding_to_string,
         },
-        zbytes::{
-            z_zbytes_as_bytes, zbytes_as_bytes, zbytes_new_clone, zbytes_new_from_slice,
-            zbytes_new_from_vec,
-        },
+        zbytes::{zbytes_as_bytes, zbytes_new_clone, zbytes_new_from_slice, zbytes_new_from_vec},
     },
     config::{
         config_get_json, config_insert_json5, config_new_clone, config_new_default,
