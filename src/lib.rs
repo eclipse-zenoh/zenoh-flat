@@ -44,7 +44,9 @@
 //!   (`sample_get_payload`, `sample_get_kind`, `session_get_zid`).
 //! - `<type>_new_<member>` — construct a new instance (`sample_new_put`,
 //!   `config_new_default`, `keyexpr_new_try_from`).
-//! - `encoding_const_<name>` — a predefined constant ([`Encoding`] presets).
+//! - `encoding_const_<name>` — a predefined constant ([`Encoding`] presets),
+//!   returned as a shared `&'static` borrow (decomposed values come from the
+//!   general accessors: [`encoding_get_id`], [`encoding_to_string`]).
 //!
 //! Conversions keep their verb (`keyexpr_to_string`).
 //!

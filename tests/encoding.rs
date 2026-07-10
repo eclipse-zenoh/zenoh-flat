@@ -49,6 +49,10 @@ fn constants_render_canonically() {
         encoding_to_string(encoding_const_zenoh_bytes()),
         "zenoh/bytes"
     );
+    // Wire-id stability for the sample presets (the composed `(id, string)`
+    // form is what bindings' expression constants read).
+    assert_eq!(encoding_get_id(encoding_const_zenoh_bytes()), 0);
+    assert_eq!(encoding_get_id(encoding_const_zenoh_string()), 1);
     assert_eq!(
         encoding_to_string(encoding_const_zenoh_string()),
         "zenoh/string"
