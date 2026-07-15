@@ -33,6 +33,8 @@ fn main() {
         Some(CongestionControl::Block),
         prio,
         Some(args.express),
+        #[cfg(feature = "unstable")]
+        None,
     )
     .unwrap_or_else(|e| panic!("{e}"));
 

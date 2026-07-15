@@ -1,6 +1,12 @@
 use crate::Error;
 use crate::ZKeyExpr;
 use prebindgen_proc_macro::prebindgen;
+
+/// Borrow the canonical string representation of a key expression.
+#[prebindgen]
+pub fn z_keyexpr_get_str(key_expr: &ZKeyExpr) -> &str {
+    key_expr.as_str()
+}
 // `SetIntersectionLevel` mirrors `zenoh::key_expr::SetIntersectionLevel`, which
 // is `#[cfg(feature = "unstable")]` — gate the relation API behind `unstable`.
 #[cfg(feature = "unstable")]

@@ -1,3 +1,5 @@
+#[cfg(feature = "unstable")]
+use crate::ReplyKeyExpr;
 use crate::{Error, ZEncoding, ZKeyExpr, ZQuery, ZZBytes};
 use prebindgen_proc_macro::prebindgen;
 use zenoh::{
@@ -27,6 +29,19 @@ pub fn z_query_payload(q: &ZQuery) -> Option<&ZZBytes> {
 #[prebindgen]
 pub fn z_query_encoding(q: &ZQuery) -> Option<&ZEncoding> {
     q.encoding()
+}
+
+/// Query attachment (borrowed bytes), or `None` when the query carries none.
+#[prebindgen]
+pub fn z_query_attachment(q: &ZQuery) -> Option<&ZZBytes> {
+    q.attachment()
+}
+
+/// Policy describing which key expressions this query accepts in replies.
+#[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn z_query_accepts_replies(q: &ZQuery) -> ReplyKeyExpr {
+    q.accepts_replies().into()
 }
 
 #[prebindgen]

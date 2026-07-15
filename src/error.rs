@@ -6,6 +6,13 @@ pub struct Error {
     pub message: String,
 }
 
+/// Return the error message for bindings that route failures through a
+/// language-specific error callback.
+#[prebindgen]
+pub fn error_get_message(error: &Error) -> String {
+    error.message.clone()
+}
+
 impl From<Box<dyn std::error::Error + Send + Sync>> for Error {
     fn from(err: Box<dyn std::error::Error + Send + Sync>) -> Self {
         Self {

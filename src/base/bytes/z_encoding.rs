@@ -35,6 +35,18 @@ pub fn z_encoding_from_string(s: String) -> ZEncoding {
     ZEncoding::from(s)
 }
 
+/// Build an encoding from its numeric id and optional schema.
+#[prebindgen]
+pub fn z_encoding_from_id(id: i32, schema: Option<String>) -> ZEncoding {
+    ZEncoding::new(id as u16, schema.map(|s| s.into_bytes().into()))
+}
+
+/// Return a copy of `encoding` with `schema` attached.
+#[prebindgen]
+pub fn z_encoding_with_schema(encoding: &ZEncoding, schema: String) -> ZEncoding {
+    encoding.clone().with_schema(schema)
+}
+
 // ── Predefined-constant accessors ─────────────────────────────────────────
 // Each predefined encoding is stored as a `static` backed by the upstream
 // `const` value so that callers receive a `&'static ZEncoding` — a permanent,
