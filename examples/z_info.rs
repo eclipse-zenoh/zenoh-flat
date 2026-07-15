@@ -32,7 +32,7 @@ fn main() -> Result<(), zenoh_flat::Error> {
     let args = Args::parse();
 
     println!("Opening session...");
-    let session = open(args.common.try_into()?)?;
+    let session = open(&args.common.try_into()?)?;
 
     println!("zid: {}", zenoh_id_to_string(&session_get_zid(&session)));
     let routers: Vec<String> = session_get_routers_zid(&session)

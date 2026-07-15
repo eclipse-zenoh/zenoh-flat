@@ -29,13 +29,13 @@ fn main() -> Result<(), zenoh_flat::Error> {
     let args = Args::parse();
 
     println!("Opening session...");
-    let session = open(args.common.try_into()?)?;
+    let session = open(&args.common.try_into()?)?;
 
     let ke = keyexpr_new_try_from(args.key.clone())?;
     println!("Declaring Liveliness Subscriber on '{}'...", args.key);
     let _subscriber = liveliness_declare_subscriber(
         &session,
-        ke,
+        &ke,
         args.history,
         |sample| {
             let ke = keyexpr_get_str(sample_get_key_expr(&sample));

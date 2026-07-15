@@ -30,7 +30,7 @@ fn main() -> Result<(), zenoh_flat::Error> {
     let args = Args::parse();
 
     println!("Opening session...");
-    let session = open(args.common.try_into()?)?;
+    let session = open(&args.common.try_into()?)?;
 
     let ke = keyexpr_new_try_from(args.key.clone())?;
     println!("Declaring Queryable on '{}'...", args.key);
@@ -39,7 +39,7 @@ fn main() -> Result<(), zenoh_flat::Error> {
     let payload = args.payload.clone();
     let _queryable = session_declare_queryable(
         &session,
-        ke,
+        &ke,
         Some(args.complete),
         move |query| {
             match query_get_payload(&query) {

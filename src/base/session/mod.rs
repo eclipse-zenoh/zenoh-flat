@@ -11,12 +11,12 @@ use crate::{
     Timestamp, ZBytes, ZenohId, util::OnceDrop,
 };
 
-/// Open a session with the given configuration. The config is consumed by value
-/// (matching native `zenoh::open`); C callers that need to keep it should
-/// `config_new_clone` first.
+/// Open a session with the given configuration. The configuration is borrowed;
+/// the flat layer clones it for zenoh's consuming `open` operation so callers
+/// can reuse the same handle without a separate FFI clone call.
 #[prebindgen]
-pub fn open(config: Config) -> Result<Session, Error> {
-    zenoh::open(config).wait()
+pub fn open(config: &Config) -> Result<Session, Error> {
+    zenoh::open(config.clone()).wait()
 }
 
 // The `reliability` QoS is unstable in zenoh; gate the single parameter (and the
@@ -31,14 +31,14 @@ pub fn open(config: Config) -> Result<Session, Error> {
 #[prebindgen]
 pub fn session_declare_publisher(
     session: &Session,
-    key_expr: KeyExpr,
+    key_expr: &KeyExpr,
     congestion_control: Option<CongestionControl>,
     priority: Option<Priority>,
     express: Option<bool>,
     #[cfg(feature = "unstable")] reliability: Option<Reliability>,
 ) -> Result<Publisher, Error> {
     #[allow(unused_mut)]
-    let mut builder = session.declare_publisher(key_expr);
+    let mut builder = session.declare_publisher(key_expr.clone());
     if let Some(cc) = congestion_control {
         builder = builder.congestion_control(cc.into());
     }
@@ -139,13 +139,13 @@ pub fn session_delete(
 #[prebindgen]
 pub fn session_declare_subscriber(
     session: &Session,
-    key_expr: KeyExpr,
+    key_expr: &KeyExpr,
     callback: impl Fn(Sample) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
 ) -> Result<Subscriber, Error> {
     let on_close = OnceDrop::new(on_close);
     session
-        .declare_subscriber(key_expr)
+        .declare_subscriber(key_expr.clone())
         .callback(move |sample| {
             let _ = &on_close;
             callback(sample);
@@ -162,7 +162,7 @@ pub fn session_declare_subscriber(
 #[allow(clippy::too_many_arguments)]
 pub fn session_declare_querier(
     session: &Session,
-    key_expr: KeyExpr,
+    key_expr: &KeyExpr,
     target: Option<QueryTarget>,
     consolidation: Option<ConsolidationMode>,
     congestion_control: Option<CongestionControl>,
@@ -171,7 +171,7 @@ pub fn session_declare_querier(
     timeout_ms: Option<i64>,
     accept_replies: Option<ReplyKeyExpr>,
 ) -> Result<Querier, Error> {
-    let mut builder = session.declare_querier(key_expr);
+    let mut builder = session.declare_querier(key_expr.clone());
     if let Some(cc) = congestion_control {
         builder = builder.congestion_control(cc.into());
     }
@@ -202,13 +202,13 @@ pub fn session_declare_querier(
 #[prebindgen]
 pub fn session_declare_queryable(
     session: &Session,
-    key_expr: KeyExpr,
+    key_expr: &KeyExpr,
     complete: Option<bool>,
     callback: impl Fn(Query) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
 ) -> Result<Queryable, Error> {
     let on_close = OnceDrop::new(on_close);
-    let mut builder = session.declare_queryable(key_expr);
+    let mut builder = session.declare_queryable(key_expr.clone());
     if let Some(v) = complete {
         builder = builder.complete(v);
     }

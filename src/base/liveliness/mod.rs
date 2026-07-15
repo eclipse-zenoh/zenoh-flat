@@ -10,9 +10,9 @@ use crate::{Error, KeyExpr, LivelinessToken, Reply, Sample, Session, Subscriber,
 #[prebindgen]
 pub fn liveliness_declare_token(
     session: &Session,
-    key_expr: KeyExpr,
+    key_expr: &KeyExpr,
 ) -> Result<LivelinessToken, Error> {
-    session.liveliness().declare_token(key_expr).wait()
+    session.liveliness().declare_token(key_expr.clone()).wait()
 }
 
 /// Query liveliness tokens matching `key_expr`, delivering each reply as an
@@ -45,7 +45,7 @@ pub fn liveliness_get(
 #[prebindgen]
 pub fn liveliness_declare_subscriber(
     session: &Session,
-    key_expr: KeyExpr,
+    key_expr: &KeyExpr,
     history: bool,
     callback: impl Fn(Sample) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
@@ -53,7 +53,7 @@ pub fn liveliness_declare_subscriber(
     let on_close = OnceDrop::new(on_close);
     session
         .liveliness()
-        .declare_subscriber(key_expr)
+        .declare_subscriber(key_expr.clone())
         .history(history)
         .callback(move |sample| {
             let _ = &on_close;

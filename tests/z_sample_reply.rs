@@ -51,7 +51,7 @@ fn make_put(key_expr: KeyExpr, payload: ZBytes, ntp64: i64, attachment: ZBytes) 
     #[cfg(not(feature = "unstable"))]
     {
         sample_new_put(
-            key_expr,
+            &key_expr,
             payload,
             None,
             Some(ntp64),
@@ -64,7 +64,7 @@ fn make_put(key_expr: KeyExpr, payload: ZBytes, ntp64: i64, attachment: ZBytes) 
     #[cfg(feature = "unstable")]
     {
         sample_new_put(
-            key_expr,
+            &key_expr,
             payload,
             None,
             Some(ntp64),
@@ -81,7 +81,7 @@ fn make_delete(key_expr: KeyExpr, ntp64: i64, attachment: ZBytes) -> Sample {
     #[cfg(not(feature = "unstable"))]
     {
         sample_new_delete(
-            key_expr,
+            &key_expr,
             Some(ntp64),
             Some(attachment),
             None,
@@ -92,7 +92,7 @@ fn make_delete(key_expr: KeyExpr, ntp64: i64, attachment: ZBytes) -> Sample {
     #[cfg(feature = "unstable")]
     {
         sample_new_delete(
-            key_expr,
+            &key_expr,
             Some(ntp64),
             Some(attachment),
             None,
@@ -123,7 +123,7 @@ fn round_trip(
 
     let _queryable = session_declare_queryable(
         session,
-        keyexpr_new_try_from(key.to_string()).expect("queryable key expr"),
+        &keyexpr_new_try_from(key.to_string()).expect("queryable key expr"),
         None,
         move |query| {
             let ke = keyexpr_new_try_from(key_owned.clone()).expect("reply key expr");
@@ -197,7 +197,7 @@ fn round_trip(
 
 #[test]
 fn put_sample_round_trip_preserves_metadata() {
-    let session = open(config_new_default()).expect("open session");
+    let session = open(&config_new_default()).expect("open session");
 
     let ntp64: i64 = 0x0123_4567_89ab_cdef;
     let payload = b"hello put sample";
@@ -233,7 +233,7 @@ fn put_sample_round_trip_preserves_metadata() {
 
 #[test]
 fn delete_sample_round_trip_preserves_kind() {
-    let session = open(config_new_default()).expect("open session");
+    let session = open(&config_new_default()).expect("open session");
 
     let ntp64: i64 = 0x0011_2233_4455_6677;
     let attachment = b"delete-attachment";

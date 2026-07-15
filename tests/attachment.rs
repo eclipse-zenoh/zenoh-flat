@@ -38,14 +38,14 @@ struct Got {
 /// Subscribe to `test/attachment/**`, publish one sample with the given optional
 /// attachment, and return what the subscriber observed.
 fn put_and_receive(attachment: Option<&[u8]>) -> Got {
-    let session = open(config_new_default()).expect("open session");
+    let session = open(&config_new_default()).expect("open session");
 
     let slot: Arc<(Mutex<Option<Got>>, Condvar)> = Arc::new((Mutex::new(None), Condvar::new()));
     let slot_cb = slot.clone();
 
     let _subscriber = session_declare_subscriber(
         &session,
-        keyexpr_new_try_from("test/attachment/**".to_string()).expect("sub key expr"),
+        &keyexpr_new_try_from("test/attachment/**".to_string()).expect("sub key expr"),
         move |sample: Sample| {
             let got = Got {
                 payload: zbytes_as_bytes(sample_get_payload(&sample)).into_owned(),

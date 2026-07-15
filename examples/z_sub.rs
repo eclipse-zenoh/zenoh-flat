@@ -34,13 +34,13 @@ fn main() -> Result<(), zenoh_flat::Error> {
     let args = Args::parse();
 
     println!("Opening session...");
-    let session = open(args.common.try_into()?)?;
+    let session = open(&args.common.try_into()?)?;
 
     let ke = keyexpr_new_try_from(args.key.clone())?;
     println!("Declaring Subscriber on '{}'...", args.key);
     let _subscriber = session_declare_subscriber(
         &session,
-        ke,
+        &ke,
         |sample| {
             let bytes = zbytes_as_bytes(sample_get_payload(&sample));
             let payload = String::from_utf8_lossy(bytes.as_ref());

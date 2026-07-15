@@ -32,7 +32,7 @@ fn isolated_session() -> zenoh_flat::Session {
         .expect("disable multicast scouting");
     config_insert_json5(&mut config, "scouting/gossip/enabled", "false")
         .expect("disable gossip scouting");
-    open(config).expect("open session")
+    open(&config).expect("open session")
 }
 
 /// `z_open` + `z_close`: a fresh session reports open, then closed after

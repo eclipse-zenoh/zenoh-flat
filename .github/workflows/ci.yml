@@ -30,7 +30,7 @@ env:
   # `PREBINDGEN_REF` must track the `prebindgen` branch this `zenoh-flat` branch
   # builds against (it is not yet published to crates.io).
   PREBINDGEN_REPO: milyin/prebindgen
-  PREBINDGEN_REF: prebindgen-ext-unexpand
+  PREBINDGEN_REF: main
 
 jobs:
   determine-runner:

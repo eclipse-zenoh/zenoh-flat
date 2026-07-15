@@ -26,7 +26,7 @@ use crate::{Reliability, ZenohId};
 #[prebindgen]
 #[allow(clippy::too_many_arguments)]
 pub fn sample_new_put(
-    key_expr: KeyExpr,
+    key_expr: &KeyExpr,
     payload: ZBytes,
     encoding: Option<&Encoding>,
     timestamp_ntp64: Option<i64>,
@@ -36,7 +36,7 @@ pub fn sample_new_put(
     express: Option<bool>,
     #[cfg(feature = "unstable")] reliability: Option<Reliability>,
 ) -> Sample {
-    let mut builder = SampleBuilder::put(key_expr, payload);
+    let mut builder = SampleBuilder::put(key_expr.clone(), payload);
     if let Some(enc) = encoding {
         builder = builder.encoding(enc.clone());
     }
@@ -69,7 +69,7 @@ pub fn sample_new_put(
 /// payload or encoding; the remaining fields mirror [`sample_new_put`].
 #[prebindgen]
 pub fn sample_new_delete(
-    key_expr: KeyExpr,
+    key_expr: &KeyExpr,
     timestamp_ntp64: Option<i64>,
     attachment: Option<ZBytes>,
     congestion_control: Option<CongestionControl>,
@@ -77,7 +77,7 @@ pub fn sample_new_delete(
     express: Option<bool>,
     #[cfg(feature = "unstable")] reliability: Option<Reliability>,
 ) -> Sample {
-    let mut builder = SampleBuilder::delete(key_expr);
+    let mut builder = SampleBuilder::delete(key_expr.clone());
     if let Some(ntp) = timestamp_ntp64 {
         builder = builder.timestamp(Timestamp::new(NTP64(ntp as u64), TimestampId::rand()));
     }
