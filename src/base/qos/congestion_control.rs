@@ -1,16 +1,17 @@
 use prebindgen_proc_macro::prebindgen;
 
 /// Congestion control policy used when routing data.
-///
-/// `BlockFirst` mirrors `zenoh::qos::CongestionControl::BlockFirst`, which is
-/// `#[cfg(feature = "unstable")]`; prebindgen honors per-variant `#[cfg]`, so the
-/// generated C enum gains/loses `BlockFirst` with the `unstable` feature.
 #[prebindgen]
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CongestionControl {
+    /// Drop messages when buffers are full.
     Drop = 0,
+    /// Wait for buffer space instead of dropping messages.
     Block = 1,
+    /// Block only while delivering the first message.
+    ///
+    /// This policy is available only when unstable features are enabled.
     #[cfg(feature = "unstable")]
     BlockFirst = 2,
 }

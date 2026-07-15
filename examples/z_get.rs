@@ -41,7 +41,7 @@ fn main() -> Result<(), zenoh_flat::Error> {
     };
 
     println!("Opening session...");
-    let session = open(&args.common.try_into()?)?;
+    let session = open(args.common.try_into()?)?;
 
     let ke = keyexpr_new_try_from(key)?;
     println!("Sending Query '{}'...", args.selector);

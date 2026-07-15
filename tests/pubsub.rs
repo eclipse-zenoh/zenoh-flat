@@ -34,14 +34,14 @@ struct Got {
 
 #[test]
 fn put_is_received_by_subscriber() {
-    let session = open(&config_new_default()).expect("open session");
+    let session = open(config_new_default()).expect("open session");
 
     let slot: Arc<(Mutex<Option<Got>>, Condvar)> = Arc::new((Mutex::new(None), Condvar::new()));
     let slot_cb = slot.clone();
 
     let _subscriber = session_declare_subscriber(
         &session,
-        &keyexpr_new_try_from("test/pubsub/**".to_string()).expect("sub key expr"),
+        keyexpr_new_try_from("test/pubsub/**".to_string()).expect("sub key expr"),
         move |sample: Sample| {
             let got = Got {
                 key: keyexpr_get_str(sample_get_key_expr(&sample)).to_string(),

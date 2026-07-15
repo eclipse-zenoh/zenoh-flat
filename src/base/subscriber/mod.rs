@@ -5,34 +5,33 @@ use zenoh::Wait;
 use crate::ZenohId;
 use crate::{Error, KeyExpr, Subscriber};
 
-/// Key expression the subscriber listens on (borrowed; valid while `subscriber`
-/// lives).
+/// Return the key expression on which this subscriber listens.
 #[prebindgen]
 pub fn subscriber_get_keyexpr(subscriber: &Subscriber) -> &KeyExpr {
     subscriber.key_expr()
 }
 
-/// Undeclare a subscriber, stopping delivery and releasing its network
-/// declaration — the flat port of `zenoh::pubsub::Subscriber::undeclare`.
-/// Consumes the handle; its `on_close` callback fires as it is torn down.
+/// Undeclare the subscriber and stop sample delivery.
+///
+/// The close callback registered at declaration is called when the subscriber
+/// ends.
 #[prebindgen]
 pub fn subscriber_undeclare(subscriber: Subscriber) -> Result<(), Error> {
     subscriber.undeclare().wait()
 }
 
-/// Zenoh id of the node hosting this subscriber (the `zid` of its entity global
-/// id).
+/// Return the identifier of the node hosting this subscriber.
 ///
-/// Unstable: `zenoh::pubsub::Subscriber::id` is an `#[unstable]` zenoh API.
+/// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn subscriber_get_zid(subscriber: &Subscriber) -> ZenohId {
     subscriber.id().zid()
 }
 
-/// Entity id of this subscriber (the per-session part of its entity global id).
+/// Return the subscriber's entity identifier within its session.
 ///
-/// Unstable: `zenoh::pubsub::Subscriber::id` is an `#[unstable]` zenoh API.
+/// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn subscriber_get_eid(subscriber: &Subscriber) -> i32 {

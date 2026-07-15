@@ -3,20 +3,13 @@ use zenoh::{Wait, config::WhatAmIMatcher};
 
 use crate::{Config, Error, Hello, Scout, util::OnceDrop};
 
-/// Start a scout, invoking `callback` for each hello message received.
+/// Discover Zenoh nodes and report each received hello message.
 ///
-/// `whatami` is a bitfield over the [`crate::WhatAmI`] variants
-/// (`Router=1 | Peer=2 | Client=4`); only the low 3 bits are
-/// significant, the wider type matches the JVM/`Int` matcher
-/// representation. When `config` is `None` the default configuration is
-/// used.
+/// `whatami` combines the node kinds to discover: router (`1`), peer (`2`),
+/// and client (`4`). When no configuration is supplied, the default scouting
+/// configuration is used.
 ///
-/// `on_close` is dropped — and therefore invoked — when the returned
-/// [`Scout`] is dropped: callers wanting to be notified of scout
-/// teardown should attach behavior to that drop.
-///
-/// Returns an opaque scout handle whose lifetime owns the running scout;
-/// dropping it stops the scout and triggers `on_close`.
+/// The close callback is called when scouting ends.
 #[prebindgen]
 pub fn scout(
     whatami: i32,

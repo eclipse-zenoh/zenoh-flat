@@ -1,13 +1,16 @@
 use prebindgen_proc_macro::prebindgen;
 
-/// The queryables that should be targeted by a GET. Mirrors
-/// `zenoh::query::QueryTarget`.
+/// The set of queryables that should receive a query.
 #[prebindgen]
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum QueryTarget {
+    /// Let Zenoh choose the most appropriate queryable targets.
     BestMatching = 0,
+    /// Send the query to every matching queryable.
     All = 1,
+    /// Send the query to all complete queryables and the best matching
+    /// incomplete queryable.
     AllComplete = 2,
 }
 

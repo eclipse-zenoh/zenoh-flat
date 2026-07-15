@@ -29,11 +29,11 @@ fn main() -> Result<(), zenoh_flat::Error> {
     let args = Args::parse();
 
     println!("Opening session...");
-    let session = open(&args.common.try_into()?)?;
+    let session = open(args.common.try_into()?)?;
 
     let ke = keyexpr_new_try_from(args.key.clone())?;
     println!("Declaring LivelinessToken on '{}'...", args.key);
-    let token = liveliness_declare_token(&session, &ke)?;
+    let token = liveliness_declare_token(&session, ke)?;
 
     println!("Press CTRL-C to undeclare LivelinessToken and quit...");
     std::thread::park();

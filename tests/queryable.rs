@@ -104,12 +104,12 @@ fn collect_get_replies(session: &Session, key: &str) -> Vec<Entry> {
 
 #[test]
 fn queryable_replies_with_value() {
-    let session = open(&config_new_default()).expect("open session");
+    let session = open(config_new_default()).expect("open session");
     let key = "test/queryable/ok";
 
     let _queryable = session_declare_queryable(
         &session,
-        &ke(key),
+        ke(key),
         None,
         move |query| {
             query_reply_success(
@@ -138,12 +138,12 @@ fn queryable_replies_with_value() {
 
 #[test]
 fn queryable_replies_with_error() {
-    let session = open(&config_new_default()).expect("open session");
+    let session = open(config_new_default()).expect("open session");
     let key = "test/queryable/err";
 
     let _queryable = session_declare_queryable(
         &session,
-        &ke(key),
+        ke(key),
         None,
         move |query| {
             query_reply_error(&query, zbytes_new_from_slice(b"boom"), None).expect("send error");

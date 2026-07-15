@@ -1,14 +1,15 @@
 use prebindgen_proc_macro::prebindgen;
 
-/// Node type in a Zenoh network: router, peer, or client. The discriminant
-/// values match upstream `zenoh::config::WhatAmI` (1, 2, 4) so an OR'd
-/// bitfield of variants encodes a `WhatAmIMatcher` directly as `u8`.
+/// The role of a node in a Zenoh network.
 #[prebindgen]
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WhatAmI {
+    /// A node that routes traffic between other nodes.
     Router = 1,
+    /// A node that communicates directly with peers and routers.
     Peer = 2,
+    /// A node that connects through a router or peer.
     Client = 4,
 }
 

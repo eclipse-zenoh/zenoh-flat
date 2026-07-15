@@ -5,14 +5,13 @@ use prebindgen_proc_macro::prebindgen;
 
 use crate::{Config, Error};
 
-/// Build a default configuration.
+/// Create a configuration with default settings.
 #[prebindgen]
 pub fn config_new_default() -> Config {
     Config::default()
 }
 
-/// Clone a configuration handle. Use this before passing a config to a
-/// consuming call (`open`) when the caller needs to keep the original.
+/// Create an independent copy of a configuration.
 #[prebindgen]
 pub fn config_new_clone(c: &Config) -> Config {
     c.clone()
@@ -25,8 +24,7 @@ pub fn config_new_from_file(path: &str) -> Result<Config, Error> {
     Config::from_file(path)
 }
 
-/// Parse a configuration from a JSON-formatted string. JSON is a subset
-/// of JSON5, so routing through the JSON5 deserializer is sufficient.
+/// Parse a configuration from JSON text.
 #[prebindgen]
 pub fn config_new_from_json(s: &str) -> Result<Config, Error> {
     config_new_from_json5(s)

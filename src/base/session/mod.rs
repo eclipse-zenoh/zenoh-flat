@@ -11,34 +11,34 @@ use crate::{
     Timestamp, ZBytes, ZenohId, util::OnceDrop,
 };
 
-/// Open a session with the given configuration. The configuration is borrowed;
-/// the flat layer clones it for zenoh's consuming `open` operation so callers
-/// can reuse the same handle without a separate FFI clone call.
+/// Open a session with the given configuration.
+///
+/// The configuration is consumed by this operation.
 #[prebindgen]
-pub fn open(config: &Config) -> Result<Session, Error> {
-    zenoh::open(config.clone()).wait()
+pub fn open(config: Config) -> Result<Session, Error> {
+    zenoh::open(config).wait()
 }
 
 // The `reliability` QoS is unstable in zenoh; gate the single parameter (and the
 // `.reliability()` call) with `#[cfg(feature = "unstable")]`. prebindgen honors
 // per-parameter cfg, so the captured signature — and the generated C ABI — gains
 // or loses the trailing `reliability` param with the feature, from ONE definition.
-/// Declare a publisher for `key_expr` with optional default QoS — the flat port
-/// of `zenoh::Session::declare_publisher`. The returned handle publishes via
-/// [`crate::publisher_put`] / [`crate::publisher_delete`]; the QoS set here
-/// (congestion control, priority, express, and `reliability` when `unstable`)
-/// becomes the per-message default.
+/// Declare a publisher for the given key expression.
+///
+/// Optional delivery settings become defaults for publications made through
+/// the returned publisher. Reliability is available only when unstable
+/// features are enabled.
 #[prebindgen]
 pub fn session_declare_publisher(
     session: &Session,
-    key_expr: &KeyExpr,
+    key_expr: KeyExpr,
     congestion_control: Option<CongestionControl>,
     priority: Option<Priority>,
     express: Option<bool>,
     #[cfg(feature = "unstable")] reliability: Option<Reliability>,
 ) -> Result<Publisher, Error> {
     #[allow(unused_mut)]
-    let mut builder = session.declare_publisher(key_expr.clone());
+    let mut builder = session.declare_publisher(key_expr);
     if let Some(cc) = congestion_control {
         builder = builder.congestion_control(cc.into());
     }
@@ -57,9 +57,11 @@ pub fn session_declare_publisher(
     builder.wait()
 }
 
-/// Publish `payload` on `key_expr` in one shot, without declaring a publisher —
-/// the flat port of `zenoh::Session::put`. `encoding`, `attachment`, and the QoS
-/// knobs are per-message overrides (`reliability` only with `unstable`).
+/// Publish data on a key expression.
+///
+/// Matching subscribers receive a PUT sample. Optional arguments specify the
+/// payload format, delivery quality, and attachment. Reliability is available
+/// only when unstable features are enabled.
 #[prebindgen]
 #[allow(clippy::too_many_arguments)]
 pub fn session_put(
@@ -98,10 +100,11 @@ pub fn session_put(
     builder.wait()
 }
 
-/// Publish a delete (tombstone) on `key_expr` in one shot — the flat port of
-/// `zenoh::Session::delete`. Subscribers receive a `SampleKind::Delete` sample.
-/// `attachment` and the QoS knobs are per-message overrides (`reliability` only
-/// with `unstable`).
+/// Publish a deletion notification on a key expression.
+///
+/// Matching subscribers receive a DELETE sample. Optional arguments specify
+/// delivery quality and attachment. Reliability is available only when
+/// unstable features are enabled.
 #[prebindgen]
 pub fn session_delete(
     session: &Session,
@@ -134,18 +137,20 @@ pub fn session_delete(
     builder.wait()
 }
 
-/// Declare a subscriber delivering each change as an opaque [`Sample`] handle
-/// (thin surface). `on_close` fires when the subscriber is dropped.
+/// Subscribe to samples whose key expressions match the supplied expression.
+///
+/// The callback is called for each sample. The close callback is called when
+/// the subscription ends.
 #[prebindgen]
 pub fn session_declare_subscriber(
     session: &Session,
-    key_expr: &KeyExpr,
+    key_expr: KeyExpr,
     callback: impl Fn(Sample) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
 ) -> Result<Subscriber, Error> {
     let on_close = OnceDrop::new(on_close);
     session
-        .declare_subscriber(key_expr.clone())
+        .declare_subscriber(key_expr)
         .callback(move |sample| {
             let _ = &on_close;
             callback(sample);
@@ -153,16 +158,15 @@ pub fn session_declare_subscriber(
         .wait()
 }
 
-/// Declare a querier for `key_expr` with optional default query settings — the
-/// flat port of `zenoh::Session::declare_querier`. A querier amortizes routing
-/// across repeated GETs; issue them via [`crate::querier_get`]. The target,
-/// consolidation, timeout, QoS, and reply-key-expr policy set here become the
-/// per-GET defaults.
+/// Declare a reusable querier for the given key expression.
+///
+/// Optional arguments set defaults for query targets, reply consolidation,
+/// delivery quality, timeout, and accepted reply key expressions.
 #[prebindgen]
 #[allow(clippy::too_many_arguments)]
 pub fn session_declare_querier(
     session: &Session,
-    key_expr: &KeyExpr,
+    key_expr: KeyExpr,
     target: Option<QueryTarget>,
     consolidation: Option<ConsolidationMode>,
     congestion_control: Option<CongestionControl>,
@@ -171,7 +175,7 @@ pub fn session_declare_querier(
     timeout_ms: Option<i64>,
     accept_replies: Option<ReplyKeyExpr>,
 ) -> Result<Querier, Error> {
-    let mut builder = session.declare_querier(key_expr.clone());
+    let mut builder = session.declare_querier(key_expr);
     if let Some(cc) = congestion_control {
         builder = builder.congestion_control(cc.into());
     }
@@ -197,18 +201,21 @@ pub fn session_declare_querier(
     builder.wait()
 }
 
-/// Declare a queryable delivering each query as an opaque [`Query`] handle
-/// (thin surface). `on_close` fires when the queryable is dropped.
+/// Declare a queryable for queries matching the supplied key expression.
+///
+/// The callback is called for each query. A complete queryable indicates that
+/// it can provide every available result for matching queries. The close
+/// callback is called when the queryable ends.
 #[prebindgen]
 pub fn session_declare_queryable(
     session: &Session,
-    key_expr: &KeyExpr,
+    key_expr: KeyExpr,
     complete: Option<bool>,
     callback: impl Fn(Query) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
 ) -> Result<Queryable, Error> {
     let on_close = OnceDrop::new(on_close);
-    let mut builder = session.declare_queryable(key_expr.clone());
+    let mut builder = session.declare_queryable(key_expr);
     if let Some(v) = complete {
         builder = builder.complete(v);
     }
@@ -220,24 +227,27 @@ pub fn session_declare_queryable(
         .wait()
 }
 
-/// Declare `key_expr` with the network, returning an optimized handle bound to
-/// this session — the flat port of `zenoh::Session::declare_keyexpr`. Reusing
-/// the returned handle lets the protocol elide the full string on the wire.
-/// Release it with [`session_undeclare_keyexpr`].
+/// Register a key expression with the session for efficient repeated use.
+///
+/// Release the registration with [`session_undeclare_keyexpr`].
 #[prebindgen]
 pub fn session_declare_keyexpr(session: &Session, key_expr: String) -> Result<KeyExpr, Error> {
     session.declare_keyexpr(key_expr).wait()
 }
 
-/// Undeclare a previously [`session_declare_keyexpr`]'d key expression, releasing
-/// its network optimization. Consumes the handle.
+/// Release a key expression previously registered with
+/// [`session_declare_keyexpr`].
 #[prebindgen]
 pub fn session_undeclare_keyexpr(session: &Session, key_expr: KeyExpr) -> Result<(), Error> {
     session.undeclare(key_expr).wait()
 }
 
-/// Query matching queryables, delivering each reply as an opaque [`Reply`]
-/// handle (thin surface). `on_close` fires when the reply stream ends.
+/// Send a query to matching queryables.
+///
+/// The callback is called for each reply. Optional arguments control selector
+/// parameters, timeout, targets, reply consolidation, accepted reply keys,
+/// delivery quality, payload metadata, and attachment. The close callback is
+/// called after the reply stream ends.
 #[prebindgen]
 #[allow(clippy::too_many_arguments)]
 pub fn session_get(
@@ -299,45 +309,42 @@ pub fn session_get(
         .wait()
 }
 
-/// This session's own Zenoh id (the flat port of `SessionInfo::zid`).
+/// Return the identifier of this session.
 #[prebindgen]
 pub fn session_get_zid(session: &Session) -> ZenohId {
     session.info().zid().wait()
 }
 
-/// Zenoh ids of the peers currently connected to this session (the flat port of
-/// `SessionInfo::peers_zid`).
+/// Return the identifiers of peers currently connected to this session.
 #[prebindgen]
 pub fn session_get_peers_zid(session: &Session) -> Vec<ZenohId> {
     session.info().peers_zid().wait().collect()
 }
 
-/// Zenoh ids of the routers this session is connected to (the flat port of
-/// `SessionInfo::routers_zid`).
+/// Return the identifiers of routers currently connected to this session.
 #[prebindgen]
 pub fn session_get_routers_zid(session: &Session) -> Vec<ZenohId> {
     session.info().routers_zid().wait().collect()
 }
 
-/// Close the session, terminating all its declarations and releasing transport
-/// resources (the flat port of `zenoh::Session::close`). Idempotent: closing an
-/// already-closed session is a no-op. The handle stays valid afterwards — use
-/// [`session_is_closed`] to test its state — and is freed when dropped.
+/// Close the session and terminate its active declarations.
+///
+/// Closing an already closed session has no effect. Use [`session_is_closed`]
+/// to inspect its state.
 #[prebindgen]
 pub fn session_close(session: &Session) -> Result<(), Error> {
     session.close().wait()
 }
 
-/// Whether the session has been closed (explicitly via [`session_close`] or
-/// because its last clone was dropped).
+/// Return whether the session has been closed.
 #[prebindgen]
 pub fn session_is_closed(session: &Session) -> bool {
     session.is_closed()
 }
 
-/// Mint a new [`Timestamp`] from the session's Hybrid Logical Clock — the flat
-/// port of `zenoh::Session::new_timestamp`. Use it to stamp a [`Sample`] or
-/// reply with a clock that stays consistent across the session's publications.
+/// Create a timestamp using the session's hybrid logical clock.
+///
+/// Such timestamps remain causally consistent with the session's operations.
 #[prebindgen]
 pub fn session_new_timestamp(session: &Session) -> Timestamp {
     session.new_timestamp()

@@ -1,16 +1,23 @@
 use prebindgen_proc_macro::prebindgen;
 
-/// Message priority policy. Lower numeric value means higher priority.
+/// The delivery priority of a message, from real-time to background traffic.
 #[prebindgen]
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Priority {
+    /// Highest priority for real-time data.
     RealTime = 1,
+    /// High priority for interactive traffic.
     InteractiveHigh = 2,
+    /// Low priority for interactive traffic.
     InteractiveLow = 3,
+    /// High priority for ordinary data.
     DataHigh = 4,
+    /// Standard priority for ordinary data.
     Data = 5,
+    /// Low priority for ordinary data.
     DataLow = 6,
+    /// Lowest priority for background traffic.
     Background = 7,
 }
 

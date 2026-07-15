@@ -5,11 +5,11 @@ use zenoh::Wait;
 use crate::ZenohId;
 use crate::{Encoding, Error, KeyExpr, Publisher, ZBytes};
 
-/// Publish a payload on the publisher's key expression — the flat port of
-/// `zenoh::pubsub::Publisher::put`. `encoding` overrides the publisher's default
-/// for this message only; `attachment` carries optional user metadata. The
-/// publisher's configured QoS (priority, congestion control, express,
-/// reliability) applies automatically.
+/// Publish data on the publisher's key expression.
+///
+/// The encoding applies to this publication, while the publisher's configured
+/// delivery settings remain in effect. The attachment carries user-defined
+/// metadata.
 #[prebindgen]
 pub fn publisher_put(
     publisher: &Publisher,
@@ -27,9 +27,10 @@ pub fn publisher_put(
     publication.wait()
 }
 
-/// Publish a delete (tombstone) on the publisher's key expression — the flat
-/// port of `zenoh::pubsub::Publisher::delete`. Subscribers receive it as a
-/// `SampleKind::Delete` sample. `attachment` carries optional user metadata.
+/// Publish a deletion notification on the publisher's key expression.
+///
+/// Matching subscribers receive a DELETE sample. The attachment carries
+/// user-defined metadata.
 #[prebindgen]
 pub fn publisher_delete(publisher: &Publisher, attachment: Option<ZBytes>) -> Result<(), Error> {
     let mut delete = publisher.delete();
@@ -39,33 +40,30 @@ pub fn publisher_delete(publisher: &Publisher, attachment: Option<ZBytes>) -> Re
     delete.wait()
 }
 
-/// Key expression the publisher publishes on (borrowed; valid while `publisher`
-/// lives).
+/// Return the key expression on which this publisher publishes.
 #[prebindgen]
 pub fn publisher_get_keyexpr(publisher: &Publisher) -> &KeyExpr {
     publisher.key_expr()
 }
 
-/// Undeclare a publisher, releasing its network declaration — the flat port of
-/// `zenoh::pubsub::Publisher::undeclare`. Consumes the handle.
+/// Undeclare the publisher and release its network declaration.
 #[prebindgen]
 pub fn publisher_undeclare(publisher: Publisher) -> Result<(), Error> {
     publisher.undeclare().wait()
 }
 
-/// Zenoh id of the node hosting this publisher (the `zid` of its entity global
-/// id).
+/// Return the identifier of the node hosting this publisher.
 ///
-/// Unstable: `zenoh::pubsub::Publisher::id` is an `#[unstable]` zenoh API.
+/// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn publisher_get_zid(publisher: &Publisher) -> ZenohId {
     publisher.id().zid()
 }
 
-/// Entity id of this publisher (the per-session part of its entity global id).
+/// Return the publisher's entity identifier within its session.
 ///
-/// Unstable: `zenoh::pubsub::Publisher::id` is an `#[unstable]` zenoh API.
+/// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn publisher_get_eid(publisher: &Publisher) -> i32 {

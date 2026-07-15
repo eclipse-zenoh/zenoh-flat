@@ -31,12 +31,12 @@ fn main() -> Result<(), zenoh_flat::Error> {
             .collect::<Vec<u8>>(),
     );
 
-    let session = open(&args.common.try_into()?)?;
+    let session = open(args.common.try_into()?)?;
 
     let ke = keyexpr_new_try_from("test/thr".to_string())?;
     let publisher = session_declare_publisher(
         &session,
-        &ke,
+        ke,
         Some(CongestionControl::Block),
         prio,
         Some(args.express),

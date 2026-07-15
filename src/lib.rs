@@ -12,27 +12,21 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-//! Flat, FFI-friendly facade over the [`zenoh`] crate.
+//! A language-neutral Zenoh API surface for generated bindings.
 //!
 //! # Purpose
 //!
-//! `zenoh-flat` flattens zenoh's generic, builder-based Rust API into plain free
-//! functions over opaque handles. Every public function is annotated with
-//! `#[prebindgen]`, so prebindgen captures this surface and generates
-//! idiomatic bindings for other languages (C, Kotlin/JNI, …) — no hand-written
-//! FFI layer per target. The surface is **callback-based**: subscribers,
-//! queryables, queriers, scouts and liveliness subscribers deliver items through
-//! an `impl Fn(..)` callback plus an `on_close` hook (no channels), keeping it
-//! trivially FFI-exportable. Fallible calls return `Result<T, `[`Error`]`>`;
-//! [`error_get_message`] renders the error message as a `String`.
+//! `zenoh-flat` presents Zenoh sessions, publications, subscriptions, queries,
+//! scouting, liveliness, and related data types through a consistent set of
+//! operations suitable for language bindings. Asynchronous streams report
+//! values through callbacks and provide a close callback that signals the end
+//! of the stream.
 //!
 //! # Structure
 //!
-//! Types are re-exported under their own zenoh Rust names ([`Session`],
-//! [`KeyExpr`], [`ZBytes`], [`Sample`], …). Functions
-//! grouped by type in the sources (keyexpr, config, bytes, session, publisher, subscriber,
-//! query, sample, scouting, liveliness, time, qos) but exported flatly at the crate root,
-//! so the FFI surface is a single namespace.
+//! Operations are grouped by their subject: key expressions, configuration,
+//! payloads, sessions, publishers, subscribers, queries, samples, scouting,
+//! liveliness, time, and delivery quality.
 //!
 //! # Naming
 //!
@@ -40,75 +34,69 @@
 //!
 //! - `<type>_<op>` — an operation (`session_put`, `publisher_undeclare`,
 //!   `keyexpr_intersects`, `open`).
-//! - `<type>_get_<member>` — read a value from an instance, by reference or value
+//! - `<type>_get_<member>` — read information from an instance
 //!   (`sample_get_payload`, `sample_get_kind`, `session_get_zid`).
 //! - `<type>_new_<member>` — construct a new instance (`sample_new_put`,
 //!   `config_new_default`, `keyexpr_new_try_from`).
-//! - `encoding_const_<name>` — a predefined constant ([`Encoding`] presets),
-//!   returned as a shared `&'static` borrow (decomposed values come from the
-//!   general accessors: [`encoding_get_id`], [`encoding_to_string`]).
+//! - `encoding_const_<name>` — return a predefined [`Encoding`].
 //!
 //! Conversions keep their verb (`keyexpr_to_string`).
 //!
 //! # Features
 //!
-//! Feature flags forward to `zenoh`; `unstable` additionally enables the
-//! `#[unstable]` slices of the API (`Reliability`, entity-id accessors, key
-//! expression relations, sample source info).
+//! The `unstable` feature enables experimental Zenoh capabilities such as
+//! reliability selection, entity identifiers, detailed key-expression
+//! relations, and sample source information.
 
+/// Directory containing the binding metadata captured while compiling this crate.
 pub const PREBINDGEN_OUT_DIR: &str = prebindgen_proc_macro::prebindgen_out_dir!();
+/// Features enabled while capturing the binding metadata.
 pub const FEATURES: &str = prebindgen_proc_macro::features!();
+/// Directory containing this crate's manifest.
 pub const MANIFEST_DIR: &str = prebindgen_proc_macro::manifest_dir!();
 
 pub(crate) mod base;
 pub(crate) mod util;
 
-// Flat re-exports of the zenoh types this crate's functions operate on. Each
-// alias keeps the underlying zenoh Rust identifier (e.g. `ZBytes`, `ZenohId`)
-// so the captured FFI surface mirrors zenoh's own names one-to-one.
-//
-// `Error` is zenoh's native boxed error (`Box<dyn Error + Send + Sync>`), used
-// as the `E` of every fallible `Result`; `error_get_message` (base/error) converts
-// it to a `String` for the JNI error callback.
+// Public names for the Zenoh types used by this API.
+/// An error reported by a Zenoh operation.
 pub type Error = zenoh::Error;
+/// A validated expression that identifies one or more keys.
 pub type KeyExpr = zenoh::key_expr::KeyExpr<'static>;
+/// Settings used to configure Zenoh operations and sessions.
 pub type Config = zenoh::Config;
+/// The globally unique identifier of a Zenoh node.
 pub type ZenohId = zenoh::session::ZenohId;
+/// A discovery announcement received while scouting.
 pub type Hello = zenoh::scouting::Hello;
+/// An active node-discovery operation.
 pub type Scout = zenoh::scouting::Scout<()>;
+/// A payload or attachment carried by Zenoh.
 pub type ZBytes = zenoh::bytes::ZBytes;
+/// Format information associated with a payload.
 pub type Encoding = zenoh::bytes::Encoding;
+/// A reusable declaration for publishing on a key expression.
 pub type Publisher = zenoh::pubsub::Publisher<'static>;
+/// A subscription that receives matching samples.
 pub type Subscriber = zenoh::pubsub::Subscriber<()>;
+/// A declaration that receives and answers matching queries.
 pub type Queryable = zenoh::query::Queryable<()>;
+/// A reusable declaration for sending queries.
 pub type Querier = zenoh::query::Querier<'static>;
+/// A request received by a queryable.
 pub type Query = zenoh::query::Query;
+/// A published value or deletion notification.
 pub type Sample = zenoh::sample::Sample;
+/// A response to a query.
 pub type Reply = zenoh::query::Reply;
+/// An application error carried by a query reply.
 pub type ReplyError = zenoh::query::ReplyError;
+/// A time value associated with a Zenoh operation.
 pub type Timestamp = zenoh::time::Timestamp;
+/// A connection to the Zenoh network.
 pub type Session = zenoh::Session;
+/// A declaration that asserts application liveliness.
 pub type LivelinessToken = zenoh::liveliness::LivelinessToken;
-
-pub type ZError = Error;
-pub type ZKeyExpr = KeyExpr;
-pub type ZConfig = Config;
-pub type ZZenohId = ZenohId;
-pub type ZHello = Hello;
-pub type ZScout = Scout;
-pub type ZZBytes = ZBytes;
-pub type ZEncoding = Encoding;
-pub type ZPublisher = Publisher;
-pub type ZSubscriber = Subscriber;
-pub type ZQueryable = Queryable;
-pub type ZQuerier = Querier;
-pub type ZQuery = Query;
-pub type ZSample = Sample;
-pub type ZReply = Reply;
-pub type ZReplyError = ReplyError;
-pub type ZTimestamp = Timestamp;
-pub type ZSession = Session;
-pub type ZLivelinessToken = LivelinessToken;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public API surface — the single source of truth for what `zenoh-flat` exports.

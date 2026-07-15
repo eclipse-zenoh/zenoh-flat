@@ -5,34 +5,33 @@ use zenoh::Wait;
 use crate::ZenohId;
 use crate::{Error, KeyExpr, Queryable};
 
-/// Key expression the queryable answers on (borrowed; valid while `queryable`
-/// lives).
+/// Return the key expression on which this queryable answers.
 #[prebindgen]
 pub fn queryable_get_keyexpr(queryable: &Queryable) -> &KeyExpr {
     queryable.key_expr()
 }
 
-/// Undeclare a queryable, stopping query delivery and releasing its network
-/// declaration — the flat port of `zenoh::query::Queryable::undeclare`. Consumes
-/// the handle; its `on_close` callback fires as it is torn down.
+/// Undeclare the queryable and stop query delivery.
+///
+/// The close callback registered at declaration is called when the queryable
+/// ends.
 #[prebindgen]
 pub fn queryable_undeclare(queryable: Queryable) -> Result<(), Error> {
     queryable.undeclare().wait()
 }
 
-/// Zenoh id of the node hosting this queryable (the `zid` of its entity global
-/// id).
+/// Return the identifier of the node hosting this queryable.
 ///
-/// Unstable: `zenoh::query::Queryable::id` is an `#[unstable]` zenoh API.
+/// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn queryable_get_zid(queryable: &Queryable) -> ZenohId {
     queryable.id().zid()
 }
 
-/// Entity id of this queryable (the per-session part of its entity global id).
+/// Return the queryable's entity identifier within its session.
 ///
-/// Unstable: `zenoh::query::Queryable::id` is an `#[unstable]` zenoh API.
+/// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn queryable_get_eid(queryable: &Queryable) -> i32 {

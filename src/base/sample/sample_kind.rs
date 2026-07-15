@@ -1,11 +1,13 @@
 use prebindgen_proc_macro::prebindgen;
 
-/// Whether a sample is a PUT or a DELETE. Mirrors `zenoh::sample::SampleKind`.
+/// The change represented by a sample.
 #[prebindgen]
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SampleKind {
+    /// The sample publishes or updates a value.
     Put = 0,
+    /// The sample announces that a value was deleted.
     Delete = 1,
 }
 

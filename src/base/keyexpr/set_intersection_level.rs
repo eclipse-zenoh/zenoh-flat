@@ -1,16 +1,19 @@
 use prebindgen_proc_macro::prebindgen;
 
-/// Mirrors `zenoh::key_expr::SetIntersectionLevel` with a stable FFI surface.
+/// The relationship between the sets of keys matched by two key expressions.
 ///
-/// Unstable: the underlying `zenoh::key_expr::SetIntersectionLevel` is
-/// `#[cfg(feature = "unstable")]`. Returned by [`crate::keyexpr_relation_to`].
+/// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SetIntersectionLevel {
+    /// The expressions cannot match a common key.
     Disjoint = 0,
+    /// The expressions can match a common key, but neither includes the other.
     Intersects = 1,
+    /// The first expression matches every key matched by the second.
     Includes = 2,
+    /// The expressions match the same set of keys.
     Equals = 3,
 }
 

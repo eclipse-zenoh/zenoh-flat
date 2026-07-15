@@ -1,12 +1,13 @@
 use prebindgen_proc_macro::prebindgen;
 
-/// Whether a query accepts replies whose key expression may not match the
-/// query's. Mirrors `zenoh::query::ReplyKeyExpr`.
+/// Whether replies may use key expressions that do not match the query.
 #[prebindgen]
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ReplyKeyExpr {
+    /// Accept replies with any key expression.
     Any = 0,
+    /// Accept only replies whose key expressions match the query.
     MatchingQuery = 1,
 }
 

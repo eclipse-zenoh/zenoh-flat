@@ -1,14 +1,17 @@
 use prebindgen_proc_macro::prebindgen;
 
-/// The kind of consolidation applied to query replies. Mirrors
-/// `zenoh::query::ConsolidationMode`.
+/// The policy used to combine replies from multiple queryables.
 #[prebindgen]
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ConsolidationMode {
+    /// Let Zenoh choose an appropriate consolidation policy.
     Auto = 0,
+    /// Deliver every reply without consolidation.
     None = 1,
+    /// Deliver replies in monotonic timestamp order for each key expression.
     Monotonic = 2,
+    /// Keep only the latest reply for each key expression.
     Latest = 3,
 }
 

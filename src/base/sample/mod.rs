@@ -11,22 +11,15 @@ use crate::{CongestionControl, Encoding, KeyExpr, Priority, Sample, Timestamp, Z
 #[cfg(feature = "unstable")]
 use crate::{Reliability, ZenohId};
 
-/// Build a **Put** [`Sample`] from its key expression, payload, and optional
-/// metadata — the flat port of zenoh's `SampleBuilder::put`. The required
-/// `key_expr`/`payload` are themselves `ptr_class` types, so wiring this as the
-/// `ptr_class_input` for `Sample` exercises **recursive input**: a `Sample`
-/// parameter expands to this constructor's params, each of which expands per its
-/// own canonical input (key-expr String|handle, bytes ByteArray, encoding String,
-/// etc.).
+/// Create a sample that publishes a value.
 ///
-/// Optional fields mirror the builder: `encoding` (default when `None`),
-/// `timestamp_ntp64` (the NTP64 component; reconstructed with a random
-/// [`TimestampId`], matching `query_reply_success`), `attachment`, and the QoS
-/// knobs. `reliability` is unstable and only present with the `unstable` feature.
+/// Optional arguments specify the payload format, timestamp, attachment, and
+/// delivery quality. Reliability is available only when unstable features are
+/// enabled.
 #[prebindgen]
 #[allow(clippy::too_many_arguments)]
 pub fn sample_new_put(
-    key_expr: &KeyExpr,
+    key_expr: KeyExpr,
     payload: ZBytes,
     encoding: Option<&Encoding>,
     timestamp_ntp64: Option<i64>,
@@ -36,7 +29,7 @@ pub fn sample_new_put(
     express: Option<bool>,
     #[cfg(feature = "unstable")] reliability: Option<Reliability>,
 ) -> Sample {
-    let mut builder = SampleBuilder::put(key_expr.clone(), payload);
+    let mut builder = SampleBuilder::put(key_expr, payload);
     if let Some(enc) = encoding {
         builder = builder.encoding(enc.clone());
     }
@@ -64,12 +57,13 @@ pub fn sample_new_put(
     builder.into()
 }
 
-/// Build a **Delete** [`Sample`] from its key expression and optional metadata —
-/// the flat port of zenoh's `SampleBuilder::delete`. A delete sample carries no
-/// payload or encoding; the remaining fields mirror [`sample_new_put`].
+/// Create a sample that announces a deletion.
+///
+/// A delete sample has no payload or encoding. Optional arguments specify its
+/// timestamp, attachment, and delivery quality.
 #[prebindgen]
 pub fn sample_new_delete(
-    key_expr: &KeyExpr,
+    key_expr: KeyExpr,
     timestamp_ntp64: Option<i64>,
     attachment: Option<ZBytes>,
     congestion_control: Option<CongestionControl>,
@@ -77,7 +71,7 @@ pub fn sample_new_delete(
     express: Option<bool>,
     #[cfg(feature = "unstable")] reliability: Option<Reliability>,
 ) -> Sample {
-    let mut builder = SampleBuilder::delete(key_expr.clone());
+    let mut builder = SampleBuilder::delete(key_expr);
     if let Some(ntp) = timestamp_ntp64 {
         builder = builder.timestamp(Timestamp::new(NTP64(ntp as u64), TimestampId::rand()));
     }
@@ -102,82 +96,81 @@ pub fn sample_new_delete(
     builder.into()
 }
 
-/// Key expression the sample was published on (borrowed; valid while `s` lives).
+/// Return the key expression on which the sample was published.
 #[prebindgen]
 pub fn sample_get_key_expr(s: &Sample) -> &KeyExpr {
     s.key_expr()
 }
 
-/// Sample payload (borrowed bytes; valid while `s` lives).
+/// Return the sample payload.
 #[prebindgen]
 pub fn sample_get_payload(s: &Sample) -> &ZBytes {
     s.payload()
 }
 
-/// Encoding of the payload (borrowed; valid while `s` lives).
+/// Return format information associated with the payload.
 #[prebindgen]
 pub fn sample_get_encoding(s: &Sample) -> &Encoding {
     s.encoding()
 }
 
-/// Whether the sample is a PUT or a DELETE.
+/// Return whether the sample publishes a value or announces a deletion.
 #[prebindgen]
 pub fn sample_get_kind(s: &Sample) -> SampleKind {
     s.kind().into()
 }
 
-/// Timestamp (borrowed), or `None` when the sample carries no timestamp.
+/// Return the publication timestamp, when present.
 #[prebindgen]
 pub fn sample_get_timestamp(s: &Sample) -> Option<&Timestamp> {
     s.timestamp()
 }
 
-/// QoS express flag.
+/// Return whether express delivery was requested.
 #[prebindgen]
 pub fn sample_get_express(s: &Sample) -> bool {
     s.express()
 }
 
-/// QoS priority.
+/// Return the sample's delivery priority.
 #[prebindgen]
 pub fn sample_get_priority(s: &Sample) -> Priority {
     s.priority().into()
 }
 
-/// QoS congestion-control policy.
+/// Return the congestion-control policy used for the sample.
 #[prebindgen]
 pub fn sample_get_congestion_control(s: &Sample) -> CongestionControl {
     s.congestion_control().into()
 }
 
-/// Optional user attachment (borrowed bytes), or `None`.
+/// Return user-defined metadata associated with the sample, when present.
 #[prebindgen]
 pub fn sample_get_attachment(s: &Sample) -> Option<&ZBytes> {
     s.attachment()
 }
 
-/// Reliability policy the sample was delivered with.
+/// Return the reliability policy used to deliver the sample.
 ///
-/// Unstable: `zenoh::sample::Sample::reliability` is an `#[unstable]` zenoh API.
+/// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn sample_get_reliability(s: &Sample) -> Reliability {
     s.reliability().into()
 }
 
-/// Zenoh id of the source entity that produced the sample, or `None` when the
-/// sample carries no source info (owned handle).
+/// Return the identifier of the node that produced the sample, when known.
 ///
-/// Unstable: `zenoh::sample::Sample::source_info` is an `#[unstable]` zenoh API.
+/// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn sample_get_source_zid(s: &Sample) -> Option<ZenohId> {
     s.source_info().map(|si| si.source_id().zid())
 }
 
-/// Entity id of the sample's source (0 when the sample carries no source info).
+/// Return the entity identifier of the sample's source, or `0` when unknown.
 ///
-/// Unstable: `zenoh::sample::Sample::source_info` is an `#[unstable]` zenoh API.
+/// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn sample_get_source_eid(s: &Sample) -> i32 {
@@ -186,10 +179,9 @@ pub fn sample_get_source_eid(s: &Sample) -> i32 {
         .unwrap_or(0)
 }
 
-/// Source sequence number of the sample (0 when the sample carries no source
-/// info).
+/// Return the source sequence number, or `0` when source information is absent.
 ///
-/// Unstable: `zenoh::sample::Sample::source_info` is an `#[unstable]` zenoh API.
+/// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn sample_get_source_sn(s: &Sample) -> i64 {

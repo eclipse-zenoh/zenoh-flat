@@ -5,9 +5,11 @@ use zenoh::Wait;
 use crate::ZenohId;
 use crate::{Encoding, Error, KeyExpr, Querier, Reply, ZBytes, util::OnceDrop};
 
-/// Perform a GET through a querier, delivering each reply as an opaque
-/// [`Reply`] handle (thin surface — cheap-FFI bindings pull fields via the
-/// `reply_*` accessors). `on_close` fires when the reply stream ends.
+/// Send a query through a reusable querier.
+///
+/// The callback is called for each reply. Optional arguments specify selector
+/// parameters, payload metadata, and attachment. The close callback is called
+/// after the reply stream ends.
 #[prebindgen]
 pub fn querier_get(
     querier: &Querier,
@@ -40,31 +42,30 @@ pub fn querier_get(
         .wait()
 }
 
-/// Key expression the querier queries on (borrowed; valid while `querier` lives).
+/// Return the key expression targeted by this querier.
 #[prebindgen]
 pub fn querier_get_keyexpr(querier: &Querier) -> &KeyExpr {
     querier.key_expr()
 }
 
-/// Undeclare a querier, releasing its network declaration — the flat port of
-/// `zenoh::query::Querier::undeclare`. Consumes the handle.
+/// Undeclare the querier and release its network declaration.
 #[prebindgen]
 pub fn querier_undeclare(querier: Querier) -> Result<(), Error> {
     querier.undeclare().wait()
 }
 
-/// Zenoh id of the node hosting this querier (the `zid` of its entity global id).
+/// Return the identifier of the node hosting this querier.
 ///
-/// Unstable: `zenoh::query::Querier::id` is an `#[unstable]` zenoh API.
+/// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn querier_get_zid(querier: &Querier) -> ZenohId {
     querier.id().zid()
 }
 
-/// Entity id of this querier (the per-session part of its entity global id).
+/// Return the querier's entity identifier within its session.
 ///
-/// Unstable: `zenoh::query::Querier::id` is an `#[unstable]` zenoh API.
+/// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn querier_get_eid(querier: &Querier) -> i32 {
