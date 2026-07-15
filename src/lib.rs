@@ -18,7 +18,7 @@
 //!
 //! `zenoh-flat` flattens zenoh's generic, builder-based Rust API into plain free
 //! functions over opaque handles. Every public function is annotated with
-//! `#[prebindgen]`, so [`prebindgen`] captures this surface and generates
+//! `#[prebindgen]`, so prebindgen captures this surface and generates
 //! idiomatic bindings for other languages (C, Kotlin/JNI, …) — no hand-written
 //! FFI layer per target. The surface is **callback-based**: subscribers,
 //! queryables, queriers, scouts and liveliness subscribers deliver items through
