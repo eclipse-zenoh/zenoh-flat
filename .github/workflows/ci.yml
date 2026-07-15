@@ -113,10 +113,10 @@ jobs:
         run: cargo +stable clippy --all-targets --features unstable -- --deny warnings
 
       - name: Run doctests
-        run: cargo test --doc
+        run: cargo +stable test --doc
 
       - name: Build doc
-        run: cargo doc --no-deps --features unstable
+        run: cargo +stable doc --no-deps --features unstable
         env:
           RUSTDOCFLAGS: -Dwarnings
 
