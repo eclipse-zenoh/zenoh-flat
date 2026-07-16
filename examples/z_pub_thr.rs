@@ -37,6 +37,7 @@ fn main() -> Result<(), zenoh_flat::Error> {
     let publisher = session_declare_publisher(
         &session,
         ke,
+        None,
         Some(CongestionControl::Block),
         prio,
         Some(args.express),

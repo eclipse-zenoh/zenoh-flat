@@ -26,12 +26,15 @@ pub fn open(config: Config) -> Result<Session, Error> {
 /// Declare a publisher for the given key expression.
 ///
 /// Optional delivery settings become defaults for publications made through
-/// the returned publisher. Reliability is available only when unstable
-/// features are enabled.
+/// the returned publisher; the optional `encoding` becomes the publisher's
+/// default payload encoding, applied natively to every publication that does
+/// not override it. Reliability is available only when unstable features are
+/// enabled.
 #[prebindgen]
 pub fn session_declare_publisher(
     session: &Session,
     key_expr: KeyExpr,
+    encoding: Option<&Encoding>,
     congestion_control: Option<CongestionControl>,
     priority: Option<Priority>,
     express: Option<bool>,
@@ -39,6 +42,9 @@ pub fn session_declare_publisher(
 ) -> Result<Publisher, Error> {
     #[allow(unused_mut)]
     let mut builder = session.declare_publisher(key_expr);
+    if let Some(enc) = encoding {
+        builder = builder.encoding(enc.clone());
+    }
     if let Some(cc) = congestion_control {
         builder = builder.congestion_control(cc.into());
     }

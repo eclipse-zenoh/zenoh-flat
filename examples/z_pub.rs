@@ -41,6 +41,7 @@ fn main() -> Result<(), zenoh_flat::Error> {
         None,
         None,
         None,
+        None,
         #[cfg(feature = "unstable")]
         None,
     )?;
