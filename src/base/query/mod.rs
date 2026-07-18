@@ -1,4 +1,5 @@
 pub(crate) mod consolidation_mode;
+pub(crate) mod parameters;
 pub(crate) mod querier;
 pub(crate) mod query_target;
 pub(crate) mod queryable;
@@ -22,44 +23,11 @@ pub fn query_get_keyexpr(q: &Query) -> &KeyExpr {
 }
 
 /// Return the parameters that refine the query selector.
+///
+/// Process the returned string with the `parameters_*` functions.
 #[prebindgen]
 pub fn query_get_parameters(q: &Query) -> String {
     q.parameters().as_str().to_string()
-}
-
-/// Get the value for a key according to the parameters format
-/// (`a=b;c=d|e;f=g`): entries split on `;`, key/value on the first `=`,
-/// the first matching key wins.
-#[prebindgen]
-pub fn parameters_get(s: &str, k: &str) -> Option<String> {
-    zenoh::query::Parameters::from(s).get(k).map(str::to_string)
-}
-
-/// Insert a key-value pair into a parameters string: every existing entry
-/// for the key is removed and the new pair appended at the end. Returns the
-/// resulting string.
-#[prebindgen]
-pub fn parameters_insert(s: &str, k: &str, v: &str) -> String {
-    let mut p = zenoh::query::Parameters::from(s);
-    p.insert(k, v);
-    p.as_str().to_string()
-}
-
-/// Remove every entry for a key from a parameters string. Returns the
-/// resulting string.
-#[prebindgen]
-pub fn parameters_remove(s: &str, k: &str) -> String {
-    let mut p = zenoh::query::Parameters::from(s);
-    p.remove(k);
-    p.as_str().to_string()
-}
-
-/// Return `true` if the parameters string contains at least one entry and
-/// none of its keys are empty.
-#[prebindgen]
-pub fn parameters_is_well_formed(s: &str) -> bool {
-    let p = zenoh::query::Parameters::from(s);
-    p.iter().next().is_some() && p.iter().all(|(k, _)| !k.is_empty())
 }
 
 /// Return the query payload, when present.

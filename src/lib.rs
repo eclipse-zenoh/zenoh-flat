@@ -180,7 +180,10 @@ pub use crate::base::{
     qos::{congestion_control::CongestionControl, priority::Priority},
     query::{
         consolidation_mode::ConsolidationMode,
-        parameters_get, parameters_insert, parameters_is_well_formed, parameters_remove,
+        parameters::{
+            parameters_contains_key, parameters_extend, parameters_get, parameters_insert,
+            parameters_is_well_formed, parameters_remove, parameters_values,
+        },
         querier::{querier_get, querier_get_keyexpr, querier_undeclare},
         query_get_attachment, query_get_encoding, query_get_keyexpr, query_get_parameters,
         query_get_payload, query_reply_delete, query_reply_error, query_reply_sample,
