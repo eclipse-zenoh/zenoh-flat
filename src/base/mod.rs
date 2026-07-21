@@ -1,3 +1,7 @@
+#[cfg(feature = "unstable")]
+pub(crate) mod advanced_publisher;
+#[cfg(feature = "unstable")]
+pub(crate) mod advanced_subscriber;
 pub(crate) mod bytes;
 pub(crate) mod config;
 pub(crate) mod error;

@@ -23,6 +23,10 @@ tracing = { version = "0.1", features = ["log"] }
 zenoh = { version = "1.9.0", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", features = [
   "internal",
 ], default-features = false }
+# Advanced pub/sub lives in zenoh-ext and is entirely `unstable`; pulled in only
+# when the `unstable` feature is on (see `unstable` below). Same git pin as
+# zenoh so Cargo unifies the instances with zenoh-flat-jni's zenoh-ext dep.
+zenoh-ext = { version = "1.9.0", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", default-features = false, optional = true }
 
 [build-dependencies]
 prebindgen = { path = "../prebindgen/prebindgen" }
@@ -60,10 +64,26 @@ transport_unixpipe = ["zenoh/transport_unixpipe"]
 transport_unixsock-stream = ["zenoh/transport_unixsock-stream"]
 transport_vsock = ["zenoh/transport_vsock"]
 transport_ws = ["zenoh/transport_ws"]
-unstable = ["zenoh/unstable"]
+# `zenoh-ext/unstable` enables the optional dep AND its unstable feature
+# (which forwards to zenoh/internal + zenoh/unstable), so the advanced pub/sub
+# surface appears only under `unstable`.
+unstable = ["zenoh-ext/unstable", "zenoh/unstable"]
 
 [dev-dependencies]
 clap = { version = "4", features = ["derive"] }
+
+# The advanced pub/sub examples use the `unstable`-gated advanced API, so they
+# only build with that feature (auto-discovery would otherwise try to compile
+# them under default features and fail).
+[[example]]
+name = "z_advanced_pub"
+path = "examples/z_advanced_pub.rs"
+required-features = ["unstable"]
+
+[[example]]
+name = "z_advanced_sub"
+path = "examples/z_advanced_sub.rs"
+required-features = ["unstable"]
 
 # Match eclipse-zenoh/zenoh's release profile so the throughput examples are
 # benchmarked under the same codegen settings as the native baseline (and as a

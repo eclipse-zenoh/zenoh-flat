@@ -97,6 +97,25 @@ pub type Timestamp = zenoh::time::Timestamp;
 pub type Session = zenoh::Session;
 /// A declaration that asserts application liveliness.
 pub type LivelinessToken = zenoh::liveliness::LivelinessToken;
+/// A publisher with advanced features (caching, sample-miss detection,
+/// publisher detection). Available only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+pub type AdvancedPublisher = zenoh_ext::AdvancedPublisher<'static>;
+/// A listener notified when a publisher's matching status changes. Available
+/// only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+pub type MatchingListener = zenoh::matching::MatchingListener<()>;
+/// A subscription with advanced features (history query, missed-sample
+/// recovery, subscriber detection). Available only when unstable features are
+/// enabled.
+#[cfg(feature = "unstable")]
+pub type AdvancedSubscriber = zenoh_ext::AdvancedSubscriber<()>;
+/// A listener reporting samples missed from advanced publishers. Available only
+/// when unstable features are enabled.
+#[cfg(feature = "unstable")]
+pub type SampleMissListener = zenoh_ext::SampleMissListener<()>;
+/// A span of time, used by configuration options such as heartbeat periods.
+pub use std::time::Duration;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public API surface — the single source of truth for what `zenoh-flat` exports.
@@ -105,7 +124,24 @@ pub type LivelinessToken = zenoh::liveliness::LivelinessToken;
 // the `base` module tree carries NO glob re-exports. When adding or removing a
 // `#[prebindgen]` item, update this list (and only this list).
 // ─────────────────────────────────────────────────────────────────────────────
-
+#[cfg(feature = "unstable")]
+pub use crate::base::advanced_publisher::{
+    CacheConfig, MissDetectionConfig, RepliesConfig,
+    advanced_publisher_declare_background_matching_listener,
+    advanced_publisher_declare_matching_listener, advanced_publisher_delete,
+    advanced_publisher_get_keyexpr, advanced_publisher_matching_status, advanced_publisher_put,
+    advanced_publisher_undeclare, matching_listener_undeclare, session_declare_advanced_publisher,
+};
+#[cfg(feature = "unstable")]
+pub use crate::base::advanced_subscriber::{
+    HistoryConfig, RecoveryConfig, SampleMiss,
+    advanced_subscriber_declare_background_detect_publishers_subscriber,
+    advanced_subscriber_declare_background_sample_miss_listener,
+    advanced_subscriber_declare_detect_publishers_subscriber,
+    advanced_subscriber_declare_sample_miss_listener, advanced_subscriber_get_keyexpr,
+    advanced_subscriber_undeclare, sample_miss_listener_undeclare,
+    session_declare_advanced_subscriber,
+};
 #[cfg(feature = "unstable")]
 pub use crate::base::keyexpr::keyexpr_relation_to;
 #[cfg(feature = "unstable")]
