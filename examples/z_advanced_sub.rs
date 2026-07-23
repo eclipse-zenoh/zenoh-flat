@@ -75,7 +75,7 @@ fn main() -> Result<(), zenoh_flat::Error> {
             println!(
                 ">> [Subscriber] Missed {} samples from {} !!!",
                 miss.nb,
-                zenoh_id_to_string(&miss.source_zid)
+                zenoh_id_to_string(&miss.source.zid)
             );
         },
         || {},

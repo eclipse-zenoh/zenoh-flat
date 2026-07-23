@@ -134,7 +134,7 @@ pub use crate::base::advanced_publisher::{
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::advanced_subscriber::{
-    HistoryConfig, RecoveryConfig, SampleMiss,
+    EntityGlobalId, HistoryConfig, Miss, RecoveryConfig,
     advanced_subscriber_declare_background_detect_publishers_subscriber,
     advanced_subscriber_declare_background_sample_miss_listener,
     advanced_subscriber_declare_detect_publishers_subscriber,

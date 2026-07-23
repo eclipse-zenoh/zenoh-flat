@@ -39,15 +39,24 @@ pub struct RecoveryConfig {
     pub heartbeat: bool,
 }
 
+/// Global identifier of an entity (publisher, subscriber, …) in a Zenoh system:
+/// the node's [`ZenohId`] plus the entity's per-session id.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+#[derive(Clone, Debug)]
+pub struct EntityGlobalId {
+    /// Identifier of the node the entity belongs to.
+    pub zid: ZenohId,
+    /// Entity identifier within its session.
+    pub eid: u32,
+}
+
 /// A report of samples missed from one source, delivered to a sample-miss
 /// listener.
 #[prebindgen(cfg = "feature = \"unstable\"")]
 #[derive(Clone, Debug)]
-pub struct SampleMiss {
-    /// Identifier of the node that produced the missed samples.
-    pub source_zid: ZenohId,
-    /// Entity identifier of the source within its session.
-    pub source_eid: u32,
+pub struct Miss {
+    /// Source of the missed samples.
+    pub source: EntityGlobalId,
     /// Number of missed samples.
     pub nb: u32,
 }
@@ -80,12 +89,19 @@ impl From<RecoveryConfig> for zenoh_ext::RecoveryConfig {
     }
 }
 
-impl From<zenoh_ext::Miss> for SampleMiss {
+impl From<zenoh::session::EntityGlobalId> for EntityGlobalId {
+    fn from(id: zenoh::session::EntityGlobalId) -> Self {
+        EntityGlobalId {
+            zid: id.zid(),
+            eid: id.eid(),
+        }
+    }
+}
+
+impl From<zenoh_ext::Miss> for Miss {
     fn from(m: zenoh_ext::Miss) -> Self {
-        let source = m.source();
-        SampleMiss {
-            source_zid: source.zid(),
-            source_eid: source.eid(),
+        Miss {
+            source: m.source().into(),
             nb: m.nb(),
         }
     }
@@ -141,7 +157,7 @@ pub fn session_declare_advanced_subscriber(
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn advanced_subscriber_declare_sample_miss_listener(
     subscriber: &AdvancedSubscriber,
-    callback: impl Fn(SampleMiss) + Send + Sync + 'static,
+    callback: impl Fn(Miss) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
 ) -> Result<SampleMissListener, Error> {
     let on_close = OnceDrop::new(on_close);
@@ -161,7 +177,7 @@ pub fn advanced_subscriber_declare_sample_miss_listener(
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn advanced_subscriber_declare_background_sample_miss_listener(
     subscriber: &AdvancedSubscriber,
-    callback: impl Fn(SampleMiss) + Send + Sync + 'static,
+    callback: impl Fn(Miss) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
 ) -> Result<(), Error> {
     let on_close = OnceDrop::new(on_close);
