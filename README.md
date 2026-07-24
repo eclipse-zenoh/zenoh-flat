@@ -79,8 +79,8 @@ answers no to the value question and is **handle-only**.
 
 A **bounded**, fixed-maximum blob — a 16-byte node id — counts as cheap, not a payload: copying it
 whole is trivial. Only *unbounded* data (arbitrary-length strings and lists) is a materialization
-cost. So a `Timestamp` (an `i64` plus a ≤16-byte id) is value-only, while an `Encoding` (which
-carries a schema `String`) is a twin.
+cost. So a `Timestamp` (a `u64` plus a ≤16-byte id) is value-only, while an `Encoding` (which
+carries an arbitrary-length schema) is a twin.
 
 ### Naming
 

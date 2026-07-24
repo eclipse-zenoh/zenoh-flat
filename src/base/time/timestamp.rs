@@ -8,8 +8,9 @@ use prebindgen_proc_macro::prebindgen;
 #[prebindgen]
 #[derive(Clone, Debug)]
 pub struct Timestamp {
-    /// NTP64 time component of the timestamp.
-    pub ntp64: i64,
+    /// NTP64 time component of the timestamp. This is an unsigned value;
+    /// current-era timestamps set the high bit.
+    pub ntp64: u64,
     /// Raw bytes of the originating node identifier.
     pub id: Vec<u8>,
 }
@@ -18,8 +19,24 @@ impl From<&zenoh::time::Timestamp> for Timestamp {
     fn from(t: &zenoh::time::Timestamp) -> Self {
         let id = t.get_id();
         Timestamp {
-            ntp64: t.get_time().as_u64() as i64,
+            ntp64: t.get_time().as_u64(),
             id: id.to_le_bytes()[..id.size()].to_vec(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use zenoh::time::{NTP64, TimestampId};
+
+    use super::*;
+
+    #[test]
+    fn preserves_unsigned_ntp64_high_bit() {
+        // A current-era NTP64 value has its high bit set (above `i64::MAX`); the
+        // value form must carry it unsigned, not wrap it into a negative number.
+        let raw = (i64::MAX as u64) + 12_345;
+        let zt = zenoh::time::Timestamp::new(NTP64(raw), TimestampId::rand());
+        assert_eq!(Timestamp::from(&zt).ntp64, raw);
     }
 }

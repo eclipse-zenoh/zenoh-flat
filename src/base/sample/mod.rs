@@ -24,7 +24,7 @@ pub fn sample_new_put(
     key_expr: KeyExpr,
     payload: ZBytes,
     encoding: Option<&Encoding>,
-    timestamp_ntp64: Option<i64>,
+    timestamp_ntp64: Option<u64>,
     attachment: Option<ZBytes>,
     congestion_control: Option<CongestionControl>,
     priority: Option<Priority>,
@@ -36,10 +36,7 @@ pub fn sample_new_put(
         builder = builder.encoding(enc.clone());
     }
     if let Some(ntp) = timestamp_ntp64 {
-        builder = builder.timestamp(zenoh::time::Timestamp::new(
-            NTP64(ntp as u64),
-            TimestampId::rand(),
-        ));
+        builder = builder.timestamp(zenoh::time::Timestamp::new(NTP64(ntp), TimestampId::rand()));
     }
     if let Some(att) = attachment {
         builder = builder.attachment(att);
@@ -69,7 +66,7 @@ pub fn sample_new_put(
 #[prebindgen]
 pub fn sample_new_delete(
     key_expr: KeyExpr,
-    timestamp_ntp64: Option<i64>,
+    timestamp_ntp64: Option<u64>,
     attachment: Option<ZBytes>,
     congestion_control: Option<CongestionControl>,
     priority: Option<Priority>,
@@ -78,10 +75,7 @@ pub fn sample_new_delete(
 ) -> Sample {
     let mut builder = SampleBuilder::delete(key_expr);
     if let Some(ntp) = timestamp_ntp64 {
-        builder = builder.timestamp(zenoh::time::Timestamp::new(
-            NTP64(ntp as u64),
-            TimestampId::rand(),
-        ));
+        builder = builder.timestamp(zenoh::time::Timestamp::new(NTP64(ntp), TimestampId::rand()));
     }
     if let Some(att) = attachment {
         builder = builder.attachment(att);

@@ -15,10 +15,12 @@ pub fn encoding_new_clone(e: &Encoding) -> Encoding {
 }
 
 /// Return the schema associated with an encoding, when present.
+///
+/// A schema is raw bytes: zenoh transmits it verbatim and does not require it to
+/// be valid UTF-8, so it is returned losslessly rather than as a string.
 #[prebindgen]
-pub fn encoding_get_schema(e: &Encoding) -> Option<String> {
-    e.schema()
-        .and_then(|s| std::str::from_utf8(s).ok().map(str::to_string))
+pub fn encoding_get_schema(e: &Encoding) -> Option<Vec<u8>> {
+    e.schema().map(|s| s.as_slice().to_vec())
 }
 
 /// Return the standard textual representation of an encoding.
@@ -28,18 +30,19 @@ pub fn encoding_to_string(e: &Encoding) -> String {
 }
 
 /// An encoding decomposed into a plain value: its numeric identifier and
-/// optional schema.
+/// optional schema (raw bytes; see [`encoding_get_schema`]).
 #[prebindgen]
 #[derive(Clone, Debug)]
 pub struct EncodingStruct {
     /// Numeric identifier of the encoding.
     pub id: i32,
     /// Schema associated with the encoding, when present.
-    pub schema: Option<String>,
+    pub schema: Option<Vec<u8>>,
 }
 
 impl From<&Encoding> for EncodingStruct {
     fn from(e: &Encoding) -> Self {
+        // Delegate to the field accessors so each field has one definition.
         EncodingStruct {
             id: encoding_get_id(e),
             schema: encoding_get_schema(e),
@@ -455,4 +458,20 @@ pub fn encoding_const_video_vp8() -> &'static Encoding {
 pub fn encoding_const_video_vp9() -> &'static Encoding {
     static E: Encoding = Encoding::VIDEO_VP9;
     &E
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn non_utf8_schema_preserved() {
+        // Zenoh schemas are raw bytes and can arrive non-UTF-8 over the wire; a
+        // present non-UTF-8 schema must be kept, not collapsed to `None`
+        // (which would be indistinguishable from no schema at all).
+        let bytes = vec![0xff, 0xfe, 0xfd];
+        let e = Encoding::new(1, Some(bytes.clone().into()));
+        assert_eq!(encoding_get_schema(&e), Some(bytes.clone()));
+        assert_eq!(encoding_to_struct(&e).schema, Some(bytes));
+    }
 }

@@ -69,7 +69,7 @@ fn constants_render_canonically() {
 fn with_schema_appends_schema() {
     let e = encoding_new_with_schema(encoding_const_zenoh_bytes(), "my_schema".to_string());
     assert_eq!(encoding_to_string(&e), "zenoh/bytes;my_schema");
-    assert_eq!(encoding_get_schema(&e).as_deref(), Some("my_schema"));
+    assert_eq!(encoding_get_schema(&e).as_deref(), Some(&b"my_schema"[..]));
 
     let e2 = encoding_new_with_schema(encoding_const_zenoh_string(), "my_schema".to_string());
     assert_eq!(encoding_to_string(&e2), "zenoh/string;my_schema");
