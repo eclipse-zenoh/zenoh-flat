@@ -1,4 +1,6 @@
 pub(crate) mod sample_kind;
+#[cfg(feature = "unstable")]
+pub(crate) mod source_info;
 
 use prebindgen_proc_macro::prebindgen;
 use zenoh::{
@@ -7,9 +9,9 @@ use zenoh::{
 };
 
 use self::sample_kind::SampleKind;
-use crate::{CongestionControl, Encoding, KeyExpr, Priority, Sample, Timestamp, ZBytes};
 #[cfg(feature = "unstable")]
-use crate::{Reliability, ZenohId};
+use crate::Reliability;
+use crate::{CongestionControl, Encoding, KeyExpr, Priority, Sample, Timestamp, ZBytes};
 
 /// Create a sample that publishes a value.
 ///
@@ -157,31 +159,4 @@ pub fn sample_get_attachment(s: &Sample) -> Option<&ZBytes> {
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn sample_get_reliability(s: &Sample) -> Reliability {
     s.reliability().into()
-}
-
-/// Return the identifier of the node that produced the sample, when known.
-///
-/// This information is available only when unstable features are enabled.
-#[cfg(feature = "unstable")]
-#[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn sample_get_source_zid(s: &Sample) -> Option<ZenohId> {
-    s.source_info().map(|si| si.source_id().zid())
-}
-
-/// Return the entity identifier of the sample's source, when known.
-///
-/// This information is available only when unstable features are enabled.
-#[cfg(feature = "unstable")]
-#[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn sample_get_source_eid(s: &Sample) -> Option<u32> {
-    s.source_info().map(|si| si.source_id().eid())
-}
-
-/// Return the source sequence number, when source information is present.
-///
-/// This information is available only when unstable features are enabled.
-#[cfg(feature = "unstable")]
-#[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn sample_get_source_sn(s: &Sample) -> Option<u32> {
-    s.source_info().map(|si| si.source_sn())
 }

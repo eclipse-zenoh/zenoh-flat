@@ -160,7 +160,11 @@ pub use crate::base::query::queryable::{queryable_get_eid, queryable_get_zid};
 pub use crate::base::query::reply::{reply_get_replier_eid, reply_get_replier_zid};
 #[cfg(feature = "unstable")]
 pub use crate::base::sample::{
-    sample_get_reliability, sample_get_source_eid, sample_get_source_sn, sample_get_source_zid,
+    sample_get_reliability,
+    source_info::{
+        SourceInfo, sample_get_source_eid, sample_get_source_info, sample_get_source_sn,
+        sample_get_source_zid, sample_source_info_defined,
+    },
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::subscriber::{subscriber_get_eid, subscriber_get_zid};
