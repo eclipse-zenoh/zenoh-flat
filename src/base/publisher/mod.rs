@@ -66,6 +66,6 @@ pub fn publisher_get_zid(publisher: &Publisher) -> ZenohId {
 /// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn publisher_get_eid(publisher: &Publisher) -> i32 {
-    publisher.id().eid() as i32
+pub fn publisher_get_eid(publisher: &Publisher) -> u32 {
+    publisher.id().eid()
 }

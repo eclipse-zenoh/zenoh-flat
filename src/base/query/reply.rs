@@ -18,8 +18,8 @@ pub fn reply_get_replier_zid(r: &Reply) -> Option<ZenohId> {
 /// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn reply_get_replier_eid(r: &Reply) -> i32 {
-    r.replier_id().map(|id| id.eid() as i32).unwrap_or(0)
+pub fn reply_get_replier_eid(r: &Reply) -> u32 {
+    r.replier_id().map(|id| id.eid()).unwrap_or(0)
 }
 
 /// Return whether this reply contains a sample rather than an error.

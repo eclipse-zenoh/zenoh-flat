@@ -68,6 +68,6 @@ pub fn querier_get_zid(querier: &Querier) -> ZenohId {
 /// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn querier_get_eid(querier: &Querier) -> i32 {
-    querier.id().eid() as i32
+pub fn querier_get_eid(querier: &Querier) -> u32 {
+    querier.id().eid()
 }

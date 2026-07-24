@@ -34,6 +34,6 @@ pub fn subscriber_get_zid(subscriber: &Subscriber) -> ZenohId {
 /// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn subscriber_get_eid(subscriber: &Subscriber) -> i32 {
-    subscriber.id().eid() as i32
+pub fn subscriber_get_eid(subscriber: &Subscriber) -> u32 {
+    subscriber.id().eid()
 }

@@ -34,6 +34,6 @@ pub fn queryable_get_zid(queryable: &Queryable) -> ZenohId {
 /// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn queryable_get_eid(queryable: &Queryable) -> i32 {
-    queryable.id().eid() as i32
+pub fn queryable_get_eid(queryable: &Queryable) -> u32 {
+    queryable.id().eid()
 }

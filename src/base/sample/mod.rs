@@ -173,10 +173,8 @@ pub fn sample_get_source_zid(s: &Sample) -> Option<ZenohId> {
 /// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn sample_get_source_eid(s: &Sample) -> i32 {
-    s.source_info()
-        .map(|si| si.source_id().eid() as i32)
-        .unwrap_or(0)
+pub fn sample_get_source_eid(s: &Sample) -> u32 {
+    s.source_info().map(|si| si.source_id().eid()).unwrap_or(0)
 }
 
 /// Return the source sequence number, or `0` when source information is absent.
@@ -184,6 +182,6 @@ pub fn sample_get_source_eid(s: &Sample) -> i32 {
 /// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn sample_get_source_sn(s: &Sample) -> i64 {
-    s.source_info().map(|si| si.source_sn() as i64).unwrap_or(0)
+pub fn sample_get_source_sn(s: &Sample) -> u32 {
+    s.source_info().map(|si| si.source_sn()).unwrap_or(0)
 }
