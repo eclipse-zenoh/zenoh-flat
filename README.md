@@ -27,18 +27,17 @@ bindings for other languages (C via `lang::Cbindgen`, Kotlin/JNI via
   liveliness subscribers deliver items through an `impl Fn(..)` callback plus an
   `on_close` hook. This keeps the surface trivially FFI-exportable.
 - **Errors as `Result<T, Error>`.** `Error` is zenoh's boxed error; the
-  `error_message` accessor renders it to a `String` for callers that cannot carry
-  a Rust error across the boundary.
+  `error_get_message` accessor renders it to a `String` for callers that cannot
+  carry a Rust error across the boundary.
 - **Opaque handles, values, and twins.** See [Type representation](#type-representation):
   resource types (`Session`, `Publisher`, …) cross as opaque handles, pure data
-  (`EntityGlobalId`, the `*Config` inputs) crosses by value, and payload-carrying types
-  (`Sample`, `Reply`, `ReplyError`) offer both.
+  (`EntityGlobalId`, `Timestamp`, the `*Config` inputs) crosses by value, and
+  payload-carrying types (`Sample`, `Encoding`, `Hello`, …) offer both.
 
 ## Type representation
 
 zenoh-flat presents every zenoh concept in one of **three shapes**. Picking the right shape for a
-type is the central design decision in this crate, so the rules are written out here. (Some shapes
-are already in place; others are being rolled out under these rules.)
+type is the central design decision in this crate, so the rules are written out here.
 
 ### The three shapes
 
@@ -46,11 +45,11 @@ are already in place; others are being rolled out under these rules.)
   publisher, a subscription, a key expression, a byte buffer. A handle crosses the boundary as an
   opaque pointer; you read its parts through `<type>_get_<field>` accessor functions, and you are
   responsible for closing or freeing it. Examples: `Session`, `Publisher`, `Subscriber`, `KeyExpr`,
-  `ZBytes`, `Encoding`.
+  `ZBytes`.
 - **Value** — plain data with no identity and nothing to release: an entity id, a report, a small
   configuration. A value is an ordinary Rust `struct` with public fields and crosses by copying
-  them. Examples: `EntityGlobalId { zid, eid }`, `Miss { source, nb }`, and the input configs
-  (`HistoryConfig`, `RecoveryConfig`, …).
+  them. Examples: `EntityGlobalId { zid, eid }`, `SourceInfo { source, sn }`, `Timestamp`, and the
+  input configs (`HistoryConfig`, `RecoveryConfig`, …).
 - **Twin** — a type worth having *both* ways. It is fully described by its fields (so it can be a
   value), but it also carries a **payload** — an unbounded string, list, or `ZBytes` — you may not
   want to copy on every access (so a handle lets you read the cheap fields without materializing it).
@@ -98,19 +97,16 @@ expressed with ordinary Rust types (`u32`, `Option<u32>`), never a wire- or bind
 - **Never fake "unknown" with a sentinel.** If zenoh returns an `Option`, flat returns an `Option`.
   For a sample's source, "no source information at all" and "the source's fields happen to be `0`"
   are different facts and must stay different — `sample_get_source_info` returns `Option<SourceInfo>`
-  (absent ⇒ `None`), never a `SourceInfo` with zeroed fields. (Collapsing the two was the bug in
-  [issue #10](https://github.com/ZettaScaleLabs/zenoh-flat/issues/10).)
+  (absent ⇒ `None`), never a `SourceInfo` with zeroed fields.
 - **Put the optionality on the right edge.** When a sample's source is known, its entity id and
   sequence number always exist; only the *whole* source-info is optional. So those fields are
   non-optional and the parent carries the `Option`, not a struct full of `Option` fields.
 
 ### One source of truth per field
 
-A grouped accessor and flat shortcuts may coexist — that is encouraged. But a shortcut must
-**delegate** to the same underlying path, not carry its own copy of the logic: two hand-written
-bodies reading the same field eventually disagree (that is how #10 slipped in). For an optional
-nested value, also expose a `<path>_defined -> bool` flag, so a caller reading only flat fields can
-still tell present from absent.
+Each field is read one way: through the value, or a grouped accessor that returns it. A convenience
+shortcut for a nested field may be added, but it must **delegate** to that same path rather than
+re-deriving the value — two independent bodies reading the same field eventually disagree.
 
 ### Construction mirrors zenoh
 
