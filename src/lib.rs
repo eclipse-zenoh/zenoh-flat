@@ -91,8 +91,6 @@ pub type Sample = zenoh::sample::Sample;
 pub type Reply = zenoh::query::Reply;
 /// An application error carried by a query reply.
 pub type ReplyError = zenoh::query::ReplyError;
-/// A time value associated with a Zenoh operation.
-pub type Timestamp = zenoh::time::Timestamp;
 /// A connection to the Zenoh network.
 pub type Session = zenoh::Session;
 /// A declaration that asserts application liveliness.
@@ -134,7 +132,7 @@ pub use crate::base::advanced_publisher::{
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::advanced_subscriber::{
-    EntityGlobalId, HistoryConfig, Miss, RecoveryConfig,
+    HistoryConfig, Miss, RecoveryConfig,
     advanced_subscriber_declare_background_detect_publishers_subscriber,
     advanced_subscriber_declare_background_sample_miss_listener,
     advanced_subscriber_declare_detect_publishers_subscriber,
@@ -143,35 +141,34 @@ pub use crate::base::advanced_subscriber::{
     session_declare_advanced_subscriber,
 };
 #[cfg(feature = "unstable")]
+pub use crate::base::entity::EntityGlobalId;
+#[cfg(feature = "unstable")]
 pub use crate::base::keyexpr::keyexpr_relation_to;
 #[cfg(feature = "unstable")]
 pub use crate::base::keyexpr::set_intersection_level::SetIntersectionLevel;
 #[cfg(feature = "unstable")]
-pub use crate::base::publisher::{publisher_get_eid, publisher_get_zid};
+pub use crate::base::publisher::publisher_get_id;
 #[cfg(feature = "unstable")]
 pub use crate::base::qos::reliability::Reliability;
 #[cfg(feature = "unstable")]
-pub use crate::base::query::querier::{querier_get_eid, querier_get_zid};
+pub use crate::base::query::querier::querier_get_id;
 #[cfg(feature = "unstable")]
 pub use crate::base::query::query_get_accepts_replies;
 #[cfg(feature = "unstable")]
-pub use crate::base::query::queryable::{queryable_get_eid, queryable_get_zid};
+pub use crate::base::query::queryable::queryable_get_id;
 #[cfg(feature = "unstable")]
-pub use crate::base::query::reply::{reply_get_replier_eid, reply_get_replier_zid};
+pub use crate::base::query::reply::reply_get_replier_id;
 #[cfg(feature = "unstable")]
 pub use crate::base::sample::{
     sample_get_reliability,
-    source_info::{
-        SourceInfo, sample_get_source_eid, sample_get_source_info, sample_get_source_sn,
-        sample_get_source_zid, sample_source_info_defined,
-    },
+    source_info::{SourceInfo, sample_get_source_info},
 };
 #[cfg(feature = "unstable")]
-pub use crate::base::subscriber::{subscriber_get_eid, subscriber_get_zid};
+pub use crate::base::subscriber::subscriber_get_id;
 pub use crate::base::{
     bytes::{
         encoding::{
-            encoding_const_application_cbor, encoding_const_application_cdr,
+            EncodingStruct, encoding_const_application_cbor, encoding_const_application_cdr,
             encoding_const_application_coap_payload,
             encoding_const_application_java_serialized_object, encoding_const_application_json,
             encoding_const_application_json_patch_json, encoding_const_application_json_seq,
@@ -195,7 +192,7 @@ pub use crate::base::{
             encoding_const_zenoh_bytes, encoding_const_zenoh_serialized,
             encoding_const_zenoh_string, encoding_get_id, encoding_get_schema, encoding_new_clone,
             encoding_new_from_id, encoding_new_from_string, encoding_new_with_schema,
-            encoding_to_string,
+            encoding_to_string, encoding_to_struct,
         },
         zbytes::{zbytes_as_bytes, zbytes_new_clone, zbytes_new_from_slice, zbytes_new_from_vec},
     },
@@ -244,7 +241,9 @@ pub use crate::base::{
         sample_new_put, sample_to_struct,
     },
     scouting::{
-        hello::{hello_get_locators, hello_get_whatami, hello_get_zid},
+        hello::{
+            HelloStruct, hello_get_locators, hello_get_whatami, hello_get_zid, hello_to_struct,
+        },
         scout::scout,
     },
     session::{
@@ -255,5 +254,5 @@ pub use crate::base::{
         session_undeclare_keyexpr,
     },
     subscriber::{subscriber_get_keyexpr, subscriber_undeclare},
-    time::timestamp::{timestamp_get_id, timestamp_get_ntp64},
+    time::timestamp::Timestamp,
 };

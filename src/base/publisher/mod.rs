@@ -2,7 +2,7 @@ use prebindgen_proc_macro::prebindgen;
 use zenoh::Wait;
 
 #[cfg(feature = "unstable")]
-use crate::ZenohId;
+use crate::EntityGlobalId;
 use crate::{Encoding, Error, KeyExpr, Publisher, ZBytes};
 
 /// Publish data on the publisher's key expression.
@@ -52,20 +52,11 @@ pub fn publisher_undeclare(publisher: Publisher) -> Result<(), Error> {
     publisher.undeclare().wait()
 }
 
-/// Return the identifier of the node hosting this publisher.
+/// Return the global identifier of this publisher.
 ///
 /// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn publisher_get_zid(publisher: &Publisher) -> ZenohId {
-    publisher.id().zid()
-}
-
-/// Return the publisher's entity identifier within its session.
-///
-/// This information is available only when unstable features are enabled.
-#[cfg(feature = "unstable")]
-#[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn publisher_get_eid(publisher: &Publisher) -> u32 {
-    publisher.id().eid()
+pub fn publisher_get_id(publisher: &Publisher) -> EntityGlobalId {
+    publisher.id().into()
 }

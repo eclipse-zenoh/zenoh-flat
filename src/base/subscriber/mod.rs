@@ -2,7 +2,7 @@ use prebindgen_proc_macro::prebindgen;
 use zenoh::Wait;
 
 #[cfg(feature = "unstable")]
-use crate::ZenohId;
+use crate::EntityGlobalId;
 use crate::{Error, KeyExpr, Subscriber};
 
 /// Return the key expression on which this subscriber listens.
@@ -20,20 +20,11 @@ pub fn subscriber_undeclare(subscriber: Subscriber) -> Result<(), Error> {
     subscriber.undeclare().wait()
 }
 
-/// Return the identifier of the node hosting this subscriber.
+/// Return the global identifier of this subscriber.
 ///
 /// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn subscriber_get_zid(subscriber: &Subscriber) -> ZenohId {
-    subscriber.id().zid()
-}
-
-/// Return the subscriber's entity identifier within its session.
-///
-/// This information is available only when unstable features are enabled.
-#[cfg(feature = "unstable")]
-#[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn subscriber_get_eid(subscriber: &Subscriber) -> u32 {
-    subscriber.id().eid()
+pub fn subscriber_get_id(subscriber: &Subscriber) -> EntityGlobalId {
+    subscriber.id().into()
 }

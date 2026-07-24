@@ -2,7 +2,7 @@ use prebindgen_proc_macro::prebindgen;
 use zenoh::Wait;
 
 #[cfg(feature = "unstable")]
-use crate::ZenohId;
+use crate::EntityGlobalId;
 use crate::{Encoding, Error, KeyExpr, Querier, Reply, ZBytes, util::OnceDrop};
 
 /// Send a query through a reusable querier.
@@ -54,20 +54,11 @@ pub fn querier_undeclare(querier: Querier) -> Result<(), Error> {
     querier.undeclare().wait()
 }
 
-/// Return the identifier of the node hosting this querier.
+/// Return the global identifier of this querier.
 ///
 /// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn querier_get_zid(querier: &Querier) -> ZenohId {
-    querier.id().zid()
-}
-
-/// Return the querier's entity identifier within its session.
-///
-/// This information is available only when unstable features are enabled.
-#[cfg(feature = "unstable")]
-#[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn querier_get_eid(querier: &Querier) -> u32 {
-    querier.id().eid()
+pub fn querier_get_id(querier: &Querier) -> EntityGlobalId {
+    querier.id().into()
 }

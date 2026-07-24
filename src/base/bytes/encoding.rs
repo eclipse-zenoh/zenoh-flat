@@ -27,6 +27,34 @@ pub fn encoding_to_string(e: &Encoding) -> String {
     e.to_string()
 }
 
+/// An encoding decomposed into a plain value: its numeric identifier and
+/// optional schema.
+#[prebindgen]
+#[derive(Clone, Debug)]
+pub struct EncodingStruct {
+    /// Numeric identifier of the encoding.
+    pub id: i32,
+    /// Schema associated with the encoding, when present.
+    pub schema: Option<String>,
+}
+
+impl From<&Encoding> for EncodingStruct {
+    fn from(e: &Encoding) -> Self {
+        EncodingStruct {
+            id: e.id() as i32,
+            schema: e
+                .schema()
+                .and_then(|s| std::str::from_utf8(s).ok().map(str::to_string)),
+        }
+    }
+}
+
+/// Decompose an encoding into its [`EncodingStruct`] value form.
+#[prebindgen]
+pub fn encoding_to_struct(e: &Encoding) -> EncodingStruct {
+    e.into()
+}
+
 /// Create an encoding from its textual representation.
 ///
 /// Known names resolve to their standard identifiers. Other names are

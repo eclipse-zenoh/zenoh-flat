@@ -1,25 +1,16 @@
 use prebindgen_proc_macro::prebindgen;
 
+#[cfg(feature = "unstable")]
+use crate::EntityGlobalId;
 use crate::{Encoding, Reply, ReplyError, Sample, SampleStruct, ZBytes};
-#[cfg(feature = "unstable")]
-use crate::{EntityGlobalId, ZenohId};
 
-/// Return the identifier of the node that answered, when known.
+/// Return the global identifier of the entity that answered, when known.
 ///
 /// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn reply_get_replier_zid(r: &Reply) -> Option<ZenohId> {
-    r.replier_id().map(|id| id.zid())
-}
-
-/// Return the answering entity's identifier, when known.
-///
-/// This information is available only when unstable features are enabled.
-#[cfg(feature = "unstable")]
-#[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn reply_get_replier_eid(r: &Reply) -> Option<u32> {
-    r.replier_id().map(|id| id.eid())
+pub fn reply_get_replier_id(r: &Reply) -> Option<EntityGlobalId> {
+    r.replier_id().map(EntityGlobalId::from)
 }
 
 /// Return whether this reply contains a sample rather than an error.

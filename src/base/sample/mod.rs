@@ -36,7 +36,10 @@ pub fn sample_new_put(
         builder = builder.encoding(enc.clone());
     }
     if let Some(ntp) = timestamp_ntp64 {
-        builder = builder.timestamp(Timestamp::new(NTP64(ntp as u64), TimestampId::rand()));
+        builder = builder.timestamp(zenoh::time::Timestamp::new(
+            NTP64(ntp as u64),
+            TimestampId::rand(),
+        ));
     }
     if let Some(att) = attachment {
         builder = builder.attachment(att);
@@ -75,7 +78,10 @@ pub fn sample_new_delete(
 ) -> Sample {
     let mut builder = SampleBuilder::delete(key_expr);
     if let Some(ntp) = timestamp_ntp64 {
-        builder = builder.timestamp(Timestamp::new(NTP64(ntp as u64), TimestampId::rand()));
+        builder = builder.timestamp(zenoh::time::Timestamp::new(
+            NTP64(ntp as u64),
+            TimestampId::rand(),
+        ));
     }
     if let Some(att) = attachment {
         builder = builder.attachment(att);
@@ -124,8 +130,8 @@ pub fn sample_get_kind(s: &Sample) -> SampleKind {
 
 /// Return the publication timestamp, when present.
 #[prebindgen]
-pub fn sample_get_timestamp(s: &Sample) -> Option<&Timestamp> {
-    s.timestamp()
+pub fn sample_get_timestamp(s: &Sample) -> Option<Timestamp> {
+    s.timestamp().map(Timestamp::from)
 }
 
 /// Return whether express delivery was requested.
@@ -204,7 +210,7 @@ impl From<&Sample> for SampleStruct {
             payload: s.payload().clone(),
             encoding: s.encoding().clone(),
             kind: s.kind().into(),
-            timestamp: s.timestamp().cloned(),
+            timestamp: s.timestamp().map(Timestamp::from),
             express: s.express(),
             priority: s.priority().into(),
             congestion_control: s.congestion_control().into(),

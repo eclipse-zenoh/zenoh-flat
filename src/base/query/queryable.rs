@@ -2,7 +2,7 @@ use prebindgen_proc_macro::prebindgen;
 use zenoh::Wait;
 
 #[cfg(feature = "unstable")]
-use crate::ZenohId;
+use crate::EntityGlobalId;
 use crate::{Error, KeyExpr, Queryable};
 
 /// Return the key expression on which this queryable answers.
@@ -20,20 +20,11 @@ pub fn queryable_undeclare(queryable: Queryable) -> Result<(), Error> {
     queryable.undeclare().wait()
 }
 
-/// Return the identifier of the node hosting this queryable.
+/// Return the global identifier of this queryable.
 ///
 /// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn queryable_get_zid(queryable: &Queryable) -> ZenohId {
-    queryable.id().zid()
-}
-
-/// Return the queryable's entity identifier within its session.
-///
-/// This information is available only when unstable features are enabled.
-#[cfg(feature = "unstable")]
-#[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn queryable_get_eid(queryable: &Queryable) -> u32 {
-    queryable.id().eid()
+pub fn queryable_get_id(queryable: &Queryable) -> EntityGlobalId {
+    queryable.id().into()
 }

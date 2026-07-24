@@ -4,6 +4,8 @@ pub(crate) mod advanced_publisher;
 pub(crate) mod advanced_subscriber;
 pub(crate) mod bytes;
 pub(crate) mod config;
+#[cfg(feature = "unstable")]
+pub(crate) mod entity;
 pub(crate) mod error;
 pub(crate) mod keyexpr;
 pub(crate) mod liveliness;

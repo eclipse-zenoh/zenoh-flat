@@ -351,5 +351,5 @@ pub fn session_is_closed(session: &Session) -> bool {
 /// Such timestamps remain causally consistent with the session's operations.
 #[prebindgen]
 pub fn session_new_timestamp(session: &Session) -> Timestamp {
-    session.new_timestamp()
+    (&session.new_timestamp()).into()
 }

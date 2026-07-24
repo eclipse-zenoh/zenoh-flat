@@ -3,8 +3,8 @@ use zenoh::Wait;
 use zenoh_ext::AdvancedSubscriberBuilderExt;
 
 use crate::{
-    AdvancedSubscriber, Duration, Error, KeyExpr, Sample, SampleMissListener, Session, Subscriber,
-    ZenohId, util::OnceDrop,
+    AdvancedSubscriber, Duration, EntityGlobalId, Error, KeyExpr, Sample, SampleMissListener,
+    Session, Subscriber, util::OnceDrop,
 };
 
 /// Query configuration for an advanced subscriber's historical data.
@@ -37,17 +37,6 @@ pub struct RecoveryConfig {
     pub periodic_queries: Option<Duration>,
     /// Subscribe to advanced publishers' heartbeats to detect misses.
     pub heartbeat: bool,
-}
-
-/// Global identifier of an entity (publisher, subscriber, …) in a Zenoh system:
-/// the node's [`ZenohId`] plus the entity's per-session id.
-#[prebindgen(cfg = "feature = \"unstable\"")]
-#[derive(Clone, Debug)]
-pub struct EntityGlobalId {
-    /// Identifier of the node the entity belongs to.
-    pub zid: ZenohId,
-    /// Entity identifier within its session.
-    pub eid: u32,
 }
 
 /// A report of samples missed from one source, delivered to a sample-miss
@@ -85,15 +74,6 @@ impl From<RecoveryConfig> for zenoh_ext::RecoveryConfig {
             zenoh_ext::RecoveryConfig::<false>::default().heartbeat()
         } else {
             zenoh_ext::RecoveryConfig::default()
-        }
-    }
-}
-
-impl From<zenoh::session::EntityGlobalId> for EntityGlobalId {
-    fn from(id: zenoh::session::EntityGlobalId) -> Self {
-        EntityGlobalId {
-            zid: id.zid(),
-            eid: id.eid(),
         }
     }
 }
