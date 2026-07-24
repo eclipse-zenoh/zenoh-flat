@@ -168,20 +168,20 @@ pub fn sample_get_source_zid(s: &Sample) -> Option<ZenohId> {
     s.source_info().map(|si| si.source_id().zid())
 }
 
-/// Return the entity identifier of the sample's source, or `0` when unknown.
+/// Return the entity identifier of the sample's source, when known.
 ///
 /// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn sample_get_source_eid(s: &Sample) -> u32 {
-    s.source_info().map(|si| si.source_id().eid()).unwrap_or(0)
+pub fn sample_get_source_eid(s: &Sample) -> Option<u32> {
+    s.source_info().map(|si| si.source_id().eid())
 }
 
-/// Return the source sequence number, or `0` when source information is absent.
+/// Return the source sequence number, when source information is present.
 ///
 /// This information is available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn sample_get_source_sn(s: &Sample) -> u32 {
-    s.source_info().map(|si| si.source_sn()).unwrap_or(0)
+pub fn sample_get_source_sn(s: &Sample) -> Option<u32> {
+    s.source_info().map(|si| si.source_sn())
 }
