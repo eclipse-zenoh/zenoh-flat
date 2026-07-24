@@ -21,8 +21,8 @@ use std::sync::mpsc;
 
 use clap::Parser;
 use zenoh_flat::{
-    QueryTarget, init_zenoh_logs_from_env_or, keyexpr_get_str, keyexpr_new_try_from, open,
-    reply_error_get_payload, reply_get_err, reply_get_sample, sample_get_key_expr,
+    QueryTarget, Selector, init_zenoh_logs_from_env_or, keyexpr_get_str, keyexpr_new_try_from,
+    open, reply_error_get_payload, reply_get_err, reply_get_sample, sample_get_key_expr,
     sample_get_payload, session_get, zbytes_as_bytes, zbytes_new_from_slice,
 };
 
@@ -49,8 +49,10 @@ fn main() -> Result<(), zenoh_flat::Error> {
     let (tx, rx) = mpsc::channel::<()>();
     session_get(
         &session,
-        &ke,
-        params,
+        Selector {
+            key_expr: ke,
+            parameters: params.unwrap_or_default(),
+        },
         Some(args.timeout as i64),
         Some(args.target.into()),
         None,

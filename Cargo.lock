@@ -4395,7 +4395,6 @@ dependencies = [
  "json5",
  "prebindgen",
  "prebindgen-proc-macro",
- "serde_yaml",
  "tracing",
  "zenoh",
  "zenoh-ext",

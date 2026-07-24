@@ -5,6 +5,7 @@ pub(crate) mod query_target;
 pub(crate) mod queryable;
 pub(crate) mod reply;
 pub(crate) mod reply_key_expr;
+pub(crate) mod selector;
 
 use prebindgen_proc_macro::prebindgen;
 use zenoh::{

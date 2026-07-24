@@ -1,14 +1,14 @@
 use std::time::Duration;
 
 use prebindgen_proc_macro::prebindgen;
-use zenoh::{Wait, query::Selector};
+use zenoh::Wait;
 
 #[cfg(feature = "unstable")]
 use crate::Reliability;
 use crate::{
     Config, CongestionControl, ConsolidationMode, Encoding, Error, KeyExpr, Priority, Publisher,
-    Querier, Query, QueryTarget, Queryable, Reply, ReplyKeyExpr, Sample, Session, Subscriber,
-    Timestamp, ZBytes, ZenohId, util::OnceDrop,
+    Querier, Query, QueryTarget, Queryable, Reply, ReplyKeyExpr, Sample, Selector, Session,
+    Subscriber, Timestamp, ZBytes, ZenohId, util::OnceDrop,
 };
 
 /// Open a session with the given configuration.
@@ -250,16 +250,15 @@ pub fn session_undeclare_keyexpr(session: &Session, key_expr: KeyExpr) -> Result
 
 /// Send a query to matching queryables.
 ///
-/// The callback is called for each reply. Optional arguments control selector
-/// parameters, timeout, targets, reply consolidation, accepted reply keys,
-/// delivery quality, payload metadata, and attachment. The close callback is
-/// called after the reply stream ends.
+/// The callback is called for each reply. Optional arguments control timeout,
+/// targets, reply consolidation, accepted reply keys, delivery quality, payload
+/// metadata, and attachment. The close callback is called after the reply
+/// stream ends.
 #[prebindgen]
 #[allow(clippy::too_many_arguments)]
 pub fn session_get(
     session: &Session,
-    key_expr: &KeyExpr,
-    parameters: Option<String>,
+    selector: Selector,
     timeout_ms: Option<i64>,
     target: Option<QueryTarget>,
     consolidation: Option<ConsolidationMode>,
@@ -273,9 +272,8 @@ pub fn session_get(
     callback: impl Fn(Reply) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
 ) -> Result<(), Error> {
-    let selector = Selector::owned(key_expr, parameters.unwrap_or_default());
     let on_close = OnceDrop::new(on_close);
-    let mut builder = session.get(selector);
+    let mut builder = session.get(zenoh::query::Selector::from(selector));
     if let Some(cc) = congestion_control {
         builder = builder.congestion_control(cc.into());
     }

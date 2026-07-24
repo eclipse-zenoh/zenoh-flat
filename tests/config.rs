@@ -14,11 +14,11 @@
 
 //! Configuration insert/get and parsing — the flat-API counterpart of
 //! eclipse-zenoh/zenoh-c's `tests/z_api_config_test.c` (`insert_get`), extended
-//! with the JSON5/JSON/YAML constructors `zenoh-flat` exposes.
+//! with the JSON5 constructor `zenoh-flat` exposes.
 
 use zenoh_flat::{
     config_get_json, config_insert_json5, config_new_clone, config_new_default,
-    config_new_from_json, config_new_from_json5, config_new_from_yaml,
+    config_new_from_json5,
 };
 
 /// Direct port of zenoh-c's `insert_get`: insert a scalar and a list value via
@@ -55,17 +55,10 @@ fn parse_from_json5() {
 }
 
 #[test]
-fn parse_from_json() {
-    let config = config_new_from_json("{ \"mode\": \"peer\" }").expect("parse json");
-    assert_eq!(
-        config_get_json(&config, "mode").expect("get mode"),
-        "\"peer\""
-    );
-}
-
-#[test]
-fn parse_from_yaml() {
-    let config = config_new_from_yaml("mode: peer\n").expect("parse yaml");
+fn parse_json_via_json5() {
+    // JSON is a subset of JSON5, so plain JSON text parses through the JSON5
+    // constructor as well.
+    let config = config_new_from_json5("{ \"mode\": \"peer\" }").expect("parse json");
     assert_eq!(
         config_get_json(&config, "mode").expect("get mode"),
         "\"peer\""
@@ -74,7 +67,7 @@ fn parse_from_yaml() {
 
 #[test]
 fn invalid_input_is_rejected() {
-    assert!(config_new_from_json("{ this is not valid json }").is_err());
+    assert!(config_new_from_json5("{ this is not valid json }").is_err());
     assert!(config_insert_json5(&mut config_new_default(), "mode", "not json5").is_err());
 }
 

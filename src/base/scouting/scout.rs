@@ -6,7 +6,9 @@ use crate::{Config, Error, Hello, Scout, util::OnceDrop};
 /// Discover Zenoh nodes and report each received hello message.
 ///
 /// `whatami` combines the node kinds to discover: router (`1`), peer (`2`),
-/// and client (`4`). When no configuration is supplied, the default scouting
+/// and client (`4`). A raw bitfield is used here deliberately: zenoh's
+/// `WhatAmIMatcher` is a Rust-specific type that does not translate cleanly to
+/// other languages. When no configuration is supplied, the default scouting
 /// configuration is used.
 ///
 /// The close callback is called when scouting ends.
