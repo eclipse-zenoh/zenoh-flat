@@ -41,10 +41,8 @@ pub struct EncodingStruct {
 impl From<&Encoding> for EncodingStruct {
     fn from(e: &Encoding) -> Self {
         EncodingStruct {
-            id: e.id() as i32,
-            schema: e
-                .schema()
-                .and_then(|s| std::str::from_utf8(s).ok().map(str::to_string)),
+            id: encoding_get_id(e),
+            schema: encoding_get_schema(e),
         }
     }
 }
