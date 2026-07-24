@@ -35,6 +35,16 @@ pub fn config_new_from_json5(s: &str) -> Result<Config, Error> {
     json5::from_str::<Config>(s).map_err(|e| format!("JSON error: {e}").into())
 }
 
+/// Parse a configuration from a YAML-formatted string.
+///
+/// Base zenoh has no YAML constructor (it parses YAML only when loading a
+/// `.yaml` file via [`zenoh::Config::from_file`]); this is a binding
+/// convenience for parsing YAML held in memory.
+#[prebindgen]
+pub fn config_new_from_yaml(s: &str) -> Result<Config, Error> {
+    serde_yaml::from_str::<Config>(s).map_err(|e| format!("YAML error: {e}").into())
+}
+
 /// Return the JSON value associated with `key` in the configuration.
 #[prebindgen]
 pub fn config_get_json(c: &Config, key: &str) -> Result<String, Error> {
