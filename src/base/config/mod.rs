@@ -26,13 +26,12 @@ pub fn config_new_from_file(path: &str) -> Result<Config, Error> {
 
 /// Parse a configuration from a JSON5-formatted string.
 ///
-/// The counterpart of [`zenoh::Config::from_json5`]. JSON is a subset of JSON5,
-/// so plain JSON text parses as well.
+/// Delegates to [`zenoh::Config::from_json5`], so it applies zenoh's own
+/// validation: a config that deserializes but is semantically invalid is
+/// rejected. JSON is a subset of JSON5, so plain JSON text parses as well.
 #[prebindgen]
 pub fn config_new_from_json5(s: &str) -> Result<Config, Error> {
-    // Stable serde path (`Config: Deserialize`), matching zenoh-c's
-    // `json5::from_str`. (`Config::from_deserializer` is an `#[unstable]` API.)
-    json5::from_str::<Config>(s).map_err(|e| format!("JSON error: {e}").into())
+    Config::from_json5(s)
 }
 
 /// Parse a configuration from a YAML-formatted string.
