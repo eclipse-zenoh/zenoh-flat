@@ -9,9 +9,9 @@ use zenoh::{
 };
 
 use self::sample_kind::SampleKind;
-#[cfg(feature = "unstable")]
-use crate::Reliability;
 use crate::{CongestionControl, Encoding, KeyExpr, Priority, Sample, Timestamp, ZBytes};
+#[cfg(feature = "unstable")]
+use crate::{Reliability, SourceInfo};
 
 /// Create a sample that publishes a value.
 ///
@@ -159,4 +159,96 @@ pub fn sample_get_attachment(s: &Sample) -> Option<&ZBytes> {
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn sample_get_reliability(s: &Sample) -> Reliability {
     s.reliability().into()
+}
+
+/// A sample decomposed into its fields as a plain value.
+///
+/// This is the value form of [`Sample`]: it owns a full copy of every field,
+/// for callers that prefer the whole sample as data over reading fields from
+/// the handle one at a time.
+#[prebindgen]
+#[derive(Clone, Debug)]
+pub struct SampleStruct {
+    /// Key expression on which the sample was published.
+    pub key_expr: KeyExpr,
+    /// Sample payload.
+    pub payload: ZBytes,
+    /// Format information associated with the payload.
+    pub encoding: Encoding,
+    /// Whether the sample publishes a value or announces a deletion.
+    pub kind: SampleKind,
+    /// Publication timestamp, when present.
+    pub timestamp: Option<Timestamp>,
+    /// Whether express delivery was requested.
+    pub express: bool,
+    /// Delivery priority.
+    pub priority: Priority,
+    /// Congestion-control policy used for the sample.
+    pub congestion_control: CongestionControl,
+    /// User-defined metadata associated with the sample, when present.
+    pub attachment: Option<ZBytes>,
+    /// Reliability policy used to deliver the sample. Available only when
+    /// unstable features are enabled.
+    #[cfg(feature = "unstable")]
+    pub reliability: Reliability,
+    /// Source information, when known. Available only when unstable features
+    /// are enabled.
+    #[cfg(feature = "unstable")]
+    pub source_info: Option<SourceInfo>,
+}
+
+impl From<&Sample> for SampleStruct {
+    fn from(s: &Sample) -> Self {
+        SampleStruct {
+            key_expr: s.key_expr().clone(),
+            payload: s.payload().clone(),
+            encoding: s.encoding().clone(),
+            kind: s.kind().into(),
+            timestamp: s.timestamp().cloned(),
+            express: s.express(),
+            priority: s.priority().into(),
+            congestion_control: s.congestion_control().into(),
+            attachment: s.attachment().cloned(),
+            #[cfg(feature = "unstable")]
+            reliability: s.reliability().into(),
+            #[cfg(feature = "unstable")]
+            source_info: s.source_info().map(SourceInfo::from),
+        }
+    }
+}
+
+/// Decompose a sample into its [`SampleStruct`] value form.
+#[prebindgen]
+pub fn sample_to_struct(s: &Sample) -> SampleStruct {
+    s.into()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{keyexpr_new_try_from, zbytes_new_from_slice};
+
+    fn put_sample() -> Sample {
+        let ke = keyexpr_new_try_from("test/ke".to_string()).unwrap();
+        sample_new_put(
+            ke,
+            zbytes_new_from_slice(b"hello"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(true),
+            #[cfg(feature = "unstable")]
+            None,
+        )
+    }
+
+    #[test]
+    fn sample_to_struct_mirrors_accessors() {
+        let s = put_sample();
+        let st = sample_to_struct(&s);
+        assert_eq!(st.express, sample_get_express(&s));
+        assert!(st.express);
+    }
 }
