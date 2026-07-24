@@ -51,24 +51,37 @@ are already in place; others are being rolled out under these rules.)
   configuration. A value is an ordinary Rust `struct` with public fields and crosses by copying
   them. Examples: `EntityGlobalId { zid, eid }`, `Miss { source, nb }`, and the input configs
   (`HistoryConfig`, `RecoveryConfig`, …).
-- **Twin** — a type worth having *both* ways. It holds real data you may want as a plain value, but
-  it also carries an unbounded payload you may not want to copy on every access. Such a type gets a
-  handle *and* a value form: the handle keeps zenoh's name (e.g. `Sample`) and the value form adds a
-  `Struct` suffix (`SampleStruct`), reached with a `<type>_to_struct` accessor. The payload-carrying
-  types are `Sample`, `Reply`, and `ReplyError` (each carries an unbounded `ZBytes`, directly or via
-  the sample/error it wraps).
+- **Twin** — a type worth having *both* ways. It is fully described by its fields (so it can be a
+  value), but it also carries a **payload** — an unbounded string, list, or `ZBytes` — you may not
+  want to copy on every access (so a handle lets you read the cheap fields without materializing it).
+  Such a type gets a handle *and* a value form: the handle keeps zenoh's name (`Sample`, `Encoding`)
+  and the value form adds a `Struct` suffix (`SampleStruct`, `EncodingStruct`), reached with a
+  `<type>_to_struct` accessor. Examples: `Sample`, `Reply`, `ReplyError`, `Hello`, `Encoding`.
 
 ### Choosing a shape
 
-Ask: **does an opaque handle earn its keep?**
+Two independent, objective questions — no "is it big or common enough?" guesswork:
 
-- Owns a resource, or is a live network object → **Handle**.
-- Small, pure data → **Value**.
-- Data *and* an unbounded payload (a `ZBytes`) → **Twin**, so a caller can read one field cheaply
-  off the handle *or* take the whole thing as a value, whichever suits them.
+- **Give it a handle?** Yes if the type is a **live resource** (a session, a subscription —
+  something with identity or a lifecycle, not just readable data), **or** if it has a **payload
+  field**: a `String`, a list, a `ZBytes`, or anything containing one. Across a language boundary
+  such a field is not free — every language must reallocate and re-encode it (a Rust `String`
+  becomes a Java `String`, a C `char*`, …), so a handle lets a caller read the cheap fields
+  (`Encoding`'s id) without paying to materialize the payload. This is an *output* concern: a type
+  you only ever *build and pass in*, like `Selector`, never lazily reads, so its string fields don't
+  force a handle.
+- **Give it a value form?** Yes if the type is **fully defined by its readable fields** — a data
+  snapshot, not an opaque resource.
 
-Add the value form only when it pays off: a tiny pure-data type gains nothing from a handle, and a
-live resource has no meaningful value form. Don't manufacture a second shape just for symmetry.
+A type can answer **yes to both** — that is exactly what a **twin** is (`Sample`, `Encoding`,
+`Hello`): a handle *and* a value form, no separate decision to make. A type of only cheap, fixed-size
+fields (an id, a timestamp) answers no to the handle question and is **value-only**. A live resource
+answers no to the value question and is **handle-only**.
+
+A **bounded**, fixed-maximum blob — a 16-byte node id — counts as cheap, not a payload: copying it
+whole is trivial. Only *unbounded* data (arbitrary-length strings and lists) is a materialization
+cost. So a `Timestamp` (an `i64` plus a ≤16-byte id) is value-only, while an `Encoding` (which
+carries a schema `String`) is a twin.
 
 ### Naming
 
@@ -83,13 +96,13 @@ A value form must mirror zenoh **exactly**: the same field types and the same op
 expressed with ordinary Rust types (`u32`, `Option<u32>`), never a wire- or binding-specific type.
 
 - **Never fake "unknown" with a sentinel.** If zenoh returns an `Option`, flat returns an `Option`.
-  For a sample's source, "no source information at all" and "source entity id is `0`" are different
-  facts and must stay different — `sample_get_source_eid` returns `Option<u32>`, not a `u32` with
-  `0` meaning absent. (Collapsing the two was the bug in
+  For a sample's source, "no source information at all" and "the source's fields happen to be `0`"
+  are different facts and must stay different — `sample_get_source_info` returns `Option<SourceInfo>`
+  (absent ⇒ `None`), never a `SourceInfo` with zeroed fields. (Collapsing the two was the bug in
   [issue #10](https://github.com/ZettaScaleLabs/zenoh-flat/issues/10).)
-- **Put the optionality on the right edge.** When a sample's source is known, its id and sequence
-  number always exist; only the *whole* source-info is optional. So those fields are non-optional
-  and the parent carries the `Option`, not a struct full of `Option` fields.
+- **Put the optionality on the right edge.** When a sample's source is known, its entity id and
+  sequence number always exist; only the *whole* source-info is optional. So those fields are
+  non-optional and the parent carries the `Option`, not a struct full of `Option` fields.
 
 ### One source of truth per field
 
