@@ -79,10 +79,10 @@ pub struct ReplyStruct {
     pub sample: Option<SampleStruct>,
     /// The error carried by an unsuccessful reply.
     pub error: Option<ReplyErrorStruct>,
-    /// Identifier of the node that answered, when known. Available only when
-    /// unstable features are enabled.
+    /// Global identifier of the entity that answered, when known. Available
+    /// only when unstable features are enabled.
     #[cfg(feature = "unstable")]
-    pub replier: Option<EntityGlobalId>,
+    pub replier_id: Option<EntityGlobalId>,
 }
 
 impl From<&Reply> for ReplyStruct {
@@ -95,7 +95,7 @@ impl From<&Reply> for ReplyStruct {
             sample,
             error,
             #[cfg(feature = "unstable")]
-            replier: r.replier_id().map(EntityGlobalId::from),
+            replier_id: r.replier_id().map(EntityGlobalId::from),
         }
     }
 }
