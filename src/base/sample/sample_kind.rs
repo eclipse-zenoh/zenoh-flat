@@ -2,7 +2,6 @@ use prebindgen_proc_macro::prebindgen;
 
 /// The change represented by a sample.
 #[prebindgen]
-#[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SampleKind {
     /// The sample publishes or updates a value.

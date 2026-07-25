@@ -2,7 +2,6 @@ use prebindgen_proc_macro::prebindgen;
 
 /// The delivery priority of a message, from real-time to background traffic.
 #[prebindgen]
-#[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Priority {
     /// Highest priority for real-time data.

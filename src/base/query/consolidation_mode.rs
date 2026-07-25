@@ -2,7 +2,6 @@ use prebindgen_proc_macro::prebindgen;
 
 /// The policy used to combine replies from multiple queryables.
 #[prebindgen]
-#[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ConsolidationMode {
     /// Let Zenoh choose an appropriate consolidation policy.

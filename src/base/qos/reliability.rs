@@ -4,7 +4,6 @@ use prebindgen_proc_macro::prebindgen;
 ///
 /// This policy is available only when unstable features are enabled.
 #[prebindgen(cfg = "feature = \"unstable\"")]
-#[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Reliability {
     /// Prefer lower overhead without retransmission guarantees.

@@ -127,6 +127,12 @@ flat offers the menu — handle, value, or both — and each language binding se
 suit it. flat itself never names a target language or wire detail (C, JNI, Kotlin, pointer widths,
 …); turning these shapes into a concrete ABI is the binding generator's job.
 
+This is why **enums carry no `#[repr]`**. An integer width is a wire detail, so the choice belongs
+to the adapter, which already declares its own representation. The one exception is an enum whose
+discriminants *are* data rather than an ordinal sequence — `WhatAmI`, whose values are bit flags
+combined into the bitfield `scout` takes. There the numbers are part of the type's meaning, so the
+`repr` stays.
+
 ## Layout
 
 All API lives under `src/base/`, grouped by area (`keyexpr`, `config`, `bytes`,

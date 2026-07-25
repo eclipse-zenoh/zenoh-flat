@@ -2,7 +2,6 @@ use prebindgen_proc_macro::prebindgen;
 
 /// The set of queryables that should receive a query.
 #[prebindgen]
-#[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum QueryTarget {
     /// Let Zenoh choose the most appropriate queryable targets.

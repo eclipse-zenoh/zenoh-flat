@@ -2,7 +2,6 @@ use prebindgen_proc_macro::prebindgen;
 
 /// Congestion control policy used when routing data.
 #[prebindgen]
-#[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CongestionControl {
     /// Drop messages when buffers are full.

@@ -2,7 +2,6 @@ use prebindgen_proc_macro::prebindgen;
 
 /// Whether replies may use key expressions that do not match the query.
 #[prebindgen]
-#[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ReplyKeyExpr {
     /// Accept replies with any key expression.
