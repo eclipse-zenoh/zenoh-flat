@@ -83,6 +83,35 @@ fn id_round_trips() {
     let id = encoding_get_id(string_enc);
     let rebuilt = encoding_new_from_id(id, None);
     assert_eq!(encoding_to_string(&rebuilt), encoding_to_string(string_enc));
+    assert_eq!(encoding_get_schema(&rebuilt), None);
+}
+
+/// A schema carried alongside the id round-trips too, and renders as
+/// `<id>;<schema>` when it is text.
+#[test]
+fn id_and_schema_round_trip() {
+    let id = encoding_get_id(encoding_const_zenoh_string());
+    let schema = b"utf8".to_vec();
+    let e = encoding_new_from_id(id, Some(schema.clone()));
+    assert_eq!(encoding_get_id(&e), id);
+    assert_eq!(encoding_get_schema(&e), Some(schema));
+    assert_eq!(encoding_to_string(&e), "zenoh/string;utf8");
+}
+
+/// A schema is raw bytes on the wire, so one that is not valid UTF-8 survives
+/// the `(id, schema)` round-trip unchanged. No `encoding_to_string` assertion
+/// here: the base rendering deliberately replaces such a schema with
+/// `unknown(non-utf8)`, so the textual form is not a round-trip path.
+#[test]
+fn non_utf8_schema_round_trips() {
+    let original = encoding_new_from_id(1, Some(vec![0xff, 0xfe, 0xfd]));
+    let rebuilt = encoding_new_from_id(encoding_get_id(&original), encoding_get_schema(&original));
+    assert_eq!(encoding_get_id(&rebuilt), encoding_get_id(&original));
+    assert_eq!(
+        encoding_get_schema(&rebuilt),
+        encoding_get_schema(&original)
+    );
+    assert_eq!(encoding_get_schema(&rebuilt), Some(vec![0xff, 0xfe, 0xfd]));
 }
 
 #[test]
