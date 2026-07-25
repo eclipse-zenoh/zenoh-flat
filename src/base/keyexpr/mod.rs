@@ -24,15 +24,20 @@ pub fn keyexpr_new_clone(ke: &KeyExpr) -> KeyExpr {
     ke.clone()
 }
 
-/// Return the canonical text of a key expression.
+/// Return the canonical text of a key expression as an owned copy.
+///
+/// Use [`keyexpr_as_str`] to read the text without copying it.
 #[prebindgen]
 pub fn keyexpr_to_string(ke: &KeyExpr) -> String {
     ke.as_str().to_string()
 }
 
-/// Return the canonical text of a key expression.
+/// Borrow the canonical text of a key expression.
+///
+/// The text is valid for as long as the key expression is. Use
+/// [`keyexpr_to_string`] when an owned copy is needed.
 #[prebindgen]
-pub fn keyexpr_get_str(ke: &KeyExpr) -> &str {
+pub fn keyexpr_as_str(ke: &KeyExpr) -> &str {
     ke.as_str()
 }
 

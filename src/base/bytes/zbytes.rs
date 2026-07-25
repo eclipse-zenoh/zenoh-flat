@@ -6,7 +6,7 @@ use crate::ZBytes;
 
 /// Return the payload as a contiguous sequence of bytes.
 #[prebindgen]
-pub fn zbytes_as_bytes(z: &ZBytes) -> Cow<'_, [u8]> {
+pub fn zbytes_to_bytes(z: &ZBytes) -> Cow<'_, [u8]> {
     z.to_bytes()
 }
 

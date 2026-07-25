@@ -18,7 +18,7 @@
 
 use zenoh_flat::{
     config_insert_json5, config_new_default, open, session_close, session_get_peers_zid,
-    session_get_routers_zid, session_get_zid, session_is_closed, zenoh_id_to_bytes,
+    session_get_routers_zid, session_get_zid, session_is_closed, zenoh_id_to_le_bytes,
     zenoh_id_to_string,
 };
 
@@ -59,7 +59,7 @@ fn zid_has_string_and_byte_form() {
 
     let zid = session_get_zid(&session);
     let s = zenoh_id_to_string(&zid);
-    let bytes = zenoh_id_to_bytes(&zid);
+    let bytes = zenoh_id_to_le_bytes(&zid);
 
     assert!(!s.is_empty(), "zid string form must not be empty");
     assert_eq!(

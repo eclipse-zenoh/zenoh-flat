@@ -21,9 +21,9 @@ use std::{
 };
 
 use zenoh_flat::{
-    Sample, SampleKind, config_new_default, keyexpr_get_str, keyexpr_new_try_from, open,
+    Sample, SampleKind, config_new_default, keyexpr_as_str, keyexpr_new_try_from, open,
     sample_get_key_expr, sample_get_kind, sample_get_payload, session_declare_subscriber,
-    session_put, zbytes_as_bytes, zbytes_new_from_slice,
+    session_put, zbytes_new_from_slice, zbytes_to_bytes,
 };
 
 struct Got {
@@ -44,8 +44,8 @@ fn put_is_received_by_subscriber() {
         keyexpr_new_try_from("test/pubsub/**".to_string()).expect("sub key expr"),
         move |sample: Sample| {
             let got = Got {
-                key: keyexpr_get_str(sample_get_key_expr(&sample)).to_string(),
-                payload: zbytes_as_bytes(sample_get_payload(&sample)).into_owned(),
+                key: keyexpr_as_str(sample_get_key_expr(&sample)).to_string(),
+                payload: zbytes_to_bytes(sample_get_payload(&sample)).into_owned(),
                 kind: sample_get_kind(&sample),
             };
             let (lock, cv) = &*slot_cb;

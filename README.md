@@ -88,6 +88,12 @@ carries an arbitrary-length schema) is a twin.
 - The `Struct` suffix exists *only* to tell a value apart from a same-named handle (`Sample` →
   `SampleStruct`). A value with no handle uses the plain name (`EntityGlobalId`, `Miss`).
 - Functions are `<type>_<verb>`: `sample_get_payload`, `sample_new_put`, `keyexpr_new_try_from`.
+- **The `<verb>` mirrors zenoh's own method name**, so a flat name can be translated back by
+  inspection: `ZBytes::to_bytes` → `zbytes_to_bytes`, `ZenohId::to_le_bytes` →
+  `zenoh_id_to_le_bytes`, `keyexpr::as_str` → `keyexpr_as_str`, `Sample::key_expr` →
+  `sample_get_key_expr`. The same holds for value-struct fields: `CacheConfig::replies_config`
+  keeps zenoh's field name. Where zenoh spells a name as one word, so does flat
+  (`Session::declare_keyexpr` → `session_declare_keyexpr`).
 
 ### Be faithful to zenoh — the most important rule
 

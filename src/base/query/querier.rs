@@ -44,7 +44,7 @@ pub fn querier_get(
 
 /// Return the key expression targeted by this querier.
 #[prebindgen]
-pub fn querier_get_keyexpr(querier: &Querier) -> &KeyExpr {
+pub fn querier_get_key_expr(querier: &Querier) -> &KeyExpr {
     querier.key_expr()
 }
 

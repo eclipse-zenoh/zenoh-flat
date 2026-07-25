@@ -16,7 +16,7 @@
 
 use clap::Parser;
 use zenoh_flat::{
-    SampleKind, init_zenoh_logs_from_env_or, keyexpr_get_str, keyexpr_new_try_from,
+    SampleKind, init_zenoh_logs_from_env_or, keyexpr_as_str, keyexpr_new_try_from,
     liveliness_declare_subscriber, open, sample_get_key_expr, sample_get_kind,
 };
 
@@ -38,7 +38,7 @@ fn main() -> Result<(), zenoh_flat::Error> {
         ke,
         args.history,
         |sample| {
-            let ke = keyexpr_get_str(sample_get_key_expr(&sample));
+            let ke = keyexpr_as_str(sample_get_key_expr(&sample));
             match sample_get_kind(&sample) {
                 SampleKind::Put => {
                     println!(">> [LivelinessSubscriber] New alive token ('{ke}')")

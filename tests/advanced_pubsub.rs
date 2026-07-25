@@ -30,10 +30,10 @@ use zenoh_flat::{
     CacheConfig, HistoryConfig, MissDetectionConfig, RecoveryConfig, Sample, SampleKind,
     advanced_publisher_declare_matching_listener, advanced_publisher_matching_status,
     advanced_publisher_put, advanced_subscriber_declare_detect_publishers_subscriber,
-    advanced_subscriber_declare_sample_miss_listener, config_new_default, keyexpr_get_str,
+    advanced_subscriber_declare_sample_miss_listener, config_new_default, keyexpr_as_str,
     keyexpr_new_try_from, open, sample_get_key_expr, sample_get_kind, sample_get_payload,
-    session_declare_advanced_publisher, session_declare_advanced_subscriber, zbytes_as_bytes,
-    zbytes_new_from_slice,
+    session_declare_advanced_publisher, session_declare_advanced_subscriber, zbytes_new_from_slice,
+    zbytes_to_bytes,
 };
 
 struct Got {
@@ -57,8 +57,8 @@ fn advanced_put_is_received_and_matching_detected() {
         keyexpr_new_try_from("test/adv/**".to_string()).expect("sub key expr"),
         move |sample: Sample| {
             let got = Got {
-                key: keyexpr_get_str(sample_get_key_expr(&sample)).to_string(),
-                payload: zbytes_as_bytes(sample_get_payload(&sample)).into_owned(),
+                key: keyexpr_as_str(sample_get_key_expr(&sample)).to_string(),
+                payload: zbytes_to_bytes(sample_get_payload(&sample)).into_owned(),
                 kind: sample_get_kind(&sample),
             };
             let (lock, cv) = &*slot_cb;

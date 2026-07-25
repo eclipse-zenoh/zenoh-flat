@@ -19,7 +19,7 @@ use crate::{Encoding, Error, KeyExpr, Query, Sample, ZBytes};
 
 /// Return the key expression targeted by the query.
 #[prebindgen]
-pub fn query_get_keyexpr(q: &Query) -> &KeyExpr {
+pub fn query_get_key_expr(q: &Query) -> &KeyExpr {
     q.key_expr()
 }
 

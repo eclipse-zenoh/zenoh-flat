@@ -42,7 +42,7 @@ pub fn publisher_delete(publisher: &Publisher, attachment: Option<ZBytes>) -> Re
 
 /// Return the key expression on which this publisher publishes.
 #[prebindgen]
-pub fn publisher_get_keyexpr(publisher: &Publisher) -> &KeyExpr {
+pub fn publisher_get_key_expr(publisher: &Publisher) -> &KeyExpr {
     publisher.key_expr()
 }
 

@@ -17,8 +17,8 @@
 use clap::Parser;
 use zenoh_flat::{
     init_zenoh_logs_from_env_or, keyexpr_new_try_from, open, query_get_parameters,
-    query_get_payload, query_reply_success, session_declare_queryable, zbytes_as_bytes,
-    zbytes_new_from_slice,
+    query_get_payload, query_reply_success, session_declare_queryable, zbytes_new_from_slice,
+    zbytes_to_bytes,
 };
 
 #[path = "common/mod.rs"]
@@ -50,7 +50,7 @@ fn main() -> Result<(), zenoh_flat::Error> {
                 Some(p) => println!(
                     ">> [Queryable] Received Query (params: '{}') with payload '{}'",
                     query_get_parameters(&query),
-                    String::from_utf8_lossy(zbytes_as_bytes(p).as_ref())
+                    String::from_utf8_lossy(zbytes_to_bytes(p).as_ref())
                 ),
             }
             println!(">> [Queryable] Responding ('{key}': '{payload}')");

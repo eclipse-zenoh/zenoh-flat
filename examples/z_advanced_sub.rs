@@ -24,8 +24,8 @@
 use clap::Parser;
 use zenoh_flat::{
     HistoryConfig, RecoveryConfig, advanced_subscriber_declare_sample_miss_listener,
-    init_zenoh_logs_from_env_or, keyexpr_get_str, keyexpr_new_try_from, open, sample_get_key_expr,
-    sample_get_kind, sample_get_payload, session_declare_advanced_subscriber, zbytes_as_bytes,
+    init_zenoh_logs_from_env_or, keyexpr_as_str, keyexpr_new_try_from, open, sample_get_key_expr,
+    sample_get_kind, sample_get_payload, session_declare_advanced_subscriber, zbytes_to_bytes,
     zenoh_id_to_string,
 };
 
@@ -46,12 +46,12 @@ fn main() -> Result<(), zenoh_flat::Error> {
         &session,
         ke,
         |sample| {
-            let bytes = zbytes_as_bytes(sample_get_payload(&sample));
+            let bytes = zbytes_to_bytes(sample_get_payload(&sample));
             let payload = String::from_utf8_lossy(bytes.as_ref());
             println!(
                 ">> [Subscriber] Received {:?} ('{}': '{}')",
                 sample_get_kind(&sample),
-                keyexpr_get_str(sample_get_key_expr(&sample)),
+                keyexpr_as_str(sample_get_key_expr(&sample)),
                 payload
             );
         },

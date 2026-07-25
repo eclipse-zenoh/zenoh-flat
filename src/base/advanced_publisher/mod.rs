@@ -43,7 +43,7 @@ pub struct CacheConfig {
     /// How many samples to keep for each resource.
     pub max_samples: u64,
     /// Delivery quality applied to the replies served from the cache.
-    pub replies: RepliesConfig,
+    pub replies_config: RepliesConfig,
 }
 
 impl Default for RepliesConfig {
@@ -60,7 +60,7 @@ impl Default for CacheConfig {
     fn default() -> Self {
         CacheConfig {
             max_samples: 1,
-            replies: RepliesConfig::default(),
+            replies_config: RepliesConfig::default(),
         }
     }
 }
@@ -78,7 +78,7 @@ impl From<CacheConfig> for zenoh_ext::CacheConfig {
     fn from(c: CacheConfig) -> Self {
         zenoh_ext::CacheConfig::default()
             .max_samples(c.max_samples as usize)
-            .replies_config(c.replies.into())
+            .replies_config(c.replies_config.into())
     }
 }
 
@@ -187,7 +187,7 @@ pub fn advanced_publisher_delete(
 ///
 /// Available only when unstable features are enabled.
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn advanced_publisher_get_keyexpr(publisher: &AdvancedPublisher) -> &KeyExpr {
+pub fn advanced_publisher_get_key_expr(publisher: &AdvancedPublisher) -> &KeyExpr {
     publisher.key_expr()
 }
 

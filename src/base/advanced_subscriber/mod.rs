@@ -227,7 +227,7 @@ pub fn advanced_subscriber_declare_background_detect_publishers_subscriber(
 ///
 /// Available only when unstable features are enabled.
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn advanced_subscriber_get_keyexpr(subscriber: &AdvancedSubscriber) -> &KeyExpr {
+pub fn advanced_subscriber_get_key_expr(subscriber: &AdvancedSubscriber) -> &KeyExpr {
     subscriber.key_expr()
 }
 

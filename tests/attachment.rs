@@ -26,8 +26,8 @@ use std::{
 
 use zenoh_flat::{
     Sample, config_new_default, keyexpr_new_try_from, open, sample_get_attachment,
-    sample_get_payload, session_declare_subscriber, session_put, zbytes_as_bytes,
-    zbytes_new_from_slice,
+    sample_get_payload, session_declare_subscriber, session_put, zbytes_new_from_slice,
+    zbytes_to_bytes,
 };
 
 struct Got {
@@ -48,8 +48,8 @@ fn put_and_receive(attachment: Option<&[u8]>) -> Got {
         keyexpr_new_try_from("test/attachment/**".to_string()).expect("sub key expr"),
         move |sample: Sample| {
             let got = Got {
-                payload: zbytes_as_bytes(sample_get_payload(&sample)).into_owned(),
-                attachment: sample_get_attachment(&sample).map(|z| zbytes_as_bytes(z).into_owned()),
+                payload: zbytes_to_bytes(sample_get_payload(&sample)).into_owned(),
+                attachment: sample_get_attachment(&sample).map(|z| zbytes_to_bytes(z).into_owned()),
             };
             let (lock, cv) = &*slot_cb;
             *lock.lock().unwrap() = Some(got);

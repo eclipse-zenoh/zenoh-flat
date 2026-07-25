@@ -18,8 +18,8 @@ use std::sync::mpsc;
 
 use clap::Parser;
 use zenoh_flat::{
-    init_zenoh_logs_from_env_or, keyexpr_get_str, keyexpr_new_try_from, liveliness_get, open,
-    reply_error_get_payload, reply_get_err, reply_get_sample, sample_get_key_expr, zbytes_as_bytes,
+    init_zenoh_logs_from_env_or, keyexpr_as_str, keyexpr_new_try_from, liveliness_get, open,
+    reply_error_get_payload, reply_get_err, reply_get_sample, sample_get_key_expr, zbytes_to_bytes,
 };
 
 #[path = "common/mod.rs"]
@@ -45,10 +45,10 @@ fn main() -> Result<(), zenoh_flat::Error> {
             if let Some(sample) = reply_get_sample(&reply) {
                 println!(
                     ">> Alive token ('{}')",
-                    keyexpr_get_str(sample_get_key_expr(sample))
+                    keyexpr_as_str(sample_get_key_expr(sample))
                 );
             } else if let Some(err) = reply_get_err(&reply) {
-                let bytes = zbytes_as_bytes(reply_error_get_payload(err));
+                let bytes = zbytes_to_bytes(reply_error_get_payload(err));
                 println!(
                     ">> Received (ERROR: '{}')",
                     String::from_utf8_lossy(bytes.as_ref())

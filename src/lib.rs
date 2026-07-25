@@ -127,7 +127,7 @@ pub use crate::base::advanced_publisher::{
     CacheConfig, MissDetectionConfig, RepliesConfig,
     advanced_publisher_declare_background_matching_listener,
     advanced_publisher_declare_matching_listener, advanced_publisher_delete,
-    advanced_publisher_get_keyexpr, advanced_publisher_matching_status, advanced_publisher_put,
+    advanced_publisher_get_key_expr, advanced_publisher_matching_status, advanced_publisher_put,
     advanced_publisher_undeclare, matching_listener_undeclare, session_declare_advanced_publisher,
 };
 #[cfg(feature = "unstable")]
@@ -136,7 +136,7 @@ pub use crate::base::advanced_subscriber::{
     advanced_subscriber_declare_background_detect_publishers_subscriber,
     advanced_subscriber_declare_background_sample_miss_listener,
     advanced_subscriber_declare_detect_publishers_subscriber,
-    advanced_subscriber_declare_sample_miss_listener, advanced_subscriber_get_keyexpr,
+    advanced_subscriber_declare_sample_miss_listener, advanced_subscriber_get_key_expr,
     advanced_subscriber_undeclare, sample_miss_listener_undeclare,
     session_declare_advanced_subscriber,
 };
@@ -194,17 +194,17 @@ pub use crate::base::{
             encoding_new_from_id, encoding_new_from_string, encoding_new_with_schema,
             encoding_to_string, encoding_to_struct,
         },
-        zbytes::{zbytes_as_bytes, zbytes_new_clone, zbytes_new_from_slice, zbytes_new_from_vec},
+        zbytes::{zbytes_new_clone, zbytes_new_from_slice, zbytes_new_from_vec, zbytes_to_bytes},
     },
     config::{
         config_get_json, config_insert_json5, config_new_clone, config_new_default,
         config_new_from_file, config_new_from_json5, config_new_from_yaml,
         whatami::WhatAmI,
-        zenoh_id::{zenoh_id_to_bytes, zenoh_id_to_string},
+        zenoh_id::{zenoh_id_to_le_bytes, zenoh_id_to_string},
     },
     error::error_get_message,
     keyexpr::{
-        keyexpr_get_str, keyexpr_includes, keyexpr_intersects, keyexpr_new_autocanonize,
+        keyexpr_as_str, keyexpr_includes, keyexpr_intersects, keyexpr_new_autocanonize,
         keyexpr_new_clone, keyexpr_new_concat, keyexpr_new_join, keyexpr_new_try_from,
         keyexpr_to_string,
     },
@@ -213,7 +213,7 @@ pub use crate::base::{
         liveliness_undeclare_token,
     },
     logger::{init_android_logs, init_zenoh_logs_from_env_or, try_init_zenoh_logs_from_env},
-    publisher::{publisher_delete, publisher_get_keyexpr, publisher_put, publisher_undeclare},
+    publisher::{publisher_delete, publisher_get_key_expr, publisher_put, publisher_undeclare},
     qos::{congestion_control::CongestionControl, priority::Priority},
     query::{
         consolidation_mode::ConsolidationMode,
@@ -221,12 +221,12 @@ pub use crate::base::{
             parameters_contains_key, parameters_extend, parameters_get, parameters_insert,
             parameters_is_well_formed, parameters_remove, parameters_values,
         },
-        querier::{querier_get, querier_get_keyexpr, querier_undeclare},
-        query_get_attachment, query_get_encoding, query_get_keyexpr, query_get_parameters,
+        querier::{querier_get, querier_get_key_expr, querier_undeclare},
+        query_get_attachment, query_get_encoding, query_get_key_expr, query_get_parameters,
         query_get_payload, query_reply_delete, query_reply_error, query_reply_sample,
         query_reply_success,
         query_target::QueryTarget,
-        queryable::{queryable_get_keyexpr, queryable_undeclare},
+        queryable::{queryable_get_key_expr, queryable_undeclare},
         reply::{
             ReplyErrorStruct, ReplyStruct, reply_error_get_encoding, reply_error_get_payload,
             reply_error_to_struct, reply_get_err, reply_get_sample, reply_is_ok, reply_to_struct,
@@ -253,6 +253,6 @@ pub use crate::base::{
         session_get_zid, session_is_closed, session_new_timestamp, session_put,
         session_undeclare_keyexpr,
     },
-    subscriber::{subscriber_get_keyexpr, subscriber_undeclare},
+    subscriber::{subscriber_get_key_expr, subscriber_undeclare},
     time::timestamp::Timestamp,
 };

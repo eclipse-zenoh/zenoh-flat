@@ -7,7 +7,7 @@ use crate::{Error, KeyExpr, Queryable};
 
 /// Return the key expression on which this queryable answers.
 #[prebindgen]
-pub fn queryable_get_keyexpr(queryable: &Queryable) -> &KeyExpr {
+pub fn queryable_get_key_expr(queryable: &Queryable) -> &KeyExpr {
     queryable.key_expr()
 }
 

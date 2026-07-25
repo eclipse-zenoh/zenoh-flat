@@ -22,7 +22,7 @@ use clap::Parser;
 use zenoh_flat::{
     init_zenoh_logs_from_env_or, keyexpr_new_try_from, open, sample_get_attachment,
     sample_get_key_expr, sample_get_kind, sample_get_payload, session_declare_subscriber,
-    zbytes_as_bytes,
+    zbytes_to_bytes,
 };
 
 #[path = "common/mod.rs"]
@@ -42,18 +42,18 @@ fn main() -> Result<(), zenoh_flat::Error> {
         &session,
         ke,
         |sample| {
-            let bytes = zbytes_as_bytes(sample_get_payload(&sample));
+            let bytes = zbytes_to_bytes(sample_get_payload(&sample));
             let payload = String::from_utf8_lossy(bytes.as_ref());
             print!(
                 ">> [Subscriber] Received {:?} ('{}': '{}')",
                 sample_get_kind(&sample),
-                zenoh_flat::keyexpr_get_str(sample_get_key_expr(&sample)),
+                zenoh_flat::keyexpr_as_str(sample_get_key_expr(&sample)),
                 payload
             );
             if let Some(att) = sample_get_attachment(&sample) {
                 print!(
                     " ({})",
-                    String::from_utf8_lossy(zbytes_as_bytes(att).as_ref())
+                    String::from_utf8_lossy(zbytes_to_bytes(att).as_ref())
                 );
             }
             println!();

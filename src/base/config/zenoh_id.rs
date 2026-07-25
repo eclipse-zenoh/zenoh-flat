@@ -4,7 +4,7 @@ use crate::ZenohId;
 
 /// Serialize a Zenoh node identifier as raw bytes (16 bytes, little-endian).
 #[prebindgen]
-pub fn zenoh_id_to_bytes(z: &ZenohId) -> Vec<u8> {
+pub fn zenoh_id_to_le_bytes(z: &ZenohId) -> Vec<u8> {
     z.to_le_bytes().to_vec()
 }
 

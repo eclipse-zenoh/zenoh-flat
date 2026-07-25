@@ -7,7 +7,7 @@ use crate::{Error, KeyExpr, Subscriber};
 
 /// Return the key expression on which this subscriber listens.
 #[prebindgen]
-pub fn subscriber_get_keyexpr(subscriber: &Subscriber) -> &KeyExpr {
+pub fn subscriber_get_key_expr(subscriber: &Subscriber) -> &KeyExpr {
     subscriber.key_expr()
 }
 
