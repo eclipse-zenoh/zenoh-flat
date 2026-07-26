@@ -145,7 +145,7 @@ pub use crate::base::keyexpr::keyexpr_relation_to;
 #[cfg(feature = "unstable")]
 pub use crate::base::keyexpr::set_intersection_level::SetIntersectionLevel;
 #[cfg(feature = "unstable")]
-pub use crate::base::publisher::publisher_get_id;
+pub use crate::base::publisher::{publisher_get_id, publisher_get_reliability};
 #[cfg(feature = "unstable")]
 pub use crate::base::qos::reliability::Reliability;
 #[cfg(feature = "unstable")]
@@ -211,7 +211,10 @@ pub use crate::base::{
         liveliness_undeclare_token,
     },
     logger::{init_android_logs, init_zenoh_logs_from_env_or, try_init_zenoh_logs_from_env},
-    publisher::{publisher_delete, publisher_get_key_expr, publisher_put, publisher_undeclare},
+    publisher::{
+        publisher_delete, publisher_get_congestion_control, publisher_get_encoding,
+        publisher_get_key_expr, publisher_get_priority, publisher_put, publisher_undeclare,
+    },
     qos::{congestion_control::CongestionControl, priority::Priority},
     query::{
         consolidation_mode::ConsolidationMode,
