@@ -97,9 +97,7 @@ pub type LivelinessToken = zenoh::liveliness::LivelinessToken;
 /// publisher detection). Available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 pub type AdvancedPublisher = zenoh_ext::AdvancedPublisher<'static>;
-/// A listener notified when a publisher's matching status changes. Available
-/// only when unstable features are enabled.
-#[cfg(feature = "unstable")]
+/// A listener notified when a publisher's matching status changes.
 pub type MatchingListener = zenoh::matching::MatchingListener<()>;
 /// A subscription with advanced features (history query, missed-sample
 /// recovery, subscriber detection). Available only when unstable features are
@@ -126,7 +124,7 @@ pub use crate::base::advanced_publisher::{
     advanced_publisher_declare_background_matching_listener,
     advanced_publisher_declare_matching_listener, advanced_publisher_delete,
     advanced_publisher_get_key_expr, advanced_publisher_matching_status, advanced_publisher_put,
-    advanced_publisher_undeclare, matching_listener_undeclare, session_declare_advanced_publisher,
+    advanced_publisher_undeclare, session_declare_advanced_publisher,
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::advanced_subscriber::{
@@ -211,7 +209,12 @@ pub use crate::base::{
         liveliness_undeclare_token,
     },
     logger::{init_android_logs, init_zenoh_logs_from_env_or, try_init_zenoh_logs_from_env},
-    publisher::{publisher_delete, publisher_get_key_expr, publisher_put, publisher_undeclare},
+    matching::matching_listener_undeclare,
+    publisher::{
+        publisher_declare_background_matching_listener, publisher_declare_matching_listener,
+        publisher_delete, publisher_get_key_expr, publisher_matching_status, publisher_put,
+        publisher_undeclare,
+    },
     qos::{congestion_control::CongestionControl, priority::Priority},
     query::{
         consolidation_mode::ConsolidationMode,

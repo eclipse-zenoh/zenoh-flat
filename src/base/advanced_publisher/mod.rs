@@ -249,11 +249,3 @@ pub fn advanced_publisher_declare_background_matching_listener(
 pub fn advanced_publisher_undeclare(publisher: AdvancedPublisher) -> Result<(), Error> {
     publisher.undeclare().wait()
 }
-
-/// Undeclare a matching listener.
-///
-/// Available only when unstable features are enabled.
-#[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn matching_listener_undeclare(listener: MatchingListener) -> Result<(), Error> {
-    listener.undeclare().wait()
-}
