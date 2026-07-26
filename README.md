@@ -58,6 +58,9 @@ type is the central design decision in this crate, so the rules are written out 
   Such a type gets a handle *and* a value form: the handle keeps zenoh's name (`Sample`, `Encoding`)
   and the value form adds a `Struct` suffix (`SampleStruct`, `EncodingStruct`), reached with a
   `<type>_to_struct` accessor. Examples: `Sample`, `Reply`, `ReplyError`, `Hello`, `Encoding`.
+  A type whose value form would hold a **single** field is handle-only instead, its accessor serving
+  as the value form — which is why `KeyExpr` and `ZBytes` above are handles and not twins (see
+  [Choosing a shape](#choosing-a-shape)).
 
 ### Composing a value
 
@@ -107,6 +110,14 @@ A type can answer **yes to both** — that is exactly what a **twin** is (`Sampl
 `Hello`): a handle *and* a value form, no separate decision to make. A type of only cheap, fixed-size
 fields (an id, a timestamp) answers no to the handle question and is **value-only**. A live resource
 answers no to the value question and is **handle-only**.
+
+**A value form of one field is just an accessor.** The two questions above answer *yes* to both for
+`ZBytes`, `KeyExpr` and `Error` — each carries a payload and each is fully defined by it — which
+would make them twins. They are not, because their value form would hold a single field, and a
+one-field struct is a function in disguise: the accessor *is* the value form. So `zbytes_to_bytes`,
+`keyexpr_as_str` and `error_get_message` are those types' value forms, and no `…Struct` /
+`<type>_to_struct` pair is emitted. The `…Struct` machinery exists for types with **more than one**
+readable field, where a struct is what saves a caller from a call per field.
 
 A **bounded**, fixed-maximum blob — a 16-byte node id — counts as cheap, not a payload: copying it
 whole is trivial. Only *unbounded* data (arbitrary-length strings and lists) is a materialization
@@ -168,8 +179,13 @@ domain sum is always a named enum.
 
 ### Be faithful to zenoh — the most important rule
 
-A value form must mirror zenoh **exactly**: the same field types and the same optionality,
-expressed with ordinary Rust types (`u32`, `Option<u32>`), never a wire- or binding-specific type.
+A value form must preserve zenoh's **information and optionality exactly**, expressed in ordinary
+Rust types (`u32`, `Option<u32>`). Where zenoh wraps a value in a newtype or an opaque id — `NTP64`,
+`TimestampId`, `ZSlice` — lower it to the plain Rust type carrying the same information without
+loss (`u64`, `Vec<u8>`), and never to a wire- or binding-specific type.
+
+The test is what a reader can still recover, not what the field is spelled as: lowering `NTP64` to
+`u64` loses nothing, while widening a `u16` id to `i32` or narrowing it back does.
 
 - **Never fake "unknown" with a sentinel.** If zenoh returns an `Option`, flat returns an `Option`.
   For a sample's source, "no source information at all" and "the source's fields happen to be `0`"
@@ -181,9 +197,14 @@ expressed with ordinary Rust types (`u32`, `Option<u32>`), never a wire- or bind
 
 ### One source of truth per field
 
-Each field is read one way: through the value, or a grouped accessor that returns it. A convenience
-shortcut for a nested field may be added, but it must **delegate** to that same path rather than
-re-deriving the value — two independent bodies reading the same field eventually disagree.
+Each field has **one implementation**. This is a rule about bodies, not about the surface: a twin
+deliberately makes every field readable two ways — `sample_get_payload(&s)` and
+`sample_to_struct(&s).payload` — and that is the point of the shape, not a violation.
+
+What the rule forbids is those two routes being *computed* independently. Where a field is reachable
+both through a value form and through an accessor, one must **delegate** to the other; likewise a
+convenience shortcut for a nested field must delegate to the same path rather than re-deriving the
+value. Two independent bodies reading the same field eventually disagree.
 
 ### Construction mirrors zenoh
 
