@@ -87,3 +87,29 @@ fn isolated_session_has_no_peers_or_routers() {
         "isolated session must have no routers"
     );
 }
+
+/// A session reports the locators it is reachable at, rendered the same way
+/// `hello_get_locators` renders them.
+///
+/// An isolated session still listens somewhere, so the list is non-empty; each
+/// entry must be a real locator string rather than a placeholder, which is what
+/// the scheme check pins.
+#[cfg(feature = "unstable")]
+#[test]
+fn session_reports_its_locators() {
+    use zenoh_flat::session_get_locators;
+
+    let session = isolated_session();
+    let locators = session_get_locators(&session);
+
+    assert!(
+        !locators.is_empty(),
+        "a listening session has at least one locator"
+    );
+    for l in &locators {
+        assert!(
+            l.contains('/'),
+            "locator {l:?} should carry a scheme, e.g. tcp/…"
+        );
+    }
+}

@@ -162,6 +162,8 @@ pub use crate::base::sample::{
     source_info::{SourceInfo, sample_get_source_info},
 };
 #[cfg(feature = "unstable")]
+pub use crate::base::session::session_get_locators;
+#[cfg(feature = "unstable")]
 pub use crate::base::subscriber::subscriber_get_id;
 pub use crate::base::{
     bytes::{
