@@ -58,9 +58,9 @@ type is the central design decision in this crate, so the rules are written out 
   Such a type gets a handle *and* a value form: the handle keeps zenoh's name (`Sample`, `Encoding`)
   and the value form adds a `Struct` suffix (`SampleStruct`, `EncodingStruct`), reached with a
   `<type>_to_struct` accessor. Examples: `Sample`, `Reply`, `ReplyError`, `Hello`, `Encoding`.
-  A type whose value form would hold a **single** field is handle-only instead, its accessor serving
-  as the value form — which is why `KeyExpr` and `ZBytes` above are handles and not twins (see
-  [Choosing a shape](#choosing-a-shape)).
+  A type is *not* a twin when it hides state a caller cannot read back (`KeyExpr`, `Error`), nor when
+  its value form would hold a **single** field, since then the accessor already is that value form
+  (`ZBytes`) — see [Choosing a shape](#choosing-a-shape).
 
 ### Composing a value
 
@@ -111,13 +111,23 @@ A type can answer **yes to both** — that is exactly what a **twin** is (`Sampl
 fields (an id, a timestamp) answers no to the handle question and is **value-only**. A live resource
 answers no to the value question and is **handle-only**.
 
-**A value form of one field is just an accessor.** The two questions above answer *yes* to both for
-`ZBytes`, `KeyExpr` and `Error` — each carries a payload and each is fully defined by it — which
-would make them twins. They are not, because their value form would hold a single field, and a
-one-field struct is a function in disguise: the accessor *is* the value form. So `zbytes_to_bytes`,
-`keyexpr_as_str` and `error_get_message` are those types' value forms, and no `…Struct` /
+**"Fully defined by its readable fields" is a strict test.** A type fails it when it carries state a
+caller cannot read back, even if what *is* readable looks like the whole thing:
+
+- `KeyExpr` — a **declared** key expression holds a wire declaration bound to the session that
+  declared it (an id plus a reference to that session). `keyexpr_as_str` returns only the
+  expression, so rebuilding from that string yields an *undeclared* key expression: same text,
+  different object, and the declaration's optimisation silently gone. A declared key expression is a
+  live resource, so `KeyExpr` is **handle-only**.
+- `Error` — `error_get_message` renders the error; it does not decompose it. The concrete error type
+  and its `source()` chain are not recoverable from that string, so `Error` is **handle-only** too.
+
+**A value form of one field is just an accessor.** `ZBytes` does pass both questions — it carries a
+payload and it *is* its bytes — so the rules above would make it a twin. It is not, because its
+value form would hold a single field, and a one-field struct is a function in disguise: the accessor
+*is* the value form. So `zbytes_to_bytes` is `ZBytes`'s value form, and no `…Struct` /
 `<type>_to_struct` pair is emitted. The `…Struct` machinery exists for types with **more than one**
-readable field, where a struct is what saves a caller from a call per field.
+readable field, where a struct is what saves a caller a call per field.
 
 A **bounded**, fixed-maximum blob — a 16-byte node id — counts as cheap, not a payload: copying it
 whole is trivial. Only *unbounded* data (arbitrary-length strings and lists) is a materialization
