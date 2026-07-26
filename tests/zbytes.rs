@@ -19,8 +19,8 @@
 //! tests cover the slice/vec constructors and the borrowed/owned accessors.
 
 use zenoh_flat::{
-    zbytes_new_clone, zbytes_new_from_slice, zbytes_new_from_vec, zbytes_to_bytes,
-    zbytes_try_to_string,
+    zbytes_is_empty, zbytes_len, zbytes_new_clone, zbytes_new_from_slice, zbytes_new_from_vec,
+    zbytes_to_bytes, zbytes_try_to_string,
 };
 
 /// `test_slice`: bytes built from a borrowed slice come back byte-identical
@@ -79,4 +79,17 @@ fn try_to_string_decodes_text_and_rejects_invalid_utf8() {
     );
     // The bytes themselves are still readable.
     assert_eq!(zbytes_to_bytes(&bad).as_ref(), &[0xff, 0xfe, 0x80]);
+}
+
+/// The size of a payload is readable without materializing it, and agrees with
+/// the materialized form. `zbytes_len` exists precisely so a caller does not
+/// have to call `zbytes_to_bytes` just to learn how big the payload is.
+#[test]
+fn len_agrees_with_materialized_payload() {
+    for bytes in [b"".as_slice(), b"x".as_slice(), b"hello world".as_slice()] {
+        let z = zbytes_new_from_slice(bytes);
+        assert_eq!(zbytes_len(&z), bytes.len());
+        assert_eq!(zbytes_len(&z), zbytes_to_bytes(&z).len());
+        assert_eq!(zbytes_is_empty(&z), bytes.is_empty());
+    }
 }

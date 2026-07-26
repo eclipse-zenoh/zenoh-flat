@@ -330,6 +330,24 @@ pub fn session_get_peers_zid(session: &Session) -> Vec<ZenohId> {
         .collect()
 }
 
+/// Return the locators this session is reachable at.
+///
+/// A locator is rendered as its standard string form, matching
+/// [`crate::hello_get_locators`].
+///
+/// Available only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn session_get_locators(session: &Session) -> Vec<String> {
+    session
+        .info()
+        .locators()
+        .wait()
+        .iter()
+        .map(|l| l.to_string())
+        .collect()
+}
+
 /// Return the identifiers of routers currently connected to this session.
 #[prebindgen]
 pub fn session_get_routers_zid(session: &Session) -> Vec<ZenohId> {
