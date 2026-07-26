@@ -168,7 +168,7 @@ pub fn sample_get_reliability(s: &Sample) -> Reliability {
     s.reliability().into()
 }
 
-/// A sample decomposed into its fields as a plain value.
+/// A sample decomposed into its fields as a value form.
 ///
 /// This is the value form of [`Sample`]: the sample's accessors gathered into
 /// one struct, for callers that prefer the whole sample as data over reading
