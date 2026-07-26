@@ -12,6 +12,8 @@ use zenoh::Wait;
 
 #[cfg(feature = "unstable")]
 use self::reply_key_expr::ReplyKeyExpr;
+#[cfg(feature = "unstable")]
+use crate::TimestampStack;
 use crate::{Encoding, Error, KeyExpr, Query, Sample, Timestamp, ZBytes};
 
 /// Return the key expression targeted by the query.
@@ -53,6 +55,16 @@ pub fn query_get_attachment(q: &Query) -> Option<&ZBytes> {
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn query_get_accepts_replies(q: &Query) -> ReplyKeyExpr {
     q.accepts_replies().into()
+}
+
+/// Return the timestamps this query accumulated along its path, when
+/// instrumentation recorded any.
+///
+/// This information is available only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn query_get_timestamp_stack(q: &Query) -> Option<&TimestampStack> {
+    q.timestamp_stack()
 }
 
 /// Reply to a query with a complete sample.
