@@ -20,7 +20,7 @@
 use zenoh_flat::{
     encoding_const_zenoh_bytes, encoding_const_zenoh_serialized, encoding_const_zenoh_string,
     encoding_get_id, encoding_get_schema, encoding_new_clone, encoding_new_from_id,
-    encoding_new_from_string, encoding_new_with_schema, encoding_to_string,
+    encoding_new_from_string, encoding_new_with_schema, encoding_to_string, encoding_to_struct,
 };
 
 /// `test_encoding_without_id`: a free-form string with no known id round-trips
@@ -112,6 +112,47 @@ fn non_utf8_schema_round_trips() {
         encoding_get_schema(&original)
     );
     assert_eq!(encoding_get_schema(&rebuilt), Some(vec![0xff, 0xfe, 0xfd]));
+}
+
+/// Every encoding id round-trips losslessly, across the whole domain and at both
+/// ends of it — accessor and value form alike.
+///
+/// This is the guard for the defect this API used to have. The id crossed as a
+/// signed 32-bit integer and was narrowed with `as u16` on the way back in, so
+/// an out-of-range input silently became a *different, valid* encoding: `65536`
+/// turned into `0` and `-1` into `65535`, with no error and nothing to observe.
+/// Now the parameter is zenoh's own id type, so those inputs cannot be written
+/// at all and there is no narrowing left to test — what remains testable, and
+/// what this pins, is that nothing in the surviving path loses information.
+#[test]
+fn every_id_round_trips_losslessly() {
+    for id in [
+        0u16,
+        1,
+        2,
+        127,
+        128,
+        255,
+        256,
+        257,
+        4096,
+        32767,
+        32768,
+        u16::MAX - 1,
+        u16::MAX,
+    ] {
+        let e = encoding_new_from_id(id, None);
+        assert_eq!(encoding_get_id(&e), id, "encoding_get_id lost id {id}");
+        assert_eq!(encoding_to_struct(&e).id, id, "value form lost id {id}");
+
+        // A schema must not perturb the id.
+        let with_schema = encoding_new_from_id(id, Some(b"s".to_vec()));
+        assert_eq!(
+            encoding_get_id(&with_schema),
+            id,
+            "schema perturbed id {id}"
+        );
+    }
 }
 
 #[test]

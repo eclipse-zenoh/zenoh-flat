@@ -4,8 +4,8 @@ use crate::Encoding;
 
 /// Return the numeric identifier of an encoding.
 #[prebindgen]
-pub fn encoding_get_id(e: &Encoding) -> i32 {
-    e.id() as i32
+pub fn encoding_get_id(e: &Encoding) -> u16 {
+    e.id()
 }
 
 /// Create an independent copy of an encoding.
@@ -35,7 +35,7 @@ pub fn encoding_to_string(e: &Encoding) -> String {
 #[derive(Clone, Debug)]
 pub struct EncodingStruct {
     /// Numeric identifier of the encoding.
-    pub id: i32,
+    pub id: u16,
     /// Schema associated with the encoding, when present.
     pub schema: Option<Vec<u8>>,
 }
@@ -70,9 +70,13 @@ pub fn encoding_new_from_string(s: String) -> Encoding {
 /// The schema is raw bytes and is stored verbatim (see [`encoding_get_schema`]),
 /// so this is the exact inverse of [`encoding_get_id`] / [`encoding_get_schema`]:
 /// the pair round-trips losslessly even for a schema that is not valid UTF-8.
+///
+/// The identifier is zenoh's own `EncodingId`, so every value it can hold is a
+/// valid encoding id: there is no out-of-range case to reject and nothing is
+/// narrowed on the way in.
 #[prebindgen]
-pub fn encoding_new_from_id(id: i32, schema: Option<Vec<u8>>) -> Encoding {
-    Encoding::new(id as u16, schema.map(Into::into))
+pub fn encoding_new_from_id(id: u16, schema: Option<Vec<u8>>) -> Encoding {
+    Encoding::new(id, schema.map(Into::into))
 }
 
 /// Create an encoding with the supplied schema.
