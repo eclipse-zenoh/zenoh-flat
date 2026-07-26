@@ -125,8 +125,9 @@ pub use crate::base::advanced_publisher::{
     CacheConfig, MissDetectionConfig, RepliesConfig,
     advanced_publisher_declare_background_matching_listener,
     advanced_publisher_declare_matching_listener, advanced_publisher_delete,
-    advanced_publisher_get_key_expr, advanced_publisher_matching_status, advanced_publisher_put,
-    advanced_publisher_undeclare, matching_listener_undeclare, session_declare_advanced_publisher,
+    advanced_publisher_get_id, advanced_publisher_get_key_expr, advanced_publisher_matching_status,
+    advanced_publisher_put, advanced_publisher_undeclare, matching_listener_undeclare,
+    session_declare_advanced_publisher,
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::advanced_subscriber::{
@@ -134,9 +135,9 @@ pub use crate::base::advanced_subscriber::{
     advanced_subscriber_declare_background_detect_publishers_subscriber,
     advanced_subscriber_declare_background_sample_miss_listener,
     advanced_subscriber_declare_detect_publishers_subscriber,
-    advanced_subscriber_declare_sample_miss_listener, advanced_subscriber_get_key_expr,
-    advanced_subscriber_undeclare, sample_miss_listener_undeclare,
-    session_declare_advanced_subscriber,
+    advanced_subscriber_declare_sample_miss_listener, advanced_subscriber_get_id,
+    advanced_subscriber_get_key_expr, advanced_subscriber_undeclare,
+    sample_miss_listener_undeclare, session_declare_advanced_subscriber,
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::entity::EntityGlobalId;

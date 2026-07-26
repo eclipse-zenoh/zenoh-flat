@@ -5,8 +5,8 @@ use zenoh::Wait;
 use zenoh_ext::AdvancedPublisherBuilderExt;
 
 use crate::{
-    AdvancedPublisher, CongestionControl, Encoding, Error, KeyExpr, MatchingListener, Priority,
-    Reliability, Session, ZBytes, util::OnceDrop,
+    AdvancedPublisher, CongestionControl, Encoding, EntityGlobalId, Error, KeyExpr,
+    MatchingListener, Priority, Reliability, Session, ZBytes, util::OnceDrop,
 };
 
 /// Configuration enabling sample-miss detection on an advanced publisher.
@@ -181,6 +181,16 @@ pub fn advanced_publisher_delete(
         delete = delete.attachment(att);
     }
     delete.wait()
+}
+
+/// Return the global identifier of this advanced publisher.
+///
+/// This is the identifier a receiver sees as a sample's source, so it is what
+/// correlates what this publisher sends with what a subscriber attributes.
+/// Available only when unstable features are enabled.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn advanced_publisher_get_id(publisher: &AdvancedPublisher) -> EntityGlobalId {
+    publisher.id().into()
 }
 
 /// Return the key expression on which this advanced publisher publishes.

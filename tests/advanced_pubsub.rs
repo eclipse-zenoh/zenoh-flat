@@ -28,12 +28,13 @@ use std::{
 
 use zenoh_flat::{
     CacheConfig, HistoryConfig, MissDetectionConfig, RecoveryConfig, RecoveryMode, Sample,
-    SampleKind, advanced_publisher_declare_matching_listener, advanced_publisher_matching_status,
-    advanced_publisher_put, advanced_subscriber_declare_detect_publishers_subscriber,
-    advanced_subscriber_declare_sample_miss_listener, config_new_default, keyexpr_as_str,
-    keyexpr_new_try_from, open, sample_get_key_expr, sample_get_kind, sample_get_payload,
-    session_declare_advanced_publisher, session_declare_advanced_subscriber, zbytes_new_from_slice,
-    zbytes_to_bytes,
+    SampleKind, advanced_publisher_declare_matching_listener, advanced_publisher_get_id,
+    advanced_publisher_matching_status, advanced_publisher_put,
+    advanced_subscriber_declare_detect_publishers_subscriber,
+    advanced_subscriber_declare_sample_miss_listener, advanced_subscriber_get_id,
+    config_new_default, keyexpr_as_str, keyexpr_new_try_from, open, sample_get_key_expr,
+    sample_get_kind, sample_get_payload, session_declare_advanced_publisher,
+    session_declare_advanced_subscriber, session_get_zid, zbytes_new_from_slice, zbytes_to_bytes,
 };
 
 struct Got {
@@ -186,4 +187,65 @@ fn advanced_subscriber_listeners_declare() {
         Some(false),
     )
     .expect("declare detect-publishers subscriber");
+}
+
+/// Both advanced entities report a global identifier, and it belongs to this
+/// session — the same identifier a receiver sees as a sample's source, which is
+/// what makes it usable for correlation.
+///
+/// Two declarations of the same kind must differ, otherwise the accessor could
+/// be returning something session-wide rather than per-entity.
+#[test]
+fn advanced_entities_report_their_ids() {
+    let session = open(config_new_default()).expect("open session");
+    let zid = session_get_zid(&session);
+
+    let pub1 = session_declare_advanced_publisher(
+        &session,
+        keyexpr_new_try_from("test/adv3/a".to_string()).expect("key expr"),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    .expect("declare advanced publisher");
+    let pub2 = session_declare_advanced_publisher(
+        &session,
+        keyexpr_new_try_from("test/adv3/b".to_string()).expect("key expr"),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    .expect("declare advanced publisher");
+
+    let id1 = advanced_publisher_get_id(&pub1);
+    let id2 = advanced_publisher_get_id(&pub2);
+    assert_eq!(id1.zid, zid, "publisher id must carry this session's zid");
+    assert_ne!(id1.eid, id2.eid, "each publisher gets its own entity id");
+
+    let subscriber = session_declare_advanced_subscriber(
+        &session,
+        keyexpr_new_try_from("test/adv3/**".to_string()).expect("key expr"),
+        |_sample: Sample| {},
+        || {},
+        None,
+        None,
+        None,
+        None,
+    )
+    .expect("declare advanced subscriber");
+    assert_eq!(
+        advanced_subscriber_get_id(&subscriber).zid,
+        zid,
+        "subscriber id must carry this session's zid"
+    );
 }
