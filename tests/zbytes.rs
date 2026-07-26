@@ -71,8 +71,7 @@ fn try_to_string_decodes_text_and_rejects_invalid_utf8() {
         assert_eq!(zbytes_try_to_string(&z).expect("valid utf-8"), text);
     }
 
-    // A lone continuation byte is not valid UTF-8.
-    let bad = zbytes_new_from_slice(&[0xff, 0xfe, 0x80]);
+    // An invalid UTF-8 byte sequence (0xff/0xfe are never valid UTF-8, and 0x80 is a continuation byte).
     assert!(
         zbytes_try_to_string(&bad).is_err(),
         "invalid utf-8 must be reported, not replaced"
