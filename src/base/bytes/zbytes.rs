@@ -4,6 +4,21 @@ use prebindgen_proc_macro::prebindgen;
 
 use crate::ZBytes;
 
+/// Return the number of bytes in the payload.
+///
+/// Reading the size does not materialize the payload: this is the cheap field a
+/// caller can read off the handle without paying to copy the buffer out.
+#[prebindgen]
+pub fn zbytes_len(z: &ZBytes) -> usize {
+    z.len()
+}
+
+/// Return whether the payload is empty.
+#[prebindgen]
+pub fn zbytes_is_empty(z: &ZBytes) -> bool {
+    z.is_empty()
+}
+
 /// Return the payload as a contiguous sequence of bytes.
 #[prebindgen]
 pub fn zbytes_to_bytes(z: &ZBytes) -> Cow<'_, [u8]> {

@@ -43,7 +43,7 @@ pub fn reply_error_get_encoding(e: &ReplyError) -> &Encoding {
     e.encoding()
 }
 
-/// The application error carried by an unsuccessful reply, as a plain value.
+/// The application error carried by an unsuccessful reply, as a value form.
 ///
 /// Like every value form it is this type's accessors gathered into one struct,
 /// so `encoding` is the [`Encoding`] handle, not its value form.

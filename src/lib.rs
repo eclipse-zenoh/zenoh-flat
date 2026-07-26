@@ -97,9 +97,7 @@ pub type LivelinessToken = zenoh::liveliness::LivelinessToken;
 /// publisher detection). Available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 pub type AdvancedPublisher = zenoh_ext::AdvancedPublisher<'static>;
-/// A listener notified when a publisher's matching status changes. Available
-/// only when unstable features are enabled.
-#[cfg(feature = "unstable")]
+/// A listener notified when a publisher's matching status changes.
 pub type MatchingListener = zenoh::matching::MatchingListener<()>;
 /// A subscription with advanced features (history query, missed-sample
 /// recovery, subscriber detection). Available only when unstable features are
@@ -125,8 +123,8 @@ pub use crate::base::advanced_publisher::{
     CacheConfig, MissDetectionConfig, RepliesConfig,
     advanced_publisher_declare_background_matching_listener,
     advanced_publisher_declare_matching_listener, advanced_publisher_delete,
-    advanced_publisher_get_key_expr, advanced_publisher_matching_status, advanced_publisher_put,
-    advanced_publisher_undeclare, matching_listener_undeclare, session_declare_advanced_publisher,
+    advanced_publisher_get_id, advanced_publisher_get_key_expr, advanced_publisher_matching_status,
+    advanced_publisher_put, advanced_publisher_undeclare, session_declare_advanced_publisher,
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::advanced_subscriber::{
@@ -134,9 +132,9 @@ pub use crate::base::advanced_subscriber::{
     advanced_subscriber_declare_background_detect_publishers_subscriber,
     advanced_subscriber_declare_background_sample_miss_listener,
     advanced_subscriber_declare_detect_publishers_subscriber,
-    advanced_subscriber_declare_sample_miss_listener, advanced_subscriber_get_key_expr,
-    advanced_subscriber_undeclare, sample_miss_listener_undeclare,
-    session_declare_advanced_subscriber,
+    advanced_subscriber_declare_sample_miss_listener, advanced_subscriber_get_id,
+    advanced_subscriber_get_key_expr, advanced_subscriber_undeclare,
+    sample_miss_listener_undeclare, session_declare_advanced_subscriber,
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::entity::EntityGlobalId;
@@ -145,22 +143,27 @@ pub use crate::base::keyexpr::keyexpr_relation_to;
 #[cfg(feature = "unstable")]
 pub use crate::base::keyexpr::set_intersection_level::SetIntersectionLevel;
 #[cfg(feature = "unstable")]
-pub use crate::base::publisher::publisher_get_id;
+pub use crate::base::publisher::{publisher_get_id, publisher_get_reliability};
 #[cfg(feature = "unstable")]
 pub use crate::base::qos::reliability::Reliability;
 #[cfg(feature = "unstable")]
-pub use crate::base::query::querier::querier_get_id;
-#[cfg(feature = "unstable")]
-pub use crate::base::query::query_get_accepts_replies;
+pub use crate::base::query::querier::{querier_get_accept_replies, querier_get_id};
 #[cfg(feature = "unstable")]
 pub use crate::base::query::queryable::queryable_get_id;
 #[cfg(feature = "unstable")]
 pub use crate::base::query::reply::reply_get_replier_id;
 #[cfg(feature = "unstable")]
+pub use crate::base::query::{
+    query_get_accepts_replies, query_get_congestion_control, query_get_express, query_get_priority,
+    query_get_source_info,
+};
+#[cfg(feature = "unstable")]
 pub use crate::base::sample::{
     sample_get_reliability,
     source_info::{SourceInfo, sample_get_source_info},
 };
+#[cfg(feature = "unstable")]
+pub use crate::base::session::session_get_locators;
 #[cfg(feature = "unstable")]
 pub use crate::base::subscriber::subscriber_get_id;
 pub use crate::base::{
@@ -192,7 +195,10 @@ pub use crate::base::{
             encoding_new_from_id, encoding_new_from_string, encoding_new_with_schema,
             encoding_to_string, encoding_to_struct,
         },
-        zbytes::{zbytes_new_clone, zbytes_new_from_slice, zbytes_new_from_vec, zbytes_to_bytes},
+        zbytes::{
+            zbytes_is_empty, zbytes_len, zbytes_new_clone, zbytes_new_from_slice,
+            zbytes_new_from_vec, zbytes_to_bytes,
+        },
     },
     config::{
         config_get_json, config_insert_json5, config_new_clone, config_new_default,
@@ -211,7 +217,13 @@ pub use crate::base::{
         liveliness_undeclare_token,
     },
     logger::{init_android_logs, init_zenoh_logs_from_env_or, try_init_zenoh_logs_from_env},
-    publisher::{publisher_delete, publisher_get_key_expr, publisher_put, publisher_undeclare},
+    matching::matching_listener_undeclare,
+    publisher::{
+        publisher_declare_background_matching_listener, publisher_declare_matching_listener,
+        publisher_delete, publisher_get_congestion_control, publisher_get_encoding,
+        publisher_get_key_expr, publisher_get_priority, publisher_matching_status, publisher_put,
+        publisher_undeclare,
+    },
     qos::{congestion_control::CongestionControl, priority::Priority},
     query::{
         consolidation_mode::ConsolidationMode,
@@ -219,7 +231,10 @@ pub use crate::base::{
             parameters_contains_key, parameters_extend, parameters_get, parameters_insert,
             parameters_is_well_formed, parameters_remove, parameters_values,
         },
-        querier::{querier_get, querier_get_key_expr, querier_undeclare},
+        querier::{
+            querier_get, querier_get_congestion_control, querier_get_key_expr,
+            querier_get_priority, querier_undeclare,
+        },
         query_get_attachment, query_get_encoding, query_get_key_expr, query_get_parameters,
         query_get_payload, query_reply_delete, query_reply_error, query_reply_sample,
         query_reply_success,

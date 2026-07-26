@@ -10,6 +10,7 @@ pub(crate) mod error;
 pub(crate) mod keyexpr;
 pub(crate) mod liveliness;
 pub(crate) mod logger;
+pub(crate) mod matching;
 pub(crate) mod publisher;
 pub(crate) mod qos;
 pub(crate) mod query;

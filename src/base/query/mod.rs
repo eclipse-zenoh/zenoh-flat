@@ -12,6 +12,8 @@ use zenoh::Wait;
 
 #[cfg(feature = "unstable")]
 use self::reply_key_expr::ReplyKeyExpr;
+#[cfg(feature = "unstable")]
+use crate::{CongestionControl, Priority, SourceInfo};
 use crate::{Encoding, Error, KeyExpr, Query, Sample, Timestamp, ZBytes};
 
 /// Return the key expression targeted by the query.
@@ -53,6 +55,44 @@ pub fn query_get_attachment(q: &Query) -> Option<&ZBytes> {
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn query_get_accepts_replies(q: &Query) -> ReplyKeyExpr {
     q.accepts_replies().into()
+}
+
+/// Return the congestion-control policy the query was sent with.
+///
+/// This information is available only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn query_get_congestion_control(q: &Query) -> CongestionControl {
+    q.congestion_control().into()
+}
+
+/// Return the priority the query was sent with.
+///
+/// This information is available only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn query_get_priority(q: &Query) -> Priority {
+    q.priority().into()
+}
+
+/// Return whether the query requested express delivery.
+///
+/// This information is available only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn query_get_express(q: &Query) -> bool {
+    q.express()
+}
+
+/// Return information about the entity that issued the query, when known.
+///
+/// This is the query-side counterpart of [`crate::sample_get_source_info`], so a
+/// queryable can attribute a query as a subscriber attributes a sample.
+/// This information is available only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn query_get_source_info(q: &Query) -> Option<SourceInfo> {
+    q.source_info().map(SourceInfo::from)
 }
 
 /// Reply to a query with a complete sample.

@@ -103,8 +103,8 @@ fn reply_struct_mismatches(r: &Reply) -> Vec<String> {
                     // `ReplyErrorStruct`'s own value form, reached directly
                     // rather than nested inside the reply.
                     let direct = reply_error_to_struct(err);
-                    if direct.payload != *reply_error_get_payload(err)
-                        || direct.encoding != *reply_error_get_encoding(err)
+                    if &direct.payload != reply_error_get_payload(err)
+                        || &direct.encoding != reply_error_get_encoding(err)
                     {
                         bad.push("reply_error_to_struct disagrees with its accessors".to_string());
                     }
