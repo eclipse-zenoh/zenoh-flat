@@ -46,16 +46,47 @@ type is the central design decision in this crate, so the rules are written out 
   opaque pointer; you read its parts through `<type>_get_<field>` accessor functions, and you are
   responsible for closing or freeing it. Examples: `Session`, `Publisher`, `Subscriber`, `KeyExpr`,
   `ZBytes`.
-- **Value** — plain data with no identity and nothing to release: an entity id, a report, a small
-  configuration. A value is an ordinary Rust `struct` with public fields and crosses by copying
-  them. Examples: `ZenohId`, `EntityGlobalId { zid, eid }`, `SourceInfo { source, sn }`,
-  `Timestamp`, and the input configs (`HistoryConfig`, `RecoveryConfig`, …).
+- **Value** — plain data with no identity: an entity id, a report, a small configuration. A value is
+  an ordinary Rust `struct` with public fields and crosses by copying them. Examples: `ZenohId`,
+  `EntityGlobalId { zid, eid }`, `SourceInfo { source, sn }`, `Timestamp`, and the input configs
+  (`HistoryConfig`, `RecoveryConfig`, …). A value has no identity of its own, but it is **not
+  necessarily release-free**: it may own a handle for a field whose type has no value form — see
+  [Composing a value](#composing-a-value).
 - **Twin** — a type worth having *both* ways. It is fully described by its fields (so it can be a
   value), but it also carries a **payload** — an unbounded string, list, or `ZBytes` — you may not
   want to copy on every access (so a handle lets you read the cheap fields without materializing it).
   Such a type gets a handle *and* a value form: the handle keeps zenoh's name (`Sample`, `Encoding`)
   and the value form adds a `Struct` suffix (`SampleStruct`, `EncodingStruct`), reached with a
   `<type>_to_struct` accessor. Examples: `Sample`, `Reply`, `ReplyError`, `Hello`, `Encoding`.
+
+### Composing a value
+
+A value form's fields follow one rule: **for each field, use that field's value form if its type has
+one, and its handle if it does not.**
+
+- `Encoding` is a twin, so a value form carries an `EncodingStruct` — `SampleStruct.encoding` and
+  `ReplyErrorStruct.encoding` both do.
+- `KeyExpr` and `ZBytes` have no value form, so they are carried as handles —
+  `SampleStruct.key_expr` and `SampleStruct.payload`.
+- `Reply` is a twin whose parts are twins, so `ReplyStruct` carries `ReplyResult`'s `SampleStruct` /
+  `ReplyErrorStruct`, not `Sample` / `ReplyError`.
+
+The point of the rule is that it is *uniform*: applied at every level, so flattening a value never
+depends on which level you are at. It is what makes the previous behaviour — one nesting level
+preferring the value form and the next preferring the handle — a bug rather than a judgement call.
+
+The consequence is stated plainly rather than hidden: a value form **can** carry a handle, so a
+consumer may still have handles to release after taking one apart. Only a value whose fields are all
+values is release-free. This is deliberate: making every field a value would mean copying an
+unbounded payload on every `<type>_to_struct` call, which is the cost the twin shape exists to let a
+caller avoid. A caller who wants the cheap fields without the payload reads them off the handle
+instead.
+
+**Input-only structs are exempt.** A type flat only ever *receives* from a caller, never hands back —
+`Selector`, the `*Config` inputs — is not a twin's value form and does not follow this rule.
+`Selector.key_expr` stays a `KeyExpr` because passing an already-declared key expression is a real
+capability: it avoids re-resolving the expression on every query, and a `String` field would remove
+it.
 
 ### Choosing a shape
 

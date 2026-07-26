@@ -2,7 +2,9 @@ use prebindgen_proc_macro::prebindgen;
 
 #[cfg(feature = "unstable")]
 use crate::EntityGlobalId;
-use crate::{Encoding, Reply, ReplyError, Sample, SampleStruct, ZBytes};
+use crate::{
+    Encoding, EncodingStruct, Reply, ReplyError, Sample, SampleStruct, ZBytes, encoding_to_struct,
+};
 
 /// Return the global identifier of the entity that answered, when known.
 ///
@@ -50,7 +52,7 @@ pub struct ReplyErrorStruct {
     /// Error payload.
     pub payload: ZBytes,
     /// Format information associated with the error payload.
-    pub encoding: Encoding,
+    pub encoding: EncodingStruct,
 }
 
 impl From<&ReplyError> for ReplyErrorStruct {
@@ -58,7 +60,7 @@ impl From<&ReplyError> for ReplyErrorStruct {
         // Delegate to the field accessors so each field has one definition.
         ReplyErrorStruct {
             payload: reply_error_get_payload(e).clone(),
-            encoding: reply_error_get_encoding(e).clone(),
+            encoding: encoding_to_struct(reply_error_get_encoding(e)),
         }
     }
 }

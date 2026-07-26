@@ -32,7 +32,7 @@ pub fn encoding_to_string(e: &Encoding) -> String {
 /// An encoding decomposed into a plain value: its numeric identifier and
 /// optional schema (raw bytes; see [`encoding_get_schema`]).
 #[prebindgen]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EncodingStruct {
     /// Numeric identifier of the encoding.
     pub id: u16,
