@@ -178,7 +178,7 @@ pub fn sample_get_timestamp_stack(s: &Sample) -> Option<&TimestampStack> {
     s.timestamp_stack()
 }
 
-/// A sample decomposed into its fields as a plain value.
+/// A sample decomposed into its fields as a value form.
 ///
 /// This is the value form of [`Sample`]: the sample's accessors gathered into
 /// one struct, for callers that prefer the whole sample as data over reading
