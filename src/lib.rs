@@ -151,11 +151,14 @@ pub use crate::base::qos::reliability::Reliability;
 #[cfg(feature = "unstable")]
 pub use crate::base::query::querier::querier_get_id;
 #[cfg(feature = "unstable")]
-pub use crate::base::query::query_get_accepts_replies;
-#[cfg(feature = "unstable")]
 pub use crate::base::query::queryable::queryable_get_id;
 #[cfg(feature = "unstable")]
 pub use crate::base::query::reply::reply_get_replier_id;
+#[cfg(feature = "unstable")]
+pub use crate::base::query::{
+    query_get_accepts_replies, query_get_congestion_control, query_get_express, query_get_priority,
+    query_get_source_info,
+};
 #[cfg(feature = "unstable")]
 pub use crate::base::sample::{
     sample_get_reliability,
