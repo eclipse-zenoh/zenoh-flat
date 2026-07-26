@@ -64,26 +64,24 @@ type is the central design decision in this crate, so the rules are written out 
 
 ### Composing a value
 
-A value form's fields follow one rule: **for each field, use that field's value form if its type has
-one, and its handle if it does not.**
+A value form is the type's own accessors gathered into one struct: `sample_to_struct` returns
+exactly what `sample_get_key_expr`, `sample_get_payload`, `sample_get_encoding`, … return, in one
+call instead of one per field. So there is no separate rule for composing it — **a `…Struct` opens
+the one handle you called it on, and stops there.** Whatever an accessor hands back, the field
+holds; a field whose type is a handle stays that handle.
 
-- `Encoding` is a twin, so a value form carries an `EncodingStruct` — `SampleStruct.encoding` and
-  `ReplyErrorStruct.encoding` both do.
-- `KeyExpr` and `ZBytes` have no value form, so they are carried as handles —
-  `SampleStruct.key_expr` and `SampleStruct.payload`.
-- `Reply` is a twin whose parts are twins, so `ReplyStruct` carries `ReplyResult`'s `SampleStruct` /
-  `ReplyErrorStruct`, not `Sample` / `ReplyError`.
+- `SampleStruct.encoding` is an `Encoding`, `SampleStruct.key_expr` a `KeyExpr`,
+  `SampleStruct.payload` a `ZBytes`.
+- `ReplyResult`'s variants carry a `Sample` and a `ReplyError`.
 
-The point of the rule is that it is *uniform*: applied at every level, so flattening a value never
-depends on which level you are at. It is what makes the previous behaviour — one nesting level
-preferring the value form and the next preferring the handle — a bug rather than a judgement call.
+Unwrapping further would defeat the shape. A nested value form drags in that type's payload — an
+encoding's arbitrary-length schema, a whole timestamp stack — on every call, read or not, which is
+the cost the twin shape exists to let a caller avoid. A caller who wants a nested twin as data calls
+that twin's own `<type>_to_struct`, and pays for the payload where they ask for it.
 
-The consequence is stated plainly rather than hidden: a value form **can** carry a handle, so a
-consumer may still have handles to release after taking one apart. Only a value whose fields are all
-values is release-free. This is deliberate: making every field a value would mean copying an
-unbounded payload on every `<type>_to_struct` call, which is the cost the twin shape exists to let a
-caller avoid. A caller who wants the cheap fields without the payload reads them off the handle
-instead.
+So a value form **carries handles**, and a consumer may still have handles to release after taking
+one apart. This is the normal case, not an exception; only a value whose fields all lack handle
+forms is release-free.
 
 **Input-only structs are exempt.** A type flat only ever *receives* from a caller, never hands back —
 `Selector`, the `*Config` inputs — is not a twin's value form and does not follow this rule.
@@ -154,8 +152,8 @@ the exclusivity is carried by the type, the conversion to base becomes an exhaus
 no invariant has to be documented because none can be broken.
 
 - `Reply::result()` is a `Result<&Sample, &ReplyError>`, so `ReplyStruct` carries one
-  `result: ReplyResult` with `Sample(..)` / `Error(..)` variants — not a `sample` and an `error`
-  `Option` alongside each other.
+  `result: ReplyResult` with `Sample(Sample)` / `Error(ReplyError)` variants — not a `sample` and an
+  `error` `Option` alongside each other.
 - `zenoh_ext::RecoveryConfig`'s builder type-state makes `periodic_queries` and `heartbeat`
   unreachable from one another, so flat's `RecoveryConfig` carries one
   `mode: Option<RecoveryMode>` — not a period and a flag with the period winning.

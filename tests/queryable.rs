@@ -26,11 +26,11 @@ use std::{
 #[cfg(feature = "unstable")]
 use zenoh_flat::reply_get_replier_id;
 use zenoh_flat::{
-    KeyExpr, Reply, ReplyResult, Selector, Session, config_new_default, encoding_to_struct,
-    keyexpr_new_try_from, open, query_reply_error, query_reply_success, reply_error_get_encoding,
-    reply_error_get_payload, reply_error_to_struct, reply_get_err, reply_get_sample, reply_is_ok,
-    reply_to_struct, sample_get_encoding, sample_get_key_expr, sample_get_payload,
-    session_declare_queryable, session_get, zbytes_new_from_slice, zbytes_to_bytes,
+    KeyExpr, Reply, ReplyResult, Selector, Session, config_new_default, keyexpr_new_try_from, open,
+    query_reply_error, query_reply_success, reply_error_get_encoding, reply_error_get_payload,
+    reply_error_to_struct, reply_get_err, reply_get_sample, reply_is_ok, reply_to_struct,
+    sample_get_encoding, sample_get_key_expr, sample_get_payload, session_declare_queryable,
+    session_get, zbytes_new_from_slice, zbytes_to_bytes,
 };
 
 fn ke(s: &str) -> KeyExpr {
@@ -64,13 +64,16 @@ fn reply_struct_mismatches(r: &Reply) -> Vec<String> {
             match reply_get_sample(r) {
                 None => bad.push("result is Sample but reply_get_sample is None".to_string()),
                 Some(sample) => {
-                    if &st.key_expr != sample_get_key_expr(sample) {
+                    // `st` is the sample **handle** the value form carries, so
+                    // it is compared field by field through the same accessors
+                    // as the one reached from the reply.
+                    if sample_get_key_expr(st) != sample_get_key_expr(sample) {
                         bad.push("sample.key_expr disagrees with sample_get_key_expr".to_string());
                     }
-                    if st.payload != *sample_get_payload(sample) {
+                    if sample_get_payload(st) != sample_get_payload(sample) {
                         bad.push("sample.payload disagrees with sample_get_payload".to_string());
                     }
-                    if st.encoding != encoding_to_struct(sample_get_encoding(sample)) {
+                    if sample_get_encoding(st) != sample_get_encoding(sample) {
                         bad.push("sample.encoding disagrees with sample_get_encoding".to_string());
                     }
                 }
@@ -86,12 +89,13 @@ fn reply_struct_mismatches(r: &Reply) -> Vec<String> {
             match reply_get_err(r) {
                 None => bad.push("result is Error but reply_get_err is None".to_string()),
                 Some(err) => {
-                    if es.payload != *reply_error_get_payload(err) {
+                    // `es` is the reply-error **handle** the value form carries.
+                    if reply_error_get_payload(es) != reply_error_get_payload(err) {
                         bad.push(
                             "error.payload disagrees with reply_error_get_payload".to_string(),
                         );
                     }
-                    if es.encoding != encoding_to_struct(reply_error_get_encoding(err)) {
+                    if reply_error_get_encoding(es) != reply_error_get_encoding(err) {
                         bad.push(
                             "error.encoding disagrees with reply_error_get_encoding".to_string(),
                         );
@@ -100,7 +104,7 @@ fn reply_struct_mismatches(r: &Reply) -> Vec<String> {
                     // rather than nested inside the reply.
                     let direct = reply_error_to_struct(err);
                     if direct.payload != *reply_error_get_payload(err)
-                        || direct.encoding != encoding_to_struct(reply_error_get_encoding(err))
+                        || direct.encoding != *reply_error_get_encoding(err)
                     {
                         bad.push("reply_error_to_struct disagrees with its accessors".to_string());
                     }
