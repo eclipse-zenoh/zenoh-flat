@@ -72,6 +72,9 @@ fn advanced_put_is_received_and_matching_detected() {
         }),
         Some(RecoveryConfig {
             mode: Some(RecoveryMode::Heartbeat),
+            // Exercise the retention period too: base must accept it alongside
+            // a recovery mode.
+            retention_period: Some(Duration::from_secs(60)),
         }),
         None,       // query_timeout
         Some(true), // subscriber_detection

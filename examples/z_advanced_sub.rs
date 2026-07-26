@@ -62,6 +62,8 @@ fn main() -> Result<(), zenoh_flat::Error> {
         }),
         Some(RecoveryConfig {
             mode: Some(RecoveryMode::Heartbeat),
+            // `None` keeps base's default retention period (one hour).
+            retention_period: None,
         }),
         None,       // query_timeout
         Some(true), // subscriber_detection

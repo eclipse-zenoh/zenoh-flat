@@ -46,6 +46,13 @@ pub enum RecoveryMode {
 pub struct RecoveryConfig {
     /// Recovery mode; `None` leaves recovery at its defaults.
     pub mode: Option<RecoveryMode>,
+    /// How long a publisher's last-sample state is retained for
+    /// retransmission; `None` leaves base's default (one hour).
+    ///
+    /// This is orthogonal to [`mode`](RecoveryConfig::mode) — base accepts it
+    /// with or without a recovery mode — so it is a sibling field rather than a
+    /// payload of [`RecoveryMode`].
+    pub retention_period: Option<Duration>,
 }
 
 /// A report of samples missed from one source, delivered to a sample-miss
@@ -79,7 +86,7 @@ impl From<RecoveryConfig> for zenoh_ext::RecoveryConfig {
     fn from(r: RecoveryConfig) -> Self {
         // An exhaustive match, not a precedence chain: every mode reaches base
         // and none can be silently ignored.
-        match r.mode {
+        let cfg = match r.mode {
             Some(RecoveryMode::PeriodicQueries(period)) => {
                 zenoh_ext::RecoveryConfig::<false>::default().periodic_queries(period)
             }
@@ -87,6 +94,12 @@ impl From<RecoveryConfig> for zenoh_ext::RecoveryConfig {
                 zenoh_ext::RecoveryConfig::<false>::default().heartbeat()
             }
             None => zenoh_ext::RecoveryConfig::default(),
+        };
+        // Base takes the retention period in any mode state, so it applies to
+        // every arm above.
+        match r.retention_period {
+            Some(period) => cfg.retention_period(period),
+            None => cfg,
         }
     }
 }
@@ -266,9 +279,17 @@ mod tests {
 
     /// Render a flat [`RecoveryConfig`] as the base config it converts to.
     fn to_base(mode: Option<RecoveryMode>) -> String {
+        to_base_with(mode, None)
+    }
+
+    /// As [`to_base`], with a retention period.
+    fn to_base_with(mode: Option<RecoveryMode>, retention_period: Option<Duration>) -> String {
         format!(
             "{:?}",
-            zenoh_ext::RecoveryConfig::from(RecoveryConfig { mode })
+            zenoh_ext::RecoveryConfig::from(RecoveryConfig {
+                mode,
+                retention_period,
+            })
         )
     }
 
@@ -302,6 +323,53 @@ mod tests {
         assert_eq!(
             to_base(None),
             format!("{:?}", zenoh_ext::RecoveryConfig::<true>::default()),
+        );
+    }
+
+    /// The retention period reaches base, and does so in **every** mode state —
+    /// base accepts it with or without a recovery mode, so it must not be
+    /// dropped by whichever arm the mode match takes.
+    #[test]
+    fn retention_period_reaches_base_in_every_mode() {
+        let period = Duration::from_secs(120);
+        for mode in [
+            None,
+            Some(RecoveryMode::Heartbeat),
+            Some(RecoveryMode::PeriodicQueries(Duration::from_millis(250))),
+        ] {
+            let with = to_base_with(mode.clone(), Some(period));
+            let without = to_base_with(mode.clone(), None);
+            assert_ne!(
+                with, without,
+                "retention period was dropped for mode {mode:?}"
+            );
+        }
+    }
+
+    /// Setting the retention period leaves the mode alone, and vice versa: the
+    /// two are orthogonal in base, so neither may overwrite the other.
+    #[test]
+    fn retention_period_and_mode_are_independent() {
+        let period = Duration::from_secs(120);
+        let query = Duration::from_millis(250);
+
+        // Same mode, different retention -> differs only by retention.
+        assert_ne!(
+            to_base_with(Some(RecoveryMode::Heartbeat), Some(period)),
+            to_base_with(Some(RecoveryMode::Heartbeat), None)
+        );
+        // Same retention, different mode -> differs only by mode.
+        assert_ne!(
+            to_base_with(Some(RecoveryMode::Heartbeat), Some(period)),
+            to_base_with(Some(RecoveryMode::PeriodicQueries(query)), Some(period))
+        );
+        // A retention period does not turn "no mode" into a mode.
+        assert_eq!(
+            to_base_with(None, Some(period)),
+            format!(
+                "{:?}",
+                zenoh_ext::RecoveryConfig::<true>::default().retention_period(period)
+            )
         );
     }
 
