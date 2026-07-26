@@ -123,14 +123,8 @@ pub use crate::base::advanced_publisher::{
     CacheConfig, MissDetectionConfig, RepliesConfig,
     advanced_publisher_declare_background_matching_listener,
     advanced_publisher_declare_matching_listener, advanced_publisher_delete,
-<<<<<<< HEAD
-    advanced_publisher_get_key_expr, advanced_publisher_matching_status, advanced_publisher_put,
-    advanced_publisher_undeclare, session_declare_advanced_publisher,
-=======
     advanced_publisher_get_id, advanced_publisher_get_key_expr, advanced_publisher_matching_status,
-    advanced_publisher_put, advanced_publisher_undeclare, matching_listener_undeclare,
-    session_declare_advanced_publisher,
->>>>>>> origin/main
+    advanced_publisher_put, advanced_publisher_undeclare, session_declare_advanced_publisher,
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::advanced_subscriber::{
@@ -218,17 +212,12 @@ pub use crate::base::{
         liveliness_undeclare_token,
     },
     logger::{init_android_logs, init_zenoh_logs_from_env_or, try_init_zenoh_logs_from_env},
-<<<<<<< HEAD
     matching::matching_listener_undeclare,
     publisher::{
         publisher_declare_background_matching_listener, publisher_declare_matching_listener,
-        publisher_delete, publisher_get_key_expr, publisher_matching_status, publisher_put,
-        publisher_undeclare,
-=======
-    publisher::{
         publisher_delete, publisher_get_congestion_control, publisher_get_encoding,
-        publisher_get_key_expr, publisher_get_priority, publisher_put, publisher_undeclare,
->>>>>>> origin/main
+        publisher_get_key_expr, publisher_get_priority, publisher_matching_status, publisher_put,
+        publisher_undeclare,
     },
     qos::{congestion_control::CongestionControl, priority::Priority},
     query::{
