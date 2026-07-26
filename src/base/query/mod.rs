@@ -97,6 +97,10 @@ pub fn query_get_source_info(q: &Query) -> Option<SourceInfo> {
 
 /// Return the timestamps this query accumulated along its path, when
 /// instrumentation recorded any.
+///
+/// This information is available only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn query_get_timestamp_stack(q: &Query) -> Option<&TimestampStack> {
     q.timestamp_stack()
 }
