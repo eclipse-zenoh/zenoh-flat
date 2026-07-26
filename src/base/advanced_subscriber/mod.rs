@@ -249,6 +249,14 @@ pub fn advanced_subscriber_declare_background_detect_publishers_subscriber(
         .wait()
 }
 
+/// Return the global identifier of this advanced subscriber.
+///
+/// Available only when unstable features are enabled.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn advanced_subscriber_get_id(subscriber: &AdvancedSubscriber) -> EntityGlobalId {
+    subscriber.id().into()
+}
+
 /// Return the key expression this advanced subscriber matches.
 ///
 /// Available only when unstable features are enabled.

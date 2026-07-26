@@ -123,8 +123,14 @@ pub use crate::base::advanced_publisher::{
     CacheConfig, MissDetectionConfig, RepliesConfig,
     advanced_publisher_declare_background_matching_listener,
     advanced_publisher_declare_matching_listener, advanced_publisher_delete,
+<<<<<<< HEAD
     advanced_publisher_get_key_expr, advanced_publisher_matching_status, advanced_publisher_put,
     advanced_publisher_undeclare, session_declare_advanced_publisher,
+=======
+    advanced_publisher_get_id, advanced_publisher_get_key_expr, advanced_publisher_matching_status,
+    advanced_publisher_put, advanced_publisher_undeclare, matching_listener_undeclare,
+    session_declare_advanced_publisher,
+>>>>>>> origin/main
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::advanced_subscriber::{
@@ -132,9 +138,9 @@ pub use crate::base::advanced_subscriber::{
     advanced_subscriber_declare_background_detect_publishers_subscriber,
     advanced_subscriber_declare_background_sample_miss_listener,
     advanced_subscriber_declare_detect_publishers_subscriber,
-    advanced_subscriber_declare_sample_miss_listener, advanced_subscriber_get_key_expr,
-    advanced_subscriber_undeclare, sample_miss_listener_undeclare,
-    session_declare_advanced_subscriber,
+    advanced_subscriber_declare_sample_miss_listener, advanced_subscriber_get_id,
+    advanced_subscriber_get_key_expr, advanced_subscriber_undeclare,
+    sample_miss_listener_undeclare, session_declare_advanced_subscriber,
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::entity::EntityGlobalId;
@@ -143,17 +149,20 @@ pub use crate::base::keyexpr::keyexpr_relation_to;
 #[cfg(feature = "unstable")]
 pub use crate::base::keyexpr::set_intersection_level::SetIntersectionLevel;
 #[cfg(feature = "unstable")]
-pub use crate::base::publisher::publisher_get_id;
+pub use crate::base::publisher::{publisher_get_id, publisher_get_reliability};
 #[cfg(feature = "unstable")]
 pub use crate::base::qos::reliability::Reliability;
 #[cfg(feature = "unstable")]
 pub use crate::base::query::querier::querier_get_id;
 #[cfg(feature = "unstable")]
-pub use crate::base::query::query_get_accepts_replies;
-#[cfg(feature = "unstable")]
 pub use crate::base::query::queryable::queryable_get_id;
 #[cfg(feature = "unstable")]
 pub use crate::base::query::reply::reply_get_replier_id;
+#[cfg(feature = "unstable")]
+pub use crate::base::query::{
+    query_get_accepts_replies, query_get_congestion_control, query_get_express, query_get_priority,
+    query_get_source_info,
+};
 #[cfg(feature = "unstable")]
 pub use crate::base::sample::{
     sample_get_reliability,
@@ -209,11 +218,17 @@ pub use crate::base::{
         liveliness_undeclare_token,
     },
     logger::{init_android_logs, init_zenoh_logs_from_env_or, try_init_zenoh_logs_from_env},
+<<<<<<< HEAD
     matching::matching_listener_undeclare,
     publisher::{
         publisher_declare_background_matching_listener, publisher_declare_matching_listener,
         publisher_delete, publisher_get_key_expr, publisher_matching_status, publisher_put,
         publisher_undeclare,
+=======
+    publisher::{
+        publisher_delete, publisher_get_congestion_control, publisher_get_encoding,
+        publisher_get_key_expr, publisher_get_priority, publisher_put, publisher_undeclare,
+>>>>>>> origin/main
     },
     qos::{congestion_control::CongestionControl, priority::Priority},
     query::{
