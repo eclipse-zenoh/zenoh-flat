@@ -1,8 +1,8 @@
 use prebindgen_proc_macro::prebindgen;
 
-#[cfg(feature = "unstable")]
-use crate::EntityGlobalId;
 use crate::{Encoding, Reply, ReplyError, Sample, ZBytes};
+#[cfg(feature = "unstable")]
+use crate::{EntityGlobalId, TimestampStack};
 
 /// Return the global identifier of the entity that answered, when known.
 ///
@@ -43,6 +43,16 @@ pub fn reply_error_get_encoding(e: &ReplyError) -> &Encoding {
     e.encoding()
 }
 
+/// Return the timestamps this error accumulated along its path, when
+/// instrumentation recorded any.
+///
+/// This information is available only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn reply_error_get_timestamp_stack(e: &ReplyError) -> Option<&TimestampStack> {
+    e.timestamp_stack()
+}
+
 /// The application error carried by an unsuccessful reply, as a value form.
 ///
 /// Like every value form it is this type's accessors gathered into one struct,
@@ -54,6 +64,10 @@ pub struct ReplyErrorStruct {
     pub payload: ZBytes,
     /// Format information associated with the error payload.
     pub encoding: Encoding,
+    /// Timestamps accumulated along the error's path, when instrumentation
+    /// recorded any. Available only when unstable features are enabled.
+    #[cfg(feature = "unstable")]
+    pub timestamp_stack: Option<TimestampStack>,
 }
 
 impl From<&ReplyError> for ReplyErrorStruct {
@@ -62,6 +76,8 @@ impl From<&ReplyError> for ReplyErrorStruct {
         ReplyErrorStruct {
             payload: reply_error_get_payload(e).clone(),
             encoding: reply_error_get_encoding(e).clone(),
+            #[cfg(feature = "unstable")]
+            timestamp_stack: reply_error_get_timestamp_stack(e).cloned(),
         }
     }
 }

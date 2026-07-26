@@ -10,7 +10,7 @@ use self::sample_kind::SampleKind;
 use self::source_info::sample_get_source_info;
 use crate::{CongestionControl, Encoding, Error, KeyExpr, Priority, Sample, Timestamp, ZBytes};
 #[cfg(feature = "unstable")]
-use crate::{Reliability, SourceInfo};
+use crate::{Reliability, SourceInfo, TimestampStack};
 
 /// Create a sample that publishes a value.
 ///
@@ -168,6 +168,16 @@ pub fn sample_get_reliability(s: &Sample) -> Reliability {
     s.reliability().into()
 }
 
+/// Return the timestamps this sample accumulated along its path, when
+/// instrumentation recorded any.
+///
+/// This information is available only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn sample_get_timestamp_stack(s: &Sample) -> Option<&TimestampStack> {
+    s.timestamp_stack()
+}
+
 /// A sample decomposed into its fields as a value form.
 ///
 /// This is the value form of [`Sample`]: the sample's accessors gathered into
@@ -203,6 +213,10 @@ pub struct SampleStruct {
     /// are enabled.
     #[cfg(feature = "unstable")]
     pub source_info: Option<SourceInfo>,
+    /// Timestamps accumulated along the sample's path, when instrumentation
+    /// recorded any. Available only when unstable features are enabled.
+    #[cfg(feature = "unstable")]
+    pub timestamp_stack: Option<TimestampStack>,
 }
 
 impl From<&Sample> for SampleStruct {
@@ -224,6 +238,8 @@ impl From<&Sample> for SampleStruct {
             reliability: sample_get_reliability(s),
             #[cfg(feature = "unstable")]
             source_info: sample_get_source_info(s),
+            #[cfg(feature = "unstable")]
+            timestamp_stack: sample_get_timestamp_stack(s).cloned(),
         }
     }
 }
@@ -273,6 +289,8 @@ mod tests {
         assert_eq!(st.reliability, sample_get_reliability(s));
         #[cfg(feature = "unstable")]
         assert_eq!(st.source_info, sample_get_source_info(s));
+        #[cfg(feature = "unstable")]
+        assert_eq!(st.timestamp_stack.as_ref(), sample_get_timestamp_stack(s));
     }
 
     /// A put sample with every settable field carrying a **distinctive,
