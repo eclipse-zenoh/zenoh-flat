@@ -23,7 +23,7 @@
 
 use clap::Parser;
 use zenoh_flat::{
-    HistoryConfig, RecoveryConfig, advanced_subscriber_declare_sample_miss_listener,
+    HistoryConfig, RecoveryConfig, RecoveryMode, advanced_subscriber_declare_sample_miss_listener,
     init_zenoh_logs_from_env_or, keyexpr_as_str, keyexpr_new_try_from, open, sample_get_key_expr,
     sample_get_kind, sample_get_payload, session_declare_advanced_subscriber, zbytes_to_bytes,
     zenoh_id_to_string,
@@ -61,8 +61,7 @@ fn main() -> Result<(), zenoh_flat::Error> {
             ..Default::default()
         }),
         Some(RecoveryConfig {
-            heartbeat: true,
-            ..Default::default()
+            mode: Some(RecoveryMode::Heartbeat),
         }),
         None,       // query_timeout
         Some(true), // subscriber_detection

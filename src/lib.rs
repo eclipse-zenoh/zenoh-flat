@@ -132,7 +132,7 @@ pub use crate::base::advanced_publisher::{
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::advanced_subscriber::{
-    HistoryConfig, Miss, RecoveryConfig,
+    HistoryConfig, Miss, RecoveryConfig, RecoveryMode,
     advanced_subscriber_declare_background_detect_publishers_subscriber,
     advanced_subscriber_declare_background_sample_miss_listener,
     advanced_subscriber_declare_detect_publishers_subscriber,
@@ -228,8 +228,9 @@ pub use crate::base::{
         query_target::QueryTarget,
         queryable::{queryable_get_key_expr, queryable_undeclare},
         reply::{
-            ReplyErrorStruct, ReplyStruct, reply_error_get_encoding, reply_error_get_payload,
-            reply_error_to_struct, reply_get_err, reply_get_sample, reply_is_ok, reply_to_struct,
+            ReplyErrorStruct, ReplyResult, ReplyStruct, reply_error_get_encoding,
+            reply_error_get_payload, reply_error_to_struct, reply_get_err, reply_get_sample,
+            reply_is_ok, reply_to_struct,
         },
         reply_key_expr::ReplyKeyExpr,
         selector::Selector,

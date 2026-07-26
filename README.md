@@ -82,6 +82,39 @@ whole is trivial. Only *unbounded* data (arbitrary-length strings and lists) is 
 cost. So a `Timestamp` (a `u64` plus a ≤16-byte id) is value-only, while an `Encoding` (which
 carries an arbitrary-length schema) is a twin.
 
+### Sums: mutually exclusive alternatives are one enum
+
+When zenoh says a thing is *one of* several alternatives, flat says so with a **single enum whose
+variants carry their payloads** — never with parallel `Option` fields, and never with independent
+fields resolved by a precedence rule.
+
+Parallel `Option`s make invalid states representable and demote the invariant to a doc comment:
+two `Option`s express four states where only two are legal, so "both set" and "neither set" become
+things a caller can build and a consumer must guess about. A precedence chain is the same defect
+with a silent resolution — the loser is ignored without an error. An enum removes the question:
+the exclusivity is carried by the type, the conversion to base becomes an exhaustive `match`, and
+no invariant has to be documented because none can be broken.
+
+- `Reply::result()` is a `Result<&Sample, &ReplyError>`, so `ReplyStruct` carries one
+  `result: ReplyResult` with `Sample(..)` / `Error(..)` variants — not a `sample` and an `error`
+  `Option` alongside each other.
+- `zenoh_ext::RecoveryConfig`'s builder type-state makes `periodic_queries` and `heartbeat`
+  unreachable from one another, so flat's `RecoveryConfig` carries one
+  `mode: Option<RecoveryMode>` — not a period and a flag with the period winning.
+
+Two details follow from the rule rather than from taste:
+
+- **The `Option` and the choice stay separate.** "Which alternative" and "is there one at all" are
+  independent facts, so an absent choice is `Option<Mode>`, never an extra `None`-ish variant
+  smuggled into the enum's own domain.
+- **A payload of more than one part uses named fields** (`Variant { a, b }`), not a positional
+  tuple; a single-part payload may be a tuple variant (`PeriodicQueries(Duration)`).
+
+A field that is genuinely optional-and-independent of the others stays its own `Option` — this rule
+is about *alternatives*, not about every group of optional fields. And a `Result<T, E>` field is
+not the way to spell a domain sum: in the binding generators `Result` is the error channel, so a
+domain sum is always a named enum.
+
 ### Naming
 
 - Re-exported zenoh types keep zenoh's own name: `Sample`, `KeyExpr`, `ZBytes`, `ZenohId`.
