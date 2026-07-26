@@ -114,8 +114,8 @@ fn non_utf8_schema_round_trips() {
     assert_eq!(encoding_get_schema(&rebuilt), Some(vec![0xff, 0xfe, 0xfd]));
 }
 
-/// Every encoding id round-trips losslessly, across the whole domain and at both
-/// ends of it — accessor and value form alike.
+/// Representative encoding ids round-trip losslessly, spanning the domain and
+/// exercising boundary values — accessor and value form alike.
 ///
 /// This is the guard for the defect this API used to have. The id crossed as a
 /// signed 32-bit integer and was narrowed with `as u16` on the way back in, so
