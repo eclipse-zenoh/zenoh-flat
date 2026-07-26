@@ -26,7 +26,7 @@ use std::{
 #[cfg(feature = "unstable")]
 use zenoh_flat::reply_get_replier_id;
 use zenoh_flat::{
-    KeyExpr, Reply, Selector, Session, config_new_default, keyexpr_new_try_from, open,
+    KeyExpr, Reply, ReplyResult, Selector, Session, config_new_default, keyexpr_new_try_from, open,
     query_reply_error, query_reply_success, reply_error_get_encoding, reply_error_get_payload,
     reply_error_to_struct, reply_get_err, reply_get_sample, reply_is_ok, reply_to_struct,
     sample_get_encoding, sample_get_key_expr, sample_get_payload, session_declare_queryable,
@@ -48,42 +48,64 @@ fn reply_struct_mismatches(r: &Reply) -> Vec<String> {
     let rs = reply_to_struct(r);
     let mut bad = Vec::new();
 
-    if rs.sample.is_some() != reply_get_sample(r).is_some() {
-        bad.push("sample presence disagrees with reply_get_sample".to_string());
-    }
-    if rs.error.is_some() != reply_get_err(r).is_some() {
-        bad.push("error presence disagrees with reply_get_err".to_string());
-    }
-    if rs.sample.is_some() == rs.error.is_some() {
-        bad.push("exactly one of sample/error must be present".to_string());
-    }
-
-    if let (Some(st), Some(sample)) = (rs.sample.as_ref(), reply_get_sample(r)) {
-        if &st.key_expr != sample_get_key_expr(sample) {
-            bad.push("sample.key_expr disagrees with sample_get_key_expr".to_string());
+    // The live `ReplyResult` variant must agree with all three opaque-tier
+    // accessors at once. Since `ReplyResult` is a sum, "both present" and
+    // "neither present" are no longer representable, so the old presence checks
+    // for those states are gone by construction rather than by assertion — the
+    // match arms below are exhaustive over what the type can hold.
+    match &rs.result {
+        ReplyResult::Sample(st) => {
+            if !reply_is_ok(r) {
+                bad.push("result is Sample but reply_is_ok is false".to_string());
+            }
+            if reply_get_err(r).is_some() {
+                bad.push("result is Sample but reply_get_err returned an error".to_string());
+            }
+            match reply_get_sample(r) {
+                None => bad.push("result is Sample but reply_get_sample is None".to_string()),
+                Some(sample) => {
+                    if &st.key_expr != sample_get_key_expr(sample) {
+                        bad.push("sample.key_expr disagrees with sample_get_key_expr".to_string());
+                    }
+                    if st.payload != *sample_get_payload(sample) {
+                        bad.push("sample.payload disagrees with sample_get_payload".to_string());
+                    }
+                    if st.encoding != *sample_get_encoding(sample) {
+                        bad.push("sample.encoding disagrees with sample_get_encoding".to_string());
+                    }
+                }
+            }
         }
-        if st.payload != *sample_get_payload(sample) {
-            bad.push("sample.payload disagrees with sample_get_payload".to_string());
-        }
-        if st.encoding != *sample_get_encoding(sample) {
-            bad.push("sample.encoding disagrees with sample_get_encoding".to_string());
-        }
-    }
-
-    if let (Some(es), Some(err)) = (rs.error.as_ref(), reply_get_err(r)) {
-        if es.payload != *reply_error_get_payload(err) {
-            bad.push("error.payload disagrees with reply_error_get_payload".to_string());
-        }
-        if es.encoding != *reply_error_get_encoding(err) {
-            bad.push("error.encoding disagrees with reply_error_get_encoding".to_string());
-        }
-        // `ReplyErrorStruct`'s own value form, reached directly rather than
-        // nested inside the reply.
-        let direct = reply_error_to_struct(err);
-        if direct.payload != *reply_error_get_payload(err)
-            || direct.encoding != *reply_error_get_encoding(err)
-        {
-            bad.push("reply_error_to_struct disagrees with its accessors".to_string());
+        ReplyResult::Error(es) => {
+            if reply_is_ok(r) {
+                bad.push("result is Error but reply_is_ok is true".to_string());
+            }
+            if reply_get_sample(r).is_some() {
+                bad.push("result is Error but reply_get_sample returned a sample".to_string());
+            }
+            match reply_get_err(r) {
+                None => bad.push("result is Error but reply_get_err is None".to_string()),
+                Some(err) => {
+                    if es.payload != *reply_error_get_payload(err) {
+                        bad.push(
+                            "error.payload disagrees with reply_error_get_payload".to_string(),
+                        );
+                    }
+                    if es.encoding != *reply_error_get_encoding(err) {
+                        bad.push(
+                            "error.encoding disagrees with reply_error_get_encoding".to_string(),
+                        );
+                    }
+                    // `ReplyErrorStruct`'s own value form, reached directly
+                    // rather than nested inside the reply.
+                    let direct = reply_error_to_struct(err);
+                    if direct.payload != *reply_error_get_payload(err)
+                        || direct.encoding != *reply_error_get_encoding(err)
+                    {
+                        bad.push("reply_error_to_struct disagrees with its accessors".to_string());
+                    }
+                }
+            }
         }
     }
 

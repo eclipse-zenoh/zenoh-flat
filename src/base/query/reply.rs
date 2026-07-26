@@ -69,31 +69,51 @@ pub fn reply_error_to_struct(e: &ReplyError) -> ReplyErrorStruct {
     e.into()
 }
 
-/// A reply decomposed into a plain value.
+/// The outcome of a reply, as a plain value: the sample of a successful reply,
+/// or the error of an unsuccessful one.
 ///
-/// Exactly one of `sample` (a successful reply) or `error` (an unsuccessful
-/// one) is present.
+/// This mirrors zenoh's own [`zenoh::query::Reply::result`], which is a
+/// `Result<&Sample, &ReplyError>` — a genuine sum. A reply is one or the other,
+/// never both and never neither, so the alternatives are variants of a single
+/// type rather than parallel optional fields: the exclusivity is carried by the
+/// type and a consumer cannot mistake an error reply for an empty success.
+#[prebindgen]
+#[derive(Clone, Debug)]
+pub enum ReplyResult {
+    /// The sample carried by a successful reply.
+    Sample(SampleStruct),
+    /// The error carried by an unsuccessful reply.
+    Error(ReplyErrorStruct),
+}
+
+/// A reply decomposed into a plain value.
 #[prebindgen]
 #[derive(Clone, Debug)]
 pub struct ReplyStruct {
-    /// The sample carried by a successful reply.
-    pub sample: Option<SampleStruct>,
-    /// The error carried by an unsuccessful reply.
-    pub error: Option<ReplyErrorStruct>,
+    /// The reply's outcome: its sample or its error.
+    pub result: ReplyResult,
     /// Global identifier of the entity that answered, when known. Available
     /// only when unstable features are enabled.
+    ///
+    /// This stays a sibling field rather than a [`ReplyResult`] payload: which
+    /// entity answered is orthogonal to whether it succeeded, so its `Option`
+    /// belongs where it actually applies.
     #[cfg(feature = "unstable")]
     pub replier_id: Option<EntityGlobalId>,
 }
 
 impl From<&Reply> for ReplyStruct {
     fn from(r: &Reply) -> Self {
-        // Delegate to the field accessors so each field has one definition.
-        // `reply_get_sample` and `reply_get_err` are the `Ok`/`Err` halves of
-        // the same result, so exactly one of them is `Some`.
         ReplyStruct {
-            sample: reply_get_sample(r).map(SampleStruct::from),
-            error: reply_get_err(r).map(ReplyErrorStruct::from),
+            // `Reply::result` is the one source for the outcome. The
+            // `reply_is_ok` / `reply_get_sample` / `reply_get_err` accessors are
+            // projections of that same call rather than independent readings,
+            // and `reply_struct_mismatches` in `tests/queryable.rs` pins this
+            // field in agreement with all three.
+            result: match r.result() {
+                Ok(s) => ReplyResult::Sample(s.into()),
+                Err(e) => ReplyResult::Error(e.into()),
+            },
             #[cfg(feature = "unstable")]
             replier_id: reply_get_replier_id(r),
         }
