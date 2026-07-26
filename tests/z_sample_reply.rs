@@ -28,11 +28,11 @@ use std::{
 };
 
 use zenoh_flat::{
-    KeyExpr, Reply, Sample, SampleKind, Selector, Session, ZBytes, config_new_default,
+    KeyExpr, Reply, Sample, SampleKind, Selector, Session, Timestamp, ZBytes, config_new_default,
     keyexpr_new_try_from, open, query_reply_sample, reply_get_sample, reply_is_ok,
     sample_get_attachment, sample_get_kind, sample_get_payload, sample_get_timestamp,
-    sample_new_delete, sample_new_put, session_declare_queryable, session_get, zbytes_new_from_vec,
-    zbytes_to_bytes,
+    sample_new_delete, sample_new_put, session_declare_queryable, session_get,
+    session_new_timestamp, zbytes_new_from_vec, zbytes_to_bytes,
 };
 
 /// What the `get` callback extracted from the received reply.
@@ -40,26 +40,27 @@ struct Received {
     ok: bool,
     kind: Option<SampleKind>,
     payload: Vec<u8>,
-    ntp64: Option<u64>,
+    timestamp: Option<Timestamp>,
     attachment: Option<Vec<u8>>,
 }
 
 // The `reliability` parameter of the sample constructors only exists with the
 // `unstable` feature; wrap the calls so the test body stays feature-agnostic.
 
-fn make_put(key_expr: KeyExpr, payload: ZBytes, ntp64: u64, attachment: ZBytes) -> Sample {
+fn make_put(key_expr: KeyExpr, payload: ZBytes, ts: Timestamp, attachment: ZBytes) -> Sample {
     #[cfg(not(feature = "unstable"))]
     {
         sample_new_put(
             key_expr,
             payload,
             None,
-            Some(ntp64),
+            Some(ts.clone()),
             Some(attachment),
             None,
             None,
             Some(true),
         )
+        .expect("test timestamp is valid")
     }
     #[cfg(feature = "unstable")]
     {
@@ -67,39 +68,42 @@ fn make_put(key_expr: KeyExpr, payload: ZBytes, ntp64: u64, attachment: ZBytes) 
             key_expr,
             payload,
             None,
-            Some(ntp64),
+            Some(ts.clone()),
             Some(attachment),
             None,
             None,
             Some(true),
             None,
         )
+        .expect("test timestamp is valid")
     }
 }
 
-fn make_delete(key_expr: KeyExpr, ntp64: u64, attachment: ZBytes) -> Sample {
+fn make_delete(key_expr: KeyExpr, ts: Timestamp, attachment: ZBytes) -> Sample {
     #[cfg(not(feature = "unstable"))]
     {
         sample_new_delete(
             key_expr,
-            Some(ntp64),
+            Some(ts.clone()),
             Some(attachment),
             None,
             None,
             Some(true),
         )
+        .expect("test timestamp is valid")
     }
     #[cfg(feature = "unstable")]
     {
         sample_new_delete(
             key_expr,
-            Some(ntp64),
+            Some(ts.clone()),
             Some(attachment),
             None,
             None,
             Some(true),
             None,
         )
+        .expect("test timestamp is valid")
     }
 }
 
@@ -110,7 +114,7 @@ fn round_trip(
     session: &Session,
     key: &str,
     is_delete: bool,
-    ntp64: u64,
+    ts: Timestamp,
     payload: &[u8],
     attachment: &[u8],
 ) -> Received {
@@ -129,9 +133,14 @@ fn round_trip(
             let ke = keyexpr_new_try_from(key_owned.clone()).expect("reply key expr");
             let att = zbytes_new_from_vec(attachment_owned.clone());
             let sample = if is_delete {
-                make_delete(ke, ntp64, att)
+                make_delete(ke, ts.clone(), att)
             } else {
-                make_put(ke, zbytes_new_from_vec(payload_owned.clone()), ntp64, att)
+                make_put(
+                    ke,
+                    zbytes_new_from_vec(payload_owned.clone()),
+                    ts.clone(),
+                    att,
+                )
             };
             let _ = query_reply_sample(&query, sample);
         },
@@ -165,13 +174,13 @@ fn round_trip(
                 ok: reply_is_ok(&reply),
                 kind: None,
                 payload: Vec::new(),
-                ntp64: None,
+                timestamp: None,
                 attachment: None,
             };
             if let Some(sample) = reply_get_sample(&reply) {
                 rec.kind = Some(sample_get_kind(sample));
                 rec.payload = zbytes_to_bytes(sample_get_payload(sample)).into_owned();
-                rec.ntp64 = sample_get_timestamp(sample).map(|t| t.ntp64);
+                rec.timestamp = sample_get_timestamp(sample);
                 rec.attachment =
                     sample_get_attachment(sample).map(|z| zbytes_to_bytes(z).into_owned());
             }
@@ -201,7 +210,10 @@ fn round_trip(
 fn put_sample_round_trip_preserves_metadata() {
     let session = open(config_new_default()).expect("open session");
 
-    let ntp64: u64 = 0x0123_4567_89ab_cdef;
+    let ts = Timestamp {
+        ntp64: 0x0123_4567_89ab_cdef,
+        id: vec![0xde, 0xad, 0xbe, 0xef],
+    };
     let payload = b"hello put sample";
     let attachment = b"put-attachment";
 
@@ -209,7 +221,7 @@ fn put_sample_round_trip_preserves_metadata() {
         &session,
         "test/z_sample_reply/put",
         false,
-        ntp64,
+        ts.clone(),
         payload,
         attachment,
     );
@@ -222,9 +234,10 @@ fn put_sample_round_trip_preserves_metadata() {
     );
     assert_eq!(rec.payload, payload, "payload must round-trip");
     assert_eq!(
-        rec.ntp64,
-        Some(ntp64),
-        "timestamp NTP64 must be forwarded by query_reply_sample"
+        rec.timestamp,
+        Some(ts),
+        "the whole timestamp — time and node id — must be forwarded by \
+         query_reply_sample, not rebuilt with a fabricated id"
     );
     assert_eq!(
         rec.attachment.as_deref(),
@@ -237,14 +250,17 @@ fn put_sample_round_trip_preserves_metadata() {
 fn delete_sample_round_trip_preserves_kind() {
     let session = open(config_new_default()).expect("open session");
 
-    let ntp64: u64 = 0x0011_2233_4455_6677;
+    let ts = Timestamp {
+        ntp64: 0x0011_2233_4455_6677,
+        id: vec![0xca, 0xfe, 0xba, 0xbe],
+    };
     let attachment = b"delete-attachment";
 
     let rec = round_trip(
         &session,
         "test/z_sample_reply/delete",
         true,
-        ntp64,
+        ts.clone(),
         b"",
         attachment,
     );
@@ -261,13 +277,54 @@ fn delete_sample_round_trip_preserves_kind() {
         rec.payload
     );
     assert_eq!(
-        rec.ntp64,
-        Some(ntp64),
-        "timestamp NTP64 must be forwarded for a delete reply"
+        rec.timestamp,
+        Some(ts),
+        "the whole timestamp — time and node id — must be forwarded for a \
+         delete reply"
     );
     assert_eq!(
         rec.attachment.as_deref(),
         Some(&attachment[..]),
         "attachment must be forwarded for a delete reply"
+    );
+}
+
+/// A timestamp taken from the session's own clock survives sample construction
+/// **whole** — its node id included.
+///
+/// This is the regression this file's constructors used to have: they took a
+/// bare NTP64 integer and rebuilt the timestamp with `TimestampId::rand()`, so
+/// the id was fabricated. Time still looked right, which is why only an
+/// id-aware check catches it — a receiver keying de-duplication or ordering on
+/// the `(time, id)` pair would have been fed a meaningless id, and
+/// `session_new_timestamp`'s own causal-consistency promise was void.
+#[test]
+fn session_timestamp_survives_sample_construction() {
+    let session = open(config_new_default()).expect("open session");
+    let ts = session_new_timestamp(&session);
+
+    // The session stamps a real node id; without this the comparison below
+    // could pass on two empty ids.
+    assert!(!ts.id.is_empty(), "session timestamp must carry a node id");
+
+    let ke = keyexpr_new_try_from("test/z_sample_reply/hlc".to_string()).expect("key expr");
+    let put = make_put(
+        ke,
+        zbytes_new_from_vec(b"payload".to_vec()),
+        ts.clone(),
+        zbytes_new_from_vec(b"att".to_vec()),
+    );
+    assert_eq!(
+        sample_get_timestamp(&put),
+        Some(ts.clone()),
+        "put sample must carry the session timestamp unchanged"
+    );
+
+    let ke = keyexpr_new_try_from("test/z_sample_reply/hlc".to_string()).expect("key expr");
+    let del = make_delete(ke, ts.clone(), zbytes_new_from_vec(b"att".to_vec()));
+    assert_eq!(
+        sample_get_timestamp(&del),
+        Some(ts),
+        "delete sample must carry the session timestamp unchanged"
     );
 }

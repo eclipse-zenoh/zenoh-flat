@@ -15,6 +15,18 @@ pub struct Timestamp {
     pub id: Vec<u8>,
 }
 
+impl TryFrom<&Timestamp> for zenoh::time::Timestamp {
+    type Error = crate::Error;
+
+    fn try_from(t: &Timestamp) -> Result<Self, Self::Error> {
+        // The id round-trips exactly: the `From` impl below carries the
+        // significant bytes, and reconstructing from those reproduces the id.
+        let id = zenoh::time::TimestampId::try_from(t.id.as_slice())
+            .map_err(|e| format!("invalid timestamp id: {e}"))?;
+        Ok(zenoh::time::Timestamp::new(zenoh::time::NTP64(t.ntp64), id))
+    }
+}
+
 impl From<&zenoh::time::Timestamp> for Timestamp {
     fn from(t: &zenoh::time::Timestamp) -> Self {
         let id = t.get_id();

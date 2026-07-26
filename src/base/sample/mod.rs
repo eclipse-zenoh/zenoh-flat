@@ -3,17 +3,14 @@ pub(crate) mod sample_kind;
 pub(crate) mod source_info;
 
 use prebindgen_proc_macro::prebindgen;
-use zenoh::{
-    sample::SampleBuilder,
-    time::{NTP64, TimestampId},
-};
+use zenoh::sample::SampleBuilder;
 
 use self::sample_kind::SampleKind;
 #[cfg(feature = "unstable")]
 use self::source_info::sample_get_source_info;
 use crate::{
-    CongestionControl, Encoding, EncodingStruct, KeyExpr, Priority, Sample, Timestamp, ZBytes,
-    encoding_to_struct,
+    CongestionControl, Encoding, EncodingStruct, Error, KeyExpr, Priority, Sample, Timestamp,
+    ZBytes, encoding_to_struct,
 };
 #[cfg(feature = "unstable")]
 use crate::{Reliability, SourceInfo};
@@ -23,25 +20,29 @@ use crate::{Reliability, SourceInfo};
 /// Optional arguments specify the payload format, timestamp, attachment, and
 /// delivery quality. Reliability is available only when unstable features are
 /// enabled.
+///
+/// A supplied timestamp is used exactly as given, node id included; take one
+/// from [`crate::session_new_timestamp`] to stay causally consistent with the
+/// session.
 #[prebindgen]
 #[allow(clippy::too_many_arguments)]
 pub fn sample_new_put(
     key_expr: KeyExpr,
     payload: ZBytes,
     encoding: Option<&Encoding>,
-    timestamp_ntp64: Option<u64>,
+    timestamp: Option<Timestamp>,
     attachment: Option<ZBytes>,
     congestion_control: Option<CongestionControl>,
     priority: Option<Priority>,
     express: Option<bool>,
     #[cfg(feature = "unstable")] reliability: Option<Reliability>,
-) -> Sample {
+) -> Result<Sample, Error> {
     let mut builder = SampleBuilder::put(key_expr, payload);
     if let Some(enc) = encoding {
         builder = builder.encoding(enc.clone());
     }
-    if let Some(ntp) = timestamp_ntp64 {
-        builder = builder.timestamp(zenoh::time::Timestamp::new(NTP64(ntp), TimestampId::rand()));
+    if let Some(t) = timestamp {
+        builder = builder.timestamp(zenoh::time::Timestamp::try_from(&t)?);
     }
     if let Some(att) = attachment {
         builder = builder.attachment(att);
@@ -61,26 +62,30 @@ pub fn sample_new_put(
             builder = builder.reliability(r.into());
         }
     }
-    builder.into()
+    Ok(builder.into())
 }
 
 /// Create a sample that announces a deletion.
 ///
 /// A delete sample has no payload or encoding. Optional arguments specify its
 /// timestamp, attachment, and delivery quality.
+///
+/// A supplied timestamp is used exactly as given, node id included; take one
+/// from [`crate::session_new_timestamp`] to stay causally consistent with the
+/// session.
 #[prebindgen]
 pub fn sample_new_delete(
     key_expr: KeyExpr,
-    timestamp_ntp64: Option<u64>,
+    timestamp: Option<Timestamp>,
     attachment: Option<ZBytes>,
     congestion_control: Option<CongestionControl>,
     priority: Option<Priority>,
     express: Option<bool>,
     #[cfg(feature = "unstable")] reliability: Option<Reliability>,
-) -> Sample {
+) -> Result<Sample, Error> {
     let mut builder = SampleBuilder::delete(key_expr);
-    if let Some(ntp) = timestamp_ntp64 {
-        builder = builder.timestamp(zenoh::time::Timestamp::new(NTP64(ntp), TimestampId::rand()));
+    if let Some(t) = timestamp {
+        builder = builder.timestamp(zenoh::time::Timestamp::try_from(&t)?);
     }
     if let Some(att) = attachment {
         builder = builder.attachment(att);
@@ -100,7 +105,7 @@ pub fn sample_new_delete(
             builder = builder.reliability(r.into());
         }
     }
-    builder.into()
+    Ok(builder.into())
 }
 
 /// Return the key expression on which the sample was published.
@@ -240,6 +245,17 @@ mod tests {
     /// through `i64` is visible.
     const NTP64_MARKER: u64 = (i64::MAX as u64) + 12_345;
 
+    /// A distinctive node id, so a timestamp whose id was fabricated rather
+    /// than carried through is visible.
+    const ID_MARKER: [u8; 4] = [0xde, 0xad, 0xbe, 0xef];
+
+    fn marker_timestamp() -> Timestamp {
+        Timestamp {
+            ntp64: NTP64_MARKER,
+            id: ID_MARKER.to_vec(),
+        }
+    }
+
     /// Assert that every field of the value form equals the accessor for that
     /// same field. This is the guard for "one source of truth per field": it
     /// fails the moment a field's value form stops delegating and starts
@@ -273,7 +289,7 @@ mod tests {
             zbytes_new_from_slice(b"hello"),
             // Not the default ZENOH_BYTES.
             Some(encoding_const_text_plain()),
-            Some(NTP64_MARKER),
+            Some(marker_timestamp()),
             Some(zbytes_new_from_slice(b"attachment")),
             // Not the default Drop.
             Some(CongestionControl::Block),
@@ -285,6 +301,7 @@ mod tests {
             #[cfg(feature = "unstable")]
             Some(Reliability::BestEffort),
         )
+        .expect("marker timestamp is valid")
     }
 
     /// The delete counterpart, so `kind` is exercised as something other than
@@ -293,7 +310,7 @@ mod tests {
         let ke = keyexpr_new_try_from("test/ke".to_string()).unwrap();
         sample_new_delete(
             ke,
-            Some(NTP64_MARKER),
+            Some(marker_timestamp()),
             Some(zbytes_new_from_slice(b"attachment")),
             Some(CongestionControl::Block),
             Some(Priority::InteractiveHigh),
@@ -301,6 +318,7 @@ mod tests {
             #[cfg(feature = "unstable")]
             Some(Reliability::BestEffort),
         )
+        .expect("marker timestamp is valid")
     }
 
     #[test]
@@ -321,7 +339,7 @@ mod tests {
         let st = sample_to_struct(&put_sample());
         assert_eq!(st.kind, SampleKind::Put);
         assert_eq!(st.encoding, encoding_to_struct(encoding_const_text_plain()));
-        assert_eq!(st.timestamp.map(|t| t.ntp64), Some(NTP64_MARKER));
+        assert_eq!(st.timestamp, Some(marker_timestamp()));
         assert!(st.express);
         assert_eq!(st.priority, Priority::InteractiveHigh);
         assert_eq!(st.congestion_control, CongestionControl::Block);

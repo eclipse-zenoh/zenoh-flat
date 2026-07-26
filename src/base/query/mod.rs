@@ -8,14 +8,11 @@ pub(crate) mod reply_key_expr;
 pub(crate) mod selector;
 
 use prebindgen_proc_macro::prebindgen;
-use zenoh::{
-    Wait,
-    time::{NTP64, Timestamp, TimestampId},
-};
+use zenoh::Wait;
 
 #[cfg(feature = "unstable")]
 use self::reply_key_expr::ReplyKeyExpr;
-use crate::{Encoding, Error, KeyExpr, Query, Sample, ZBytes};
+use crate::{Encoding, Error, KeyExpr, Query, Sample, Timestamp, ZBytes};
 
 /// Return the key expression targeted by the query.
 #[prebindgen]
@@ -70,7 +67,8 @@ pub fn query_reply_sample(query: &Query, sample: Sample) -> Result<(), Error> {
 /// Reply to a query with a value.
 ///
 /// Optional arguments specify the payload format, timestamp, attachment, and
-/// express delivery. When no timestamp is supplied, Zenoh assigns one. Use
+/// express delivery. When no timestamp is supplied, Zenoh assigns one; a
+/// supplied one is used exactly as given, node id included. Use
 /// [`query_reply_sample`] to send a complete sample instead.
 #[prebindgen]
 pub fn query_reply_success(
@@ -78,7 +76,7 @@ pub fn query_reply_success(
     key_expr: &KeyExpr,
     payload: ZBytes,
     encoding: Option<&Encoding>,
-    timestamp_ntp64: Option<i64>,
+    timestamp: Option<Timestamp>,
     attachment: Option<ZBytes>,
     express: Option<bool>,
 ) -> Result<(), Error> {
@@ -86,8 +84,8 @@ pub fn query_reply_success(
     if let Some(enc) = encoding {
         b = b.encoding(enc.clone());
     }
-    if let Some(ntp) = timestamp_ntp64 {
-        b = b.timestamp(Timestamp::new(NTP64(ntp as u64), TimestampId::rand()));
+    if let Some(t) = timestamp {
+        b = b.timestamp(zenoh::time::Timestamp::try_from(&t)?);
     }
     if let Some(att) = attachment {
         b = b.attachment(att);
@@ -117,17 +115,18 @@ pub fn query_reply_error(
 /// Reply to a query with a deletion notification.
 ///
 /// Optional arguments specify the timestamp, attachment, and express delivery.
+/// A supplied timestamp is used exactly as given, node id included.
 #[prebindgen]
 pub fn query_reply_delete(
     query: &Query,
     key_expr: &KeyExpr,
-    timestamp_ntp64: Option<i64>,
+    timestamp: Option<Timestamp>,
     attachment: Option<ZBytes>,
     express: Option<bool>,
 ) -> Result<(), Error> {
     let mut b = query.reply_del(key_expr);
-    if let Some(ntp) = timestamp_ntp64 {
-        b = b.timestamp(Timestamp::new(NTP64(ntp as u64), TimestampId::rand()));
+    if let Some(t) = timestamp {
+        b = b.timestamp(zenoh::time::Timestamp::try_from(&t)?);
     }
     if let Some(att) = attachment {
         b = b.attachment(att);

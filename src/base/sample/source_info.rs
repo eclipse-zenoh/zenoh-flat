@@ -54,6 +54,7 @@ mod tests {
             None,
             None,
         )
+        .expect("no timestamp to validate")
     }
 
     #[test]
