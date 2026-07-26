@@ -316,19 +316,29 @@ pub fn session_get(
 /// Return the identifier of this session.
 #[prebindgen]
 pub fn session_get_zid(session: &Session) -> ZenohId {
-    session.info().zid().wait()
+    session.info().zid().wait().into()
 }
 
 /// Return the identifiers of peers currently connected to this session.
 #[prebindgen]
 pub fn session_get_peers_zid(session: &Session) -> Vec<ZenohId> {
-    session.info().peers_zid().wait().collect()
+    session
+        .info()
+        .peers_zid()
+        .wait()
+        .map(ZenohId::from)
+        .collect()
 }
 
 /// Return the identifiers of routers currently connected to this session.
 #[prebindgen]
 pub fn session_get_routers_zid(session: &Session) -> Vec<ZenohId> {
-    session.info().routers_zid().wait().collect()
+    session
+        .info()
+        .routers_zid()
+        .wait()
+        .map(ZenohId::from)
+        .collect()
 }
 
 /// Close the session and terminate its active declarations.

@@ -34,7 +34,8 @@ fn main() -> Result<(), zenoh_flat::Error> {
             println!(
                 "Hello {{ whatami: {:?}, zid: {}, locators: {:?} }}",
                 hello_get_whatami(&hello),
-                zenoh_id_to_string(&hello_get_zid(&hello)),
+                zenoh_id_to_string(&hello_get_zid(&hello))
+                    .unwrap_or_else(|e| format!("<unrenderable zid: {e}>")),
                 hello_get_locators(&hello),
             );
         },

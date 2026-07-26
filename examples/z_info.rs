@@ -34,16 +34,16 @@ fn main() -> Result<(), zenoh_flat::Error> {
     println!("Opening session...");
     let session = open(args.common.try_into()?)?;
 
-    println!("zid: {}", zenoh_id_to_string(&session_get_zid(&session)));
+    println!("zid: {}", zenoh_id_to_string(&session_get_zid(&session))?);
     let routers: Vec<String> = session_get_routers_zid(&session)
         .iter()
         .map(zenoh_id_to_string)
-        .collect();
+        .collect::<Result<_, _>>()?;
     println!("routers zid: {routers:?}");
     let peers: Vec<String> = session_get_peers_zid(&session)
         .iter()
         .map(zenoh_id_to_string)
-        .collect();
+        .collect::<Result<_, _>>()?;
     println!("peers zid: {peers:?}");
 
     Ok(())

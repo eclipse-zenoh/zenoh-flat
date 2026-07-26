@@ -22,7 +22,7 @@ bindings for other languages (C via `lang::Cbindgen`, Kotlin/JNI via
 - **Naming follows zenoh's Rust names.** Functions are
   `<type>_<verb>` (`session_declare_publisher`, `publisher_undeclare`,
   `keyexpr_intersects`); type aliases keep zenoh's own identifier
-  (`ZBytes`, `ZenohId`).
+  (`ZBytes`, `Sample`).
 - **Callback-based, no channels.** Subscribers, queryables, queriers, scouts and
   liveliness subscribers deliver items through an `impl Fn(..)` callback plus an
   `on_close` hook. This keeps the surface trivially FFI-exportable.
@@ -48,8 +48,8 @@ type is the central design decision in this crate, so the rules are written out 
   `ZBytes`.
 - **Value** — plain data with no identity and nothing to release: an entity id, a report, a small
   configuration. A value is an ordinary Rust `struct` with public fields and crosses by copying
-  them. Examples: `EntityGlobalId { zid, eid }`, `SourceInfo { source, sn }`, `Timestamp`, and the
-  input configs (`HistoryConfig`, `RecoveryConfig`, …).
+  them. Examples: `ZenohId`, `EntityGlobalId { zid, eid }`, `SourceInfo { source, sn }`,
+  `Timestamp`, and the input configs (`HistoryConfig`, `RecoveryConfig`, …).
 - **Twin** — a type worth having *both* ways. It is fully described by its fields (so it can be a
   value), but it also carries a **payload** — an unbounded string, list, or `ZBytes` — you may not
   want to copy on every access (so a handle lets you read the cheap fields without materializing it).
@@ -79,8 +79,14 @@ answers no to the value question and is **handle-only**.
 
 A **bounded**, fixed-maximum blob — a 16-byte node id — counts as cheap, not a payload: copying it
 whole is trivial. Only *unbounded* data (arbitrary-length strings and lists) is a materialization
-cost. So a `Timestamp` (a `u64` plus a ≤16-byte id) is value-only, while an `Encoding` (which
-carries an arbitrary-length schema) is a twin.
+cost. So a `ZenohId` (≤16 bytes) and a `Timestamp` (a `u64` plus a ≤16-byte id) are value-only,
+while an `Encoding` (which carries an arbitrary-length schema) is a twin.
+
+Where a field is bounded, **say so in the type**, not in a comment: `ZenohId.bytes` is a
+`[u8; ZENOH_ID_MAX_SIZE]`, so the bound is a fact a reader and a generator can both see, and reading
+an id allocates nothing. A `Vec<u8>` would be indistinguishable from an arbitrary-length list and
+would put the bound in prose only — which is why `Timestamp.id`, still spelled that way, is the
+remaining exception rather than the pattern to copy.
 
 ### Sums: mutually exclusive alternatives are one enum
 
@@ -117,13 +123,14 @@ domain sum is always a named enum.
 
 ### Naming
 
-- Re-exported zenoh types keep zenoh's own name: `Sample`, `KeyExpr`, `ZBytes`, `ZenohId`.
+- Re-exported zenoh types keep zenoh's own name: `Sample`, `KeyExpr`, `ZBytes`. A type converted
+  to a flat value keeps it too (`ZenohId`, `Timestamp`).
 - The `Struct` suffix exists *only* to tell a value apart from a same-named handle (`Sample` →
   `SampleStruct`). A value with no handle uses the plain name (`EntityGlobalId`, `Miss`).
 - Functions are `<type>_<verb>`: `sample_get_payload`, `sample_new_put`, `keyexpr_new_try_from`.
 - **The `<verb>` mirrors zenoh's own method name**, so a flat name can be translated back by
-  inspection: `ZBytes::to_bytes` → `zbytes_to_bytes`, `ZenohId::to_le_bytes` →
-  `zenoh_id_to_le_bytes`, `keyexpr::as_str` → `keyexpr_as_str`, `Sample::key_expr` →
+  inspection: `ZBytes::to_bytes` → `zbytes_to_bytes`, `keyexpr::as_str` → `keyexpr_as_str`,
+  `Sample::key_expr` →
   `sample_get_key_expr`. The same holds for value-struct fields: `CacheConfig::replies_config`
   keeps zenoh's field name. Where zenoh spells a name as one word, so does flat
   (`Session::declare_keyexpr` → `session_declare_keyexpr`).

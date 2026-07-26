@@ -65,8 +65,6 @@ pub type Error = zenoh::Error;
 pub type KeyExpr = zenoh::key_expr::KeyExpr<'static>;
 /// Settings used to configure Zenoh operations and sessions.
 pub type Config = zenoh::Config;
-/// The globally unique identifier of a Zenoh node.
-pub type ZenohId = zenoh::session::ZenohId;
 /// A discovery announcement received while scouting.
 pub type Hello = zenoh::scouting::Hello;
 /// An active node-discovery operation.
@@ -200,7 +198,7 @@ pub use crate::base::{
         config_get_json, config_insert_json5, config_new_clone, config_new_default,
         config_new_from_file, config_new_from_json5, config_new_from_yaml,
         whatami::WhatAmI,
-        zenoh_id::{zenoh_id_to_le_bytes, zenoh_id_to_string},
+        zenoh_id::{ZENOH_ID_MAX_SIZE, ZenohId, zenoh_id_to_string},
     },
     error::error_get_message,
     keyexpr::{

@@ -11,7 +11,7 @@ pub fn hello_get_whatami(h: &Hello) -> WhatAmI {
 /// Zenoh id of the node that emitted this hello message.
 #[prebindgen]
 pub fn hello_get_zid(h: &Hello) -> ZenohId {
-    h.zid()
+    h.zid().into()
 }
 
 /// Locators advertised in this hello message.

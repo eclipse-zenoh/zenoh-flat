@@ -75,6 +75,7 @@ fn main() -> Result<(), zenoh_flat::Error> {
                 ">> [Subscriber] Missed {} samples from {} !!!",
                 miss.nb,
                 zenoh_id_to_string(&miss.source.zid)
+                    .unwrap_or_else(|e| format!("<unrenderable zid: {e}>"))
             );
         },
         || {},

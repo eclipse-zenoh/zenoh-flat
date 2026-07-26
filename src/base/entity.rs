@@ -18,7 +18,7 @@ pub struct EntityGlobalId {
 impl From<zenoh::session::EntityGlobalId> for EntityGlobalId {
     fn from(id: zenoh::session::EntityGlobalId) -> Self {
         EntityGlobalId {
-            zid: id.zid(),
+            zid: id.zid().into(),
             eid: id.eid(),
         }
     }
