@@ -18,7 +18,10 @@
 //! a contiguous-bytes value (no reader/writer/serializer surface), so these
 //! tests cover the slice/vec constructors and the borrowed/owned accessors.
 
-use zenoh_flat::{zbytes_new_clone, zbytes_new_from_slice, zbytes_new_from_vec, zbytes_to_bytes};
+use zenoh_flat::{
+    zbytes_is_empty, zbytes_len, zbytes_new_clone, zbytes_new_from_slice, zbytes_new_from_vec,
+    zbytes_to_bytes,
+};
 
 /// `test_slice`: bytes built from a borrowed slice come back byte-identical
 /// through the borrowed-or-owned (`as_bytes`) accessor.
@@ -53,4 +56,17 @@ fn clone_shares_payload() {
 fn empty_payload_round_trips() {
     let payload = zbytes_new_from_slice(&[]);
     assert!(zbytes_to_bytes(&payload).is_empty());
+}
+
+/// The size of a payload is readable without materializing it, and agrees with
+/// the materialized form. `zbytes_len` exists precisely so a caller does not
+/// have to call `zbytes_to_bytes` just to learn how big the payload is.
+#[test]
+fn len_agrees_with_materialized_payload() {
+    for bytes in [b"".as_slice(), b"x".as_slice(), b"hello world".as_slice()] {
+        let z = zbytes_new_from_slice(bytes);
+        assert_eq!(zbytes_len(&z), bytes.len());
+        assert_eq!(zbytes_len(&z), zbytes_to_bytes(&z).len());
+        assert_eq!(zbytes_is_empty(&z), bytes.is_empty());
+    }
 }
