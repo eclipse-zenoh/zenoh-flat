@@ -107,9 +107,13 @@ fn session_reports_its_locators() {
         "a listening session has at least one locator"
     );
     for l in &locators {
+        let has_scheme_and_addr = matches!(
+            l.split_once('/'),
+            Some((scheme, rest)) if !scheme.is_empty() && !rest.is_empty()
+        );
         assert!(
-            l.contains('/'),
-            "locator {l:?} should carry a scheme, e.g. tcp/…"
+            has_scheme_and_addr,
+            "locator {l:?} should carry a scheme and address, e.g. tcp/…"
         );
     }
 }
