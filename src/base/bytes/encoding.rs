@@ -474,4 +474,19 @@ mod tests {
         assert_eq!(encoding_get_schema(&e), Some(bytes.clone()));
         assert_eq!(encoding_to_struct(&e).schema, Some(bytes));
     }
+
+    /// Every field of the value form equals the accessor for that same field —
+    /// the guard for "one source of truth per field". The subject carries a
+    /// non-default id and a present schema, so a field re-derived as a
+    /// hardcoded default would not slip through.
+    #[test]
+    fn struct_mirrors_accessors() {
+        let e = Encoding::new(42, Some(b"schema".to_vec().into()));
+        let es = encoding_to_struct(&e);
+        assert_eq!(es.id, encoding_get_id(&e));
+        assert_eq!(es.schema, encoding_get_schema(&e));
+        // The subject really is non-default.
+        assert_eq!(es.id, 42);
+        assert!(es.schema.is_some());
+    }
 }

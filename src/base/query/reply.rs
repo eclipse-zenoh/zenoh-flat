@@ -55,9 +55,10 @@ pub struct ReplyErrorStruct {
 
 impl From<&ReplyError> for ReplyErrorStruct {
     fn from(e: &ReplyError) -> Self {
+        // Delegate to the field accessors so each field has one definition.
         ReplyErrorStruct {
-            payload: e.payload().clone(),
-            encoding: e.encoding().clone(),
+            payload: reply_error_get_payload(e).clone(),
+            encoding: reply_error_get_encoding(e).clone(),
         }
     }
 }
@@ -87,15 +88,14 @@ pub struct ReplyStruct {
 
 impl From<&Reply> for ReplyStruct {
     fn from(r: &Reply) -> Self {
-        let (sample, error) = match r.result() {
-            Ok(s) => (Some(SampleStruct::from(s)), None),
-            Err(e) => (None, Some(ReplyErrorStruct::from(e))),
-        };
+        // Delegate to the field accessors so each field has one definition.
+        // `reply_get_sample` and `reply_get_err` are the `Ok`/`Err` halves of
+        // the same result, so exactly one of them is `Some`.
         ReplyStruct {
-            sample,
-            error,
+            sample: reply_get_sample(r).map(SampleStruct::from),
+            error: reply_get_err(r).map(ReplyErrorStruct::from),
             #[cfg(feature = "unstable")]
-            replier_id: r.replier_id().map(EntityGlobalId::from),
+            replier_id: reply_get_replier_id(r),
         }
     }
 }

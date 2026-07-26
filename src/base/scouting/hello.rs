@@ -34,10 +34,11 @@ pub struct HelloStruct {
 
 impl From<&Hello> for HelloStruct {
     fn from(h: &Hello) -> Self {
+        // Delegate to the field accessors so each field has one definition.
         HelloStruct {
-            whatami: h.whatami().into(),
-            zid: h.zid(),
-            locators: h.locators().iter().map(|l| l.to_string()).collect(),
+            whatami: hello_get_whatami(h),
+            zid: hello_get_zid(h),
+            locators: hello_get_locators(h),
         }
     }
 }
@@ -46,4 +47,27 @@ impl From<&Hello> for HelloStruct {
 #[prebindgen]
 pub fn hello_to_struct(h: &Hello) -> HelloStruct {
     h.into()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every field of the value form equals the accessor for that same field —
+    /// the guard for "one source of truth per field".
+    ///
+    /// A `Hello` only ever arrives from the network, and the only constructor
+    /// base zenoh offers is `Hello::empty()`, so the subject carries default
+    /// values. That limits what this can catch compared with the sample guard
+    /// (which builds a fully non-default subject): a re-derivation that
+    /// hardcoded a default would still agree here. It does still pin the three
+    /// fields to their accessors, which is what the rule is about.
+    #[test]
+    fn struct_mirrors_accessors() {
+        let h = Hello::empty();
+        let hs = hello_to_struct(&h);
+        assert_eq!(hs.whatami, hello_get_whatami(&h));
+        assert_eq!(hs.zid, hello_get_zid(&h));
+        assert_eq!(hs.locators, hello_get_locators(&h));
+    }
 }

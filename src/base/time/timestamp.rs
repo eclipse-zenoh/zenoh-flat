@@ -6,7 +6,7 @@ use prebindgen_proc_macro::prebindgen;
 /// of the node that created it; both are small and fixed-size, so a timestamp
 /// crosses whole, by value.
 #[prebindgen]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Timestamp {
     /// NTP64 time component of the timestamp. This is an unsigned value;
     /// current-era timestamps set the high bit.

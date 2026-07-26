@@ -7,7 +7,7 @@ use crate::ZenohId;
 ///
 /// This information is available only when unstable features are enabled.
 #[prebindgen(cfg = "feature = \"unstable\"")]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EntityGlobalId {
     /// Identifier of the node the entity belongs to.
     pub zid: ZenohId,

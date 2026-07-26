@@ -9,6 +9,8 @@ use zenoh::{
 };
 
 use self::sample_kind::SampleKind;
+#[cfg(feature = "unstable")]
+use self::source_info::sample_get_source_info;
 use crate::{CongestionControl, Encoding, KeyExpr, Priority, Sample, Timestamp, ZBytes};
 #[cfg(feature = "unstable")]
 use crate::{Reliability, SourceInfo};
@@ -199,20 +201,23 @@ pub struct SampleStruct {
 
 impl From<&Sample> for SampleStruct {
     fn from(s: &Sample) -> Self {
+        // Delegate to the field accessors so each field has one definition.
+        // The accessors that lend a field (`&KeyExpr`, `&ZBytes`, `&Encoding`)
+        // are cloned here, since the value form owns its fields.
         SampleStruct {
-            key_expr: s.key_expr().clone(),
-            payload: s.payload().clone(),
-            encoding: s.encoding().clone(),
-            kind: s.kind().into(),
-            timestamp: s.timestamp().map(Timestamp::from),
-            express: s.express(),
-            priority: s.priority().into(),
-            congestion_control: s.congestion_control().into(),
-            attachment: s.attachment().cloned(),
+            key_expr: sample_get_key_expr(s).clone(),
+            payload: sample_get_payload(s).clone(),
+            encoding: sample_get_encoding(s).clone(),
+            kind: sample_get_kind(s),
+            timestamp: sample_get_timestamp(s),
+            express: sample_get_express(s),
+            priority: sample_get_priority(s),
+            congestion_control: sample_get_congestion_control(s),
+            attachment: sample_get_attachment(s).cloned(),
             #[cfg(feature = "unstable")]
-            reliability: s.reliability().into(),
+            reliability: sample_get_reliability(s),
             #[cfg(feature = "unstable")]
-            source_info: s.source_info().map(SourceInfo::from),
+            source_info: sample_get_source_info(s),
         }
     }
 }
@@ -226,29 +231,104 @@ pub fn sample_to_struct(s: &Sample) -> SampleStruct {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{keyexpr_new_try_from, zbytes_new_from_slice};
+    use crate::{encoding_const_text_plain, keyexpr_new_try_from, zbytes_new_from_slice};
 
+    /// NTP64 with the high bit set, so a value that silently round-trips
+    /// through `i64` is visible.
+    const NTP64_MARKER: u64 = (i64::MAX as u64) + 12_345;
+
+    /// Assert that every field of the value form equals the accessor for that
+    /// same field. This is the guard for "one source of truth per field": it
+    /// fails the moment a field's value form stops delegating and starts
+    /// re-deriving something different.
+    fn assert_struct_mirrors_accessors(s: &Sample) {
+        let st = sample_to_struct(s);
+        assert_eq!(&st.key_expr, sample_get_key_expr(s));
+        assert_eq!(&st.payload, sample_get_payload(s));
+        assert_eq!(&st.encoding, sample_get_encoding(s));
+        assert_eq!(st.kind, sample_get_kind(s));
+        assert_eq!(st.timestamp, sample_get_timestamp(s));
+        assert_eq!(st.express, sample_get_express(s));
+        assert_eq!(st.priority, sample_get_priority(s));
+        assert_eq!(st.congestion_control, sample_get_congestion_control(s));
+        assert_eq!(st.attachment.as_ref(), sample_get_attachment(s));
+        #[cfg(feature = "unstable")]
+        assert_eq!(st.reliability, sample_get_reliability(s));
+        #[cfg(feature = "unstable")]
+        assert_eq!(st.source_info, sample_get_source_info(s));
+    }
+
+    /// A put sample with every settable field carrying a **distinctive,
+    /// non-default** value. This is what gives
+    /// [`assert_struct_mirrors_accessors`] its teeth: against a sample left at
+    /// its defaults, a value form that re-derived a field as a hardcoded
+    /// default would still agree with the accessor and the test would pass.
     fn put_sample() -> Sample {
         let ke = keyexpr_new_try_from("test/ke".to_string()).unwrap();
         sample_new_put(
             ke,
             zbytes_new_from_slice(b"hello"),
-            None,
-            None,
-            None,
-            None,
-            None,
+            // Not the default ZENOH_BYTES.
+            Some(encoding_const_text_plain()),
+            Some(NTP64_MARKER),
+            Some(zbytes_new_from_slice(b"attachment")),
+            // Not the default Drop.
+            Some(CongestionControl::Block),
+            // Not the default Data.
+            Some(Priority::InteractiveHigh),
+            // Not the default false.
+            Some(true),
+            // Not the default Reliable.
+            #[cfg(feature = "unstable")]
+            Some(Reliability::BestEffort),
+        )
+    }
+
+    /// The delete counterpart, so `kind` is exercised as something other than
+    /// `Put`.
+    fn delete_sample() -> Sample {
+        let ke = keyexpr_new_try_from("test/ke".to_string()).unwrap();
+        sample_new_delete(
+            ke,
+            Some(NTP64_MARKER),
+            Some(zbytes_new_from_slice(b"attachment")),
+            Some(CongestionControl::Block),
+            Some(Priority::InteractiveHigh),
             Some(true),
             #[cfg(feature = "unstable")]
-            None,
+            Some(Reliability::BestEffort),
         )
     }
 
     #[test]
-    fn sample_to_struct_mirrors_accessors() {
-        let s = put_sample();
-        let st = sample_to_struct(&s);
-        assert_eq!(st.express, sample_get_express(&s));
+    fn put_struct_mirrors_accessors() {
+        assert_struct_mirrors_accessors(&put_sample());
+    }
+
+    #[test]
+    fn delete_struct_mirrors_accessors() {
+        assert_struct_mirrors_accessors(&delete_sample());
+    }
+
+    /// The fields really do carry the distinctive values above — otherwise
+    /// `assert_struct_mirrors_accessors` would be comparing defaults against
+    /// defaults and could not catch a hardcoding regression.
+    #[test]
+    fn put_sample_fields_are_non_default() {
+        let st = sample_to_struct(&put_sample());
+        assert_eq!(st.kind, SampleKind::Put);
+        assert_eq!(st.encoding, *encoding_const_text_plain());
+        assert_eq!(st.timestamp.map(|t| t.ntp64), Some(NTP64_MARKER));
         assert!(st.express);
+        assert_eq!(st.priority, Priority::InteractiveHigh);
+        assert_eq!(st.congestion_control, CongestionControl::Block);
+        assert!(st.attachment.is_some());
+        #[cfg(feature = "unstable")]
+        assert_eq!(st.reliability, Reliability::BestEffort);
+    }
+
+    #[test]
+    fn delete_sample_has_delete_kind() {
+        assert_eq!(sample_to_struct(&delete_sample()).kind, SampleKind::Delete);
     }
 }

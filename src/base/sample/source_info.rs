@@ -11,7 +11,7 @@ use crate::{EntityGlobalId, Sample};
 ///
 /// This information is available only when unstable features are enabled.
 #[prebindgen(cfg = "feature = \"unstable\"")]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceInfo {
     /// Global identifier of the entity that produced the sample.
     pub source: EntityGlobalId,
