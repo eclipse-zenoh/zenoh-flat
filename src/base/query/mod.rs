@@ -13,7 +13,7 @@ use zenoh::Wait;
 #[cfg(feature = "unstable")]
 use self::reply_key_expr::ReplyKeyExpr;
 #[cfg(feature = "unstable")]
-use crate::{CongestionControl, Priority, SourceInfo};
+use crate::{CongestionControl, Priority, SourceInfo, TimestampStack};
 use crate::{Encoding, Error, KeyExpr, Query, Sample, Timestamp, ZBytes};
 
 /// Return the key expression targeted by the query.
@@ -93,6 +93,12 @@ pub fn query_get_express(q: &Query) -> bool {
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn query_get_source_info(q: &Query) -> Option<SourceInfo> {
     q.source_info().map(SourceInfo::from)
+}
+
+/// Return the timestamps this query accumulated along its path, when
+/// instrumentation recorded any.
+pub fn query_get_timestamp_stack(q: &Query) -> Option<&TimestampStack> {
+    q.timestamp_stack()
 }
 
 /// Reply to a query with a complete sample.

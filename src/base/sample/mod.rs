@@ -8,12 +8,9 @@ use zenoh::sample::SampleBuilder;
 use self::sample_kind::SampleKind;
 #[cfg(feature = "unstable")]
 use self::source_info::sample_get_source_info;
-use crate::{
-    CongestionControl, Encoding, EncodingStruct, Error, KeyExpr, Priority, Sample, Timestamp,
-    ZBytes, encoding_to_struct,
-};
+use crate::{CongestionControl, Encoding, Error, KeyExpr, Priority, Sample, Timestamp, ZBytes};
 #[cfg(feature = "unstable")]
-use crate::{Reliability, SourceInfo};
+use crate::{Reliability, SourceInfo, TimestampStack};
 
 /// Create a sample that publishes a value.
 ///
@@ -171,11 +168,22 @@ pub fn sample_get_reliability(s: &Sample) -> Reliability {
     s.reliability().into()
 }
 
-/// A sample decomposed into its fields as a plain value.
+/// Return the timestamps this sample accumulated along its path, when
+/// instrumentation recorded any.
 ///
-/// This is the value form of [`Sample`]: it owns a full copy of every field,
-/// for callers that prefer the whole sample as data over reading fields from
-/// the handle one at a time.
+/// This information is available only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn sample_get_timestamp_stack(s: &Sample) -> Option<&TimestampStack> {
+    s.timestamp_stack()
+}
+
+/// A sample decomposed into its fields as a value form.
+///
+/// This is the value form of [`Sample`]: the sample's accessors gathered into
+/// one struct, for callers that prefer the whole sample as data over reading
+/// fields from the handle one at a time. Fields whose type is a handle stay
+/// handles, so taking a sample apart never copies a nested payload.
 #[prebindgen]
 #[derive(Clone, Debug)]
 pub struct SampleStruct {
@@ -184,7 +192,7 @@ pub struct SampleStruct {
     /// Sample payload.
     pub payload: ZBytes,
     /// Format information associated with the payload.
-    pub encoding: EncodingStruct,
+    pub encoding: Encoding,
     /// Whether the sample publishes a value or announces a deletion.
     pub kind: SampleKind,
     /// Publication timestamp, when present.
@@ -205,6 +213,10 @@ pub struct SampleStruct {
     /// are enabled.
     #[cfg(feature = "unstable")]
     pub source_info: Option<SourceInfo>,
+    /// Timestamps accumulated along the sample's path, when instrumentation
+    /// recorded any. Available only when unstable features are enabled.
+    #[cfg(feature = "unstable")]
+    pub timestamp_stack: Option<TimestampStack>,
 }
 
 impl From<&Sample> for SampleStruct {
@@ -215,7 +227,7 @@ impl From<&Sample> for SampleStruct {
         SampleStruct {
             key_expr: sample_get_key_expr(s).clone(),
             payload: sample_get_payload(s).clone(),
-            encoding: encoding_to_struct(sample_get_encoding(s)),
+            encoding: sample_get_encoding(s).clone(),
             kind: sample_get_kind(s),
             timestamp: sample_get_timestamp(s),
             express: sample_get_express(s),
@@ -226,6 +238,8 @@ impl From<&Sample> for SampleStruct {
             reliability: sample_get_reliability(s),
             #[cfg(feature = "unstable")]
             source_info: sample_get_source_info(s),
+            #[cfg(feature = "unstable")]
+            timestamp_stack: sample_get_timestamp_stack(s).cloned(),
         }
     }
 }
@@ -264,7 +278,7 @@ mod tests {
         let st = sample_to_struct(s);
         assert_eq!(&st.key_expr, sample_get_key_expr(s));
         assert_eq!(&st.payload, sample_get_payload(s));
-        assert_eq!(st.encoding, encoding_to_struct(sample_get_encoding(s)));
+        assert_eq!(&st.encoding, sample_get_encoding(s));
         assert_eq!(st.kind, sample_get_kind(s));
         assert_eq!(st.timestamp, sample_get_timestamp(s));
         assert_eq!(st.express, sample_get_express(s));
@@ -275,6 +289,8 @@ mod tests {
         assert_eq!(st.reliability, sample_get_reliability(s));
         #[cfg(feature = "unstable")]
         assert_eq!(st.source_info, sample_get_source_info(s));
+        #[cfg(feature = "unstable")]
+        assert_eq!(st.timestamp_stack.as_ref(), sample_get_timestamp_stack(s));
     }
 
     /// A put sample with every settable field carrying a **distinctive,
@@ -338,7 +354,7 @@ mod tests {
     fn put_sample_fields_are_non_default() {
         let st = sample_to_struct(&put_sample());
         assert_eq!(st.kind, SampleKind::Put);
-        assert_eq!(st.encoding, encoding_to_struct(encoding_const_text_plain()));
+        assert_eq!(&st.encoding, encoding_const_text_plain());
         assert_eq!(st.timestamp, Some(marker_timestamp()));
         assert!(st.express);
         assert_eq!(st.priority, Priority::InteractiveHigh);
@@ -348,27 +364,27 @@ mod tests {
         assert_eq!(st.reliability, Reliability::BestEffort);
     }
 
-    /// A twin-typed field is carried as its **value form**, not its handle —
-    /// the composition rule from README §Composing a value.
+    /// A twin-typed field is carried as its **handle**, not its value form —
+    /// README §Composing a value: a `…Struct` opens the one handle it was
+    /// called on and stops there.
     ///
     /// This is checked structurally rather than by reading the field's value:
-    /// `encoding_to_struct` is the only way to reach an `EncodingStruct` from an
-    /// `Encoding`, so the assignment below only compiles while the field is the
-    /// value form. If `SampleStruct.encoding` reverted to `Encoding`, this test
-    /// would stop compiling — which is the point, since the previous defect was
-    /// exactly one nesting level disagreeing with another.
+    /// the annotated binding below only compiles while the field is the handle.
+    /// If `SampleStruct.encoding` reverted to `EncodingStruct` — pulling the
+    /// encoding's arbitrary-length schema into every `sample_to_struct` call —
+    /// this test would stop compiling, which is the point.
     ///
     /// `ReplyErrorStruct.encoding` is pinned the same way by
     /// `reply_struct_mismatches` in `tests/queryable.rs`, which compares it
-    /// against `encoding_to_struct(..)` and so equally stops compiling if that
-    /// field reverts.
+    /// against `reply_error_get_encoding(..)` and so equally stops compiling if
+    /// that field reverts.
     #[test]
-    fn twin_fields_are_carried_as_value_forms() {
+    fn twin_fields_are_carried_as_handles() {
         let s = put_sample();
         let st = sample_to_struct(&s);
 
-        let encoding: EncodingStruct = st.encoding;
-        assert_eq!(encoding, encoding_to_struct(sample_get_encoding(&s)));
+        let encoding: Encoding = st.encoding;
+        assert_eq!(&encoding, sample_get_encoding(&s));
     }
 
     #[test]

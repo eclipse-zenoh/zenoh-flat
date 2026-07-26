@@ -1,10 +1,8 @@
 use prebindgen_proc_macro::prebindgen;
 
+use crate::{Encoding, Reply, ReplyError, Sample, ZBytes};
 #[cfg(feature = "unstable")]
-use crate::EntityGlobalId;
-use crate::{
-    Encoding, EncodingStruct, Reply, ReplyError, Sample, SampleStruct, ZBytes, encoding_to_struct,
-};
+use crate::{EntityGlobalId, TimestampStack};
 
 /// Return the global identifier of the entity that answered, when known.
 ///
@@ -45,14 +43,31 @@ pub fn reply_error_get_encoding(e: &ReplyError) -> &Encoding {
     e.encoding()
 }
 
-/// The application error carried by an unsuccessful reply, as a plain value.
+/// Return the timestamps this error accumulated along its path, when
+/// instrumentation recorded any.
+///
+/// This information is available only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn reply_error_get_timestamp_stack(e: &ReplyError) -> Option<&TimestampStack> {
+    e.timestamp_stack()
+}
+
+/// The application error carried by an unsuccessful reply, as a value form.
+///
+/// Like every value form it is this type's accessors gathered into one struct,
+/// so `encoding` is the [`Encoding`] handle, not its value form.
 #[prebindgen]
 #[derive(Clone, Debug)]
 pub struct ReplyErrorStruct {
     /// Error payload.
     pub payload: ZBytes,
     /// Format information associated with the error payload.
-    pub encoding: EncodingStruct,
+    pub encoding: Encoding,
+    /// Timestamps accumulated along the error's path, when instrumentation
+    /// recorded any. Available only when unstable features are enabled.
+    #[cfg(feature = "unstable")]
+    pub timestamp_stack: Option<TimestampStack>,
 }
 
 impl From<&ReplyError> for ReplyErrorStruct {
@@ -60,7 +75,9 @@ impl From<&ReplyError> for ReplyErrorStruct {
         // Delegate to the field accessors so each field has one definition.
         ReplyErrorStruct {
             payload: reply_error_get_payload(e).clone(),
-            encoding: encoding_to_struct(reply_error_get_encoding(e)),
+            encoding: reply_error_get_encoding(e).clone(),
+            #[cfg(feature = "unstable")]
+            timestamp_stack: reply_error_get_timestamp_stack(e).cloned(),
         }
     }
 }
@@ -79,13 +96,17 @@ pub fn reply_error_to_struct(e: &ReplyError) -> ReplyErrorStruct {
 /// never both and never neither, so the alternatives are variants of a single
 /// type rather than parallel optional fields: the exclusivity is carried by the
 /// type and a consumer cannot mistake an error reply for an empty success.
+///
+/// Both alternatives are carried as the handles the reply's own accessors hand
+/// back; a caller who wants the sample as data calls
+/// [`crate::sample_to_struct`] on it.
 #[prebindgen]
 #[derive(Clone, Debug)]
 pub enum ReplyResult {
     /// The sample carried by a successful reply.
-    Sample(SampleStruct),
+    Sample(Sample),
     /// The error carried by an unsuccessful reply.
-    Error(ReplyErrorStruct),
+    Error(ReplyError),
 }
 
 /// A reply decomposed into a plain value.
@@ -113,8 +134,8 @@ impl From<&Reply> for ReplyStruct {
             // and `reply_struct_mismatches` in `tests/queryable.rs` pins this
             // field in agreement with all three.
             result: match r.result() {
-                Ok(s) => ReplyResult::Sample(s.into()),
-                Err(e) => ReplyResult::Error(e.into()),
+                Ok(s) => ReplyResult::Sample(s.clone()),
+                Err(e) => ReplyResult::Error(e.clone()),
             },
             #[cfg(feature = "unstable")]
             replier_id: reply_get_replier_id(r),

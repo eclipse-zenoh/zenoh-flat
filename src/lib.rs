@@ -108,6 +108,10 @@ pub type AdvancedSubscriber = zenoh_ext::AdvancedSubscriber<()>;
 /// when unstable features are enabled.
 #[cfg(feature = "unstable")]
 pub type SampleMissListener = zenoh_ext::SampleMissListener<()>;
+/// The interception timestamps a message accumulated along its path. Available
+/// only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+pub type TimestampStack = zenoh::timestamp_stack::TimestampStack;
 /// A span of time, used by configuration options such as heartbeat periods.
 pub use std::time::Duration;
 
@@ -149,9 +153,11 @@ pub use crate::base::qos::reliability::Reliability;
 #[cfg(feature = "unstable")]
 pub use crate::base::query::querier::{querier_get_accept_replies, querier_get_id};
 #[cfg(feature = "unstable")]
+pub use crate::base::query::query_get_timestamp_stack;
+#[cfg(feature = "unstable")]
 pub use crate::base::query::queryable::queryable_get_id;
 #[cfg(feature = "unstable")]
-pub use crate::base::query::reply::reply_get_replier_id;
+pub use crate::base::query::reply::{reply_error_get_timestamp_stack, reply_get_replier_id};
 #[cfg(feature = "unstable")]
 pub use crate::base::query::{
     query_get_accepts_replies, query_get_congestion_control, query_get_express, query_get_priority,
@@ -159,13 +165,19 @@ pub use crate::base::query::{
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::sample::{
-    sample_get_reliability,
+    sample_get_reliability, sample_get_timestamp_stack,
     source_info::{SourceInfo, sample_get_source_info},
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::session::session_get_locators;
 #[cfg(feature = "unstable")]
 pub use crate::base::subscriber::subscriber_get_id;
+#[cfg(feature = "unstable")]
+pub use crate::base::time::timestamp_stack::{
+    InstrumentationTimestamp, InterceptionPoint, TimestampInstrumentation, TimestampStackRecord,
+    TimestampStackStruct, timestamp_stack_get_instrumentation, timestamp_stack_get_records,
+    timestamp_stack_to_struct,
+};
 pub use crate::base::{
     bytes::{
         encoding::{
