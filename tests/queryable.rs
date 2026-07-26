@@ -59,7 +59,7 @@ fn reply_struct_mismatches(r: &Reply) -> Vec<String> {
     }
 
     if let (Some(st), Some(sample)) = (rs.sample.as_ref(), reply_get_sample(r)) {
-        if st.key_expr != *sample_get_key_expr(sample) {
+        if &st.key_expr != sample_get_key_expr(sample) {
             bad.push("sample.key_expr disagrees with sample_get_key_expr".to_string());
         }
         if st.payload != *sample_get_payload(sample) {
