@@ -27,8 +27,8 @@ use std::{
 };
 
 use zenoh_flat::{
-    CacheConfig, HistoryConfig, MissDetectionConfig, RecoveryConfig, Sample, SampleKind,
-    advanced_publisher_declare_matching_listener, advanced_publisher_matching_status,
+    CacheConfig, HistoryConfig, MissDetectionConfig, RecoveryConfig, RecoveryMode, Sample,
+    SampleKind, advanced_publisher_declare_matching_listener, advanced_publisher_matching_status,
     advanced_publisher_put, advanced_subscriber_declare_detect_publishers_subscriber,
     advanced_subscriber_declare_sample_miss_listener, config_new_default, keyexpr_as_str,
     keyexpr_new_try_from, open, sample_get_key_expr, sample_get_kind, sample_get_payload,
@@ -71,8 +71,7 @@ fn advanced_put_is_received_and_matching_detected() {
             ..Default::default()
         }),
         Some(RecoveryConfig {
-            heartbeat: true,
-            ..Default::default()
+            mode: Some(RecoveryMode::Heartbeat),
         }),
         None,       // query_timeout
         Some(true), // subscriber_detection

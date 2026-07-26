@@ -24,19 +24,28 @@ pub struct HistoryConfig {
     pub max_age: Option<f64>,
 }
 
+/// How an advanced subscriber recovers missed samples.
+///
+/// The modes are mutually exclusive by construction, mirroring base zenoh's
+/// builder, whose type-state makes `periodic_queries` and `heartbeat`
+/// unreachable from one another. Because the choice is carried by the type,
+/// there is no precedence rule to document and no way to ask for both.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+#[derive(Clone, Debug)]
+pub enum RecoveryMode {
+    /// Query for not-yet-received samples with this period.
+    PeriodicQueries(Duration),
+    /// Subscribe to advanced publishers' heartbeats to detect misses.
+    Heartbeat,
+}
+
 /// Retransmission (missed-sample recovery) configuration for an advanced
 /// subscriber.
-///
-/// At most one recovery mode applies: a `periodic_queries` period, or
-/// `heartbeat` subscription. If neither is set, recovery uses its defaults.
 #[prebindgen(cfg = "feature = \"unstable\"")]
 #[derive(Clone, Debug, Default)]
 pub struct RecoveryConfig {
-    /// Period of the queries for not-yet-received samples; takes precedence over
-    /// `heartbeat`.
-    pub periodic_queries: Option<Duration>,
-    /// Subscribe to advanced publishers' heartbeats to detect misses.
-    pub heartbeat: bool,
+    /// Recovery mode; `None` leaves recovery at its defaults.
+    pub mode: Option<RecoveryMode>,
 }
 
 /// A report of samples missed from one source, delivered to a sample-miss
@@ -68,12 +77,16 @@ impl From<HistoryConfig> for zenoh_ext::HistoryConfig {
 
 impl From<RecoveryConfig> for zenoh_ext::RecoveryConfig {
     fn from(r: RecoveryConfig) -> Self {
-        if let Some(period) = r.periodic_queries {
-            zenoh_ext::RecoveryConfig::<false>::default().periodic_queries(period)
-        } else if r.heartbeat {
-            zenoh_ext::RecoveryConfig::<false>::default().heartbeat()
-        } else {
-            zenoh_ext::RecoveryConfig::default()
+        // An exhaustive match, not a precedence chain: every mode reaches base
+        // and none can be silently ignored.
+        match r.mode {
+            Some(RecoveryMode::PeriodicQueries(period)) => {
+                zenoh_ext::RecoveryConfig::<false>::default().periodic_queries(period)
+            }
+            Some(RecoveryMode::Heartbeat) => {
+                zenoh_ext::RecoveryConfig::<false>::default().heartbeat()
+            }
+            None => zenoh_ext::RecoveryConfig::default(),
         }
     }
 }
@@ -245,4 +258,66 @@ pub fn advanced_subscriber_undeclare(subscriber: AdvancedSubscriber) -> Result<(
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn sample_miss_listener_undeclare(listener: SampleMissListener) -> Result<(), Error> {
     listener.undeclare().wait()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Render a flat [`RecoveryConfig`] as the base config it converts to.
+    fn to_base(mode: Option<RecoveryMode>) -> String {
+        format!(
+            "{:?}",
+            zenoh_ext::RecoveryConfig::from(RecoveryConfig { mode })
+        )
+    }
+
+    /// Every recovery mode must arrive at base as that mode, and `None` must
+    /// leave base at its defaults. This is the guard against the defect this
+    /// type used to have: two independent knobs resolved by precedence, where
+    /// setting both silently dropped one. With a sum there is nothing to drop,
+    /// and an exhaustive `match` cannot forget a variant — but only a test
+    /// proves each variant is wired to the right base builder.
+    ///
+    /// Base's `RecoveryConfig` has private fields and no `PartialEq`, so its
+    /// `Debug` rendering is the oracle.
+    #[test]
+    fn every_recovery_mode_reaches_base() {
+        let period = Duration::from_millis(250);
+
+        assert_eq!(
+            to_base(Some(RecoveryMode::PeriodicQueries(period))),
+            format!(
+                "{:?}",
+                zenoh_ext::RecoveryConfig::<false>::default().periodic_queries(period)
+            ),
+        );
+        assert_eq!(
+            to_base(Some(RecoveryMode::Heartbeat)),
+            format!(
+                "{:?}",
+                zenoh_ext::RecoveryConfig::<false>::default().heartbeat()
+            ),
+        );
+        assert_eq!(
+            to_base(None),
+            format!("{:?}", zenoh_ext::RecoveryConfig::<true>::default()),
+        );
+    }
+
+    /// The three outcomes above are actually distinguishable. Without this, the
+    /// assertions in [`every_recovery_mode_reaches_base`] would still pass if
+    /// every mode collapsed onto one base config — exactly the silent-loss bug
+    /// they exist to catch.
+    #[test]
+    fn recovery_modes_are_distinguishable() {
+        let a = to_base(Some(RecoveryMode::PeriodicQueries(Duration::from_millis(
+            250,
+        ))));
+        let b = to_base(Some(RecoveryMode::Heartbeat));
+        let c = to_base(None);
+        assert_ne!(a, b);
+        assert_ne!(a, c);
+        assert_ne!(b, c);
+    }
 }
