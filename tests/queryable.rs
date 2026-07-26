@@ -23,8 +23,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-#[cfg(feature = "unstable")]
-use zenoh_flat::reply_get_replier_id;
 use zenoh_flat::{
     KeyExpr, Reply, ReplyResult, Selector, Session, config_new_default, keyexpr_new_try_from, open,
     query_reply_error, query_reply_success, reply_error_get_encoding, reply_error_get_payload,
@@ -32,6 +30,8 @@ use zenoh_flat::{
     sample_get_encoding, sample_get_key_expr, sample_get_payload, session_declare_queryable,
     session_get, zbytes_new_from_slice, zbytes_to_bytes,
 };
+#[cfg(feature = "unstable")]
+use zenoh_flat::{reply_error_get_timestamp_stack, reply_get_replier_id};
 
 fn ke(s: &str) -> KeyExpr {
     keyexpr_new_try_from(s.to_string()).unwrap_or_else(|e| panic!("invalid key expr {s:?}: {e}"))
@@ -107,6 +107,13 @@ fn reply_struct_mismatches(r: &Reply) -> Vec<String> {
                         || &direct.encoding != reply_error_get_encoding(err)
                     {
                         bad.push("reply_error_to_struct disagrees with its accessors".to_string());
+                    }
+                    #[cfg(feature = "unstable")]
+                    if direct.timestamp_stack.as_ref() != reply_error_get_timestamp_stack(err) {
+                        bad.push(
+                            "error.timestamp_stack disagrees with reply_error_get_timestamp_stack"
+                                .to_string(),
+                        );
                     }
                 }
             }

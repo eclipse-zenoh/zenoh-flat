@@ -328,3 +328,30 @@ fn session_timestamp_survives_sample_construction() {
         "delete sample must carry the session timestamp unchanged"
     );
 }
+
+/// A sample built locally has no timestamp stack: the stack is populated by
+/// instrumentation along a network path, which a locally-constructed sample
+/// never travelled. Its value form agrees, carrying no handle either.
+///
+/// This pins the accessor's absent case, which is the one every caller meets by
+/// default. Populating a stack requires session-level instrumentation that flat
+/// does not yet expose, so the present case is not reachable from here — stated
+/// rather than silently untested.
+#[cfg(feature = "unstable")]
+#[test]
+fn locally_built_sample_has_no_timestamp_stack() {
+    use zenoh_flat::{sample_get_timestamp_stack, sample_to_struct};
+
+    let ts = zenoh_flat::Timestamp {
+        ntp64: 1,
+        id: vec![1],
+    };
+    let sample = make_put(
+        keyexpr_new_try_from("test/z_sample_reply/stack".to_string()).expect("key expr"),
+        zbytes_new_from_vec(b"p".to_vec()),
+        ts,
+        zbytes_new_from_vec(b"a".to_vec()),
+    );
+    assert!(sample_get_timestamp_stack(&sample).is_none());
+    assert!(sample_to_struct(&sample).timestamp_stack.is_none());
+}
