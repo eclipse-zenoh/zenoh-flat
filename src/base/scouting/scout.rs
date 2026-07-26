@@ -19,11 +19,10 @@ pub fn scout(
     callback: impl Fn(Hello) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
 ) -> Result<Scout, Error> {
-    let bits = u8::try_from(whatami)
-        .map_err(|_| -> Error { format!("invalid whatami bitfield: {whatami}").into() })?;
+    let bits = u8::try_from(whatami).map_err(|_| format!("invalid whatami bitfield: {whatami}"))?;
     let matcher: WhatAmIMatcher = bits
         .try_into()
-        .map_err(|_| -> Error { format!("invalid whatami bitfield: 0b{bits:b}").into() })?;
+        .map_err(|_| format!("invalid whatami bitfield: 0b{bits:b}"))?;
     let config = config.cloned().unwrap_or_default();
     let on_close = OnceDrop::new(on_close);
     zenoh::scout(matcher, config)
