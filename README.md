@@ -132,6 +132,19 @@ whole is trivial. Only *unbounded* data (arbitrary-length strings and lists) is 
 cost. So a `ZenohId` (≤16 bytes) and a `Timestamp` (a `u64` plus a ≤16-byte id) are value-only,
 while an `Encoding` (which carries an arbitrary-length schema) is a twin.
 
+**A snapshot zenoh has already materialized is a value, even when it carries a list.** The payload
+test exists so a caller can read a type's cheap fields *without paying to materialize its payload* —
+so it only bites where there is something left to defer. `links()` and `transports()` hand back
+iterators of **owned** `Link` and `Transport` values: zenoh built the strings and the interface list
+before flat ever saw them. A handle would wrap an already-owned copy, defer nothing, and hand back N
+things to close for a call whose entire purpose is reading the list. So `Link` is **value-only**
+despite its `interfaces: Vec<String>`.
+
+The contrast with `Hello` — a twin that also carries `locators: Vec<String>` — is the test of the
+distinction, not a counterexample to it: a `Hello` arrives one at a time and is often wanted only
+for its zid, so deferring its locators pays for itself. A link list is requested precisely in order
+to be read.
+
 Where a field is bounded, **say so in the type**, not in a comment: `ZenohId.bytes` is a
 `[u8; ZENOH_ID_MAX_SIZE]`, so the bound is a fact a reader and a generator can both see, and reading
 an id allocates nothing. A `Vec<u8>` would be indistinguishable from an arbitrary-length list and

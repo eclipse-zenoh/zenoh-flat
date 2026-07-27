@@ -108,6 +108,14 @@ pub type AdvancedSubscriber = zenoh_ext::AdvancedSubscriber<()>;
 /// when unstable features are enabled.
 #[cfg(feature = "unstable")]
 pub type SampleMissListener = zenoh_ext::SampleMissListener<()>;
+/// A listener reporting links being added to and removed from a session.
+/// Available only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+pub type LinkEventsListener = zenoh::session::LinkEventsListener<()>;
+/// A listener reporting transports being opened and closed by a session.
+/// Available only when unstable features are enabled.
+#[cfg(feature = "unstable")]
+pub type TransportEventsListener = zenoh::session::TransportEventsListener<()>;
 /// The interception timestamps a message accumulated along its path. Available
 /// only when unstable features are enabled.
 #[cfg(feature = "unstable")]
@@ -167,6 +175,14 @@ pub use crate::base::query::{
 pub use crate::base::sample::{
     sample_get_reliability, sample_get_timestamp_stack,
     source_info::{SourceInfo, sample_get_source_info},
+};
+#[cfg(feature = "unstable")]
+pub use crate::base::session::info::{
+    Link, LinkEvent, LinkEventKind, PriorityRange, Transport, TransportEvent, TransportEventKind,
+    link_events_listener_undeclare, session_declare_background_link_events_listener,
+    session_declare_background_transport_events_listener, session_declare_link_events_listener,
+    session_declare_transport_events_listener, session_get_links, session_get_transports,
+    transport_events_listener_undeclare,
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::session::session_get_locators;

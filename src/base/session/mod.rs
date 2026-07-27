@@ -1,3 +1,6 @@
+#[cfg(feature = "unstable")]
+pub(crate) mod info;
+
 use std::time::Duration;
 
 use prebindgen_proc_macro::prebindgen;
