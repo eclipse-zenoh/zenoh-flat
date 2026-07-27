@@ -2,7 +2,8 @@ use prebindgen_proc_macro::prebindgen;
 use zenoh::Wait;
 
 use crate::{
-    CongestionControl, Encoding, Error, KeyExpr, Priority, Querier, Reply, ZBytes, util::OnceDrop,
+    CongestionControl, Encoding, Error, KeyExpr, MatchingListener, Priority, Querier, Reply,
+    ZBytes, util::OnceDrop,
 };
 #[cfg(feature = "unstable")]
 use crate::{EntityGlobalId, ReplyKeyExpr};
@@ -72,6 +73,55 @@ pub fn querier_get_priority(querier: &Querier) -> Priority {
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn querier_get_accept_replies(querier: &Querier) -> ReplyKeyExpr {
     querier.accept_replies().into()
+}
+
+/// Return whether any queryable would currently answer this querier's queries.
+///
+/// Asking before issuing a query is the point: there is no need to send one
+/// that nothing will serve.
+#[prebindgen]
+pub fn querier_matching_status(querier: &Querier) -> Result<bool, Error> {
+    Ok(querier.matching_status().wait()?.matching())
+}
+
+/// Declare a matching listener that is notified when the querier's matching
+/// status changes.
+///
+/// The callback receives the new matching status (`true` if matching queryables
+/// exist). The close callback is called when the listener ends.
+#[prebindgen]
+pub fn querier_declare_matching_listener(
+    querier: &Querier,
+    callback: impl Fn(bool) + Send + Sync + 'static,
+    on_close: impl Fn() + Send + Sync + 'static,
+) -> Result<MatchingListener, Error> {
+    let on_close = OnceDrop::new(on_close);
+    querier
+        .matching_listener()
+        .callback(move |status| {
+            let _ = &on_close;
+            callback(status.matching());
+        })
+        .wait()
+}
+
+/// Declare a background matching listener that runs until the querier is
+/// undeclared.
+#[prebindgen]
+pub fn querier_declare_background_matching_listener(
+    querier: &Querier,
+    callback: impl Fn(bool) + Send + Sync + 'static,
+    on_close: impl Fn() + Send + Sync + 'static,
+) -> Result<(), Error> {
+    let on_close = OnceDrop::new(on_close);
+    querier
+        .matching_listener()
+        .callback(move |status| {
+            let _ = &on_close;
+            callback(status.matching());
+        })
+        .background()
+        .wait()
 }
 
 /// Undeclare the querier and release its network declaration.

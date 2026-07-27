@@ -97,7 +97,8 @@ pub type LivelinessToken = zenoh::liveliness::LivelinessToken;
 /// publisher detection). Available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
 pub type AdvancedPublisher = zenoh_ext::AdvancedPublisher<'static>;
-/// A listener notified when a publisher's matching status changes.
+/// A listener notified when the matching status of a publisher or a querier
+/// changes.
 pub type MatchingListener = zenoh::matching::MatchingListener<()>;
 /// A subscription with advanced features (history query, missed-sample
 /// recovery, subscriber detection). Available only when unstable features are
@@ -244,8 +245,9 @@ pub use crate::base::{
             parameters_is_well_formed, parameters_remove, parameters_values,
         },
         querier::{
+            querier_declare_background_matching_listener, querier_declare_matching_listener,
             querier_get, querier_get_congestion_control, querier_get_key_expr,
-            querier_get_priority, querier_undeclare,
+            querier_get_priority, querier_matching_status, querier_undeclare,
         },
         query_get_attachment, query_get_encoding, query_get_key_expr, query_get_parameters,
         query_get_payload, query_reply_delete, query_reply_error, query_reply_sample,
