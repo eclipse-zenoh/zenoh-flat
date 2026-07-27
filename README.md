@@ -101,13 +101,29 @@ Two independent, objective questions — no "is it big or common enough?" guessw
   (`Encoding`'s id) without paying to materialize the payload. This is an *output* concern: a type
   you only ever *build and pass in*, like `Selector`, never lazily reads, so its string fields don't
   force a handle.
+
+  Read "has a payload field" **prospectively and by family**, not as a snapshot of today's struct:
+  it counts if the type has one, if it may plausibly gain one as zenoh grows, **or** if a sibling it
+  is used alongside has one. A type's shape is the hardest thing to change once bindings ship, so
+  the question to ask is not "what fields does it have right now" but "would a handle ever have been
+  the right answer". Answering yes early costs a caller nothing — the value form is right there —
+  while answering no early has to be undone in every binding at once.
+
+  `Transport` is why the rule is written this way. Its fields today are all cheap (a zid, an enum,
+  three flags), so read literally it is value-only. It is a **twin** anyway: it is handed out beside
+  `Link` by the same calls, consumed by the same callers, and passed *back* to zenoh to select which
+  links to report. Splitting the pair — one a handle, one a value — would make the two halves of one
+  API behave differently for no reason a caller can see, and would force flat to rebuild zenoh's own
+  transport from its fields in order to name it, which
+  [Construction mirrors zenoh](#construction-mirrors-zenoh) says flat does not do.
 - **Give it a value form?** Yes if the type is **fully defined by its readable fields** — a data
   snapshot, not an opaque resource.
 
 A type can answer **yes to both** — that is exactly what a **twin** is (`Sample`, `Encoding`,
 `Hello`): a handle *and* a value form, no separate decision to make. A type of only cheap, fixed-size
-fields (an id, a timestamp) answers no to the handle question and is **value-only**. A live resource
-answers no to the value question and is **handle-only**.
+fields (an id, a timestamp) answers no to the handle question — unless the prospective reading above
+answers it for them — and is **value-only**. A live resource answers no to the value question and is
+**handle-only**.
 
 **"Fully defined by its readable fields" is a strict test.** A type fails it when it carries state a
 caller cannot read back, even if what *is* readable looks like the whole thing:
@@ -131,19 +147,6 @@ A **bounded**, fixed-maximum blob — a 16-byte node id — counts as cheap, not
 whole is trivial. Only *unbounded* data (arbitrary-length strings and lists) is a materialization
 cost. So a `ZenohId` (≤16 bytes) and a `Timestamp` (a `u64` plus a ≤16-byte id) are value-only,
 while an `Encoding` (which carries an arbitrary-length schema) is a twin.
-
-**A snapshot zenoh has already materialized is a value, even when it carries a list.** The payload
-test exists so a caller can read a type's cheap fields *without paying to materialize its payload* —
-so it only bites where there is something left to defer. `links()` and `transports()` hand back
-iterators of **owned** `Link` and `Transport` values: zenoh built the strings and the interface list
-before flat ever saw them. A handle would wrap an already-owned copy, defer nothing, and hand back N
-things to close for a call whose entire purpose is reading the list. So `Link` is **value-only**
-despite its `interfaces: Vec<String>`.
-
-The contrast with `Hello` — a twin that also carries `locators: Vec<String>` — is the test of the
-distinction, not a counterexample to it: a `Hello` arrives one at a time and is often wanted only
-for its zid, so deferring its locators pays for itself. A link list is requested precisely in order
-to be read.
 
 Where a field is bounded, **say so in the type**, not in a comment: `ZenohId.bytes` is a
 `[u8; ZENOH_ID_MAX_SIZE]`, so the bound is a fact a reader and a generator can both see, and reading

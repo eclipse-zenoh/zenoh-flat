@@ -27,13 +27,3 @@ impl From<zenoh::config::WhatAmI> for WhatAmI {
         }
     }
 }
-
-impl From<WhatAmI> for zenoh::config::WhatAmI {
-    fn from(w: WhatAmI) -> Self {
-        match w {
-            WhatAmI::Router => zenoh::config::WhatAmI::Router,
-            WhatAmI::Peer => zenoh::config::WhatAmI::Peer,
-            WhatAmI::Client => zenoh::config::WhatAmI::Client,
-        }
-    }
-}

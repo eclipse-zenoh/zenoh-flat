@@ -16,7 +16,7 @@
 //! which links they carry, and the notifications when either changes.
 //!
 //! The zid accessors (`tests/session_info.rs`) answer *who* is out there; these
-//! answer *how this session reaches them*, so every test here needs two really
+//! answer *how this session reaches them*, so every test here needs really
 //! connected sessions rather than one isolated one.
 
 #![cfg(feature = "unstable")]
@@ -27,11 +27,12 @@ use std::{
 };
 
 use zenoh_flat::{
-    LinkEvent, LinkEventKind, Session, Transport, TransportEvent, TransportEventKind,
-    config_insert_json5, config_new_default, link_events_listener_undeclare, open,
+    Link, LinkEvent, LinkEventKind, Session, Transport, TransportEvent, TransportEventKind,
+    ZenohId, config_insert_json5, config_new_default, link_events_listener_undeclare, link_get_dst,
+    link_get_mtu, link_get_src, link_get_zid, link_to_struct, open,
     session_declare_link_events_listener, session_declare_transport_events_listener,
     session_get_links, session_get_locators, session_get_transports, session_get_zid,
-    transport_events_listener_undeclare,
+    transport_events_listener_undeclare, transport_get_zid, transport_to_struct,
 };
 
 /// How long to wait for a connection to establish and for the resulting events
@@ -81,6 +82,18 @@ fn connecting_session(endpoint: &str) -> Session {
     open(config).expect("open connecting session")
 }
 
+/// The transport of `session` that reaches the node `zid`.
+fn transport_to(session: &Session, zid: &ZenohId) -> Transport {
+    session_get_transports(session)
+        .into_iter()
+        .find(|t| &transport_get_zid(t) == zid)
+        .expect("a transport to that node")
+}
+
+fn zids_of(links: &[Link]) -> Vec<ZenohId> {
+    links.iter().map(link_get_zid).collect()
+}
+
 /// A session connected to nothing has no transports and no links. This is the
 /// baseline the other tests are read against: without it, a report that always
 /// returned a non-empty list would still satisfy them.
@@ -92,7 +105,7 @@ fn isolated_session_has_no_transports_or_links() {
         "an isolated session has no transports"
     );
     assert!(
-        session_get_links(&session, None).expect("links").is_empty(),
+        session_get_links(&session, None).is_empty(),
         "an isolated session has no links"
     );
 }
@@ -118,69 +131,120 @@ fn connected_sessions_report_each_other() {
         "the connecting session has exactly one transport"
     );
     assert_eq!(
-        transports[0].zid, listener_zid,
+        transport_get_zid(&transports[0]),
+        listener_zid,
         "the transport identifies the session at the other end"
     );
 
     let peer_transports = session_get_transports(&listener);
     assert_eq!(peer_transports.len(), 1);
-    assert_eq!(peer_transports[0].zid, connector_zid);
+    assert_eq!(transport_get_zid(&peer_transports[0]), connector_zid);
 
-    let links = session_get_links(&connector, None).expect("links");
+    let links = session_get_links(&connector, None);
     assert!(!links.is_empty(), "a connected session has links");
     for link in &links {
-        assert_eq!(link.zid, listener_zid, "a link carries its transport's zid");
+        assert_eq!(
+            link_get_zid(link),
+            listener_zid,
+            "a link carries its transport's zid"
+        );
         // The endpoint the connection was made to is the one we asked for, so
         // this pins the rendering as well as the presence of the field.
-        assert_eq!(link.dst, endpoint, "the link's destination is the endpoint");
-        assert!(
-            link.src.starts_with("tcp/"),
-            "link source {:?} should be a rendered locator",
-            link.src
+        assert_eq!(
+            link_get_dst(link),
+            endpoint,
+            "the link's destination is the endpoint"
         );
-        assert!(link.mtu > 0, "a real link has a non-zero mtu");
+        assert!(
+            link_get_src(link).starts_with("tcp/"),
+            "link source {:?} should be a rendered locator",
+            link_get_src(link)
+        );
+        assert!(link_get_mtu(link) > 0, "a real link has a non-zero mtu");
     }
 }
 
-/// The transport filter is applied by zenoh, not ignored: filtering by the
-/// transport that owns the links returns them, and filtering by a transport
-/// that is not connected returns nothing.
-///
-/// The negative half is the one that matters. Without it, an implementation
-/// that dropped the filter on the floor and always returned every link would
-/// pass — and dropping it is exactly what an unused parameter does.
+/// Every field of a value form equals the accessor for that same field — the
+/// guard for "one source of truth per field", on subjects that carry real data
+/// rather than the defaults an `empty()` constructor would give.
 #[test]
-fn links_can_be_filtered_by_transport() {
+fn value_forms_mirror_accessors() {
     let (listener, endpoint) = listening_session();
-    let connector = connecting_session(&endpoint);
+    let _connector = connecting_session(&endpoint);
     std::thread::sleep(SETTLE);
 
-    let all = session_get_links(&connector, None).expect("links");
-    assert!(!all.is_empty());
-
-    let transport = session_get_transports(&connector)
+    let transport = session_get_transports(&listener)
         .into_iter()
         .next()
         .expect("one transport");
-    let filtered = session_get_links(&connector, Some(transport.clone())).expect("filtered links");
+    let ts = transport_to_struct(&transport);
+    assert_eq!(ts.zid, transport_get_zid(&transport));
     assert_eq!(
-        filtered, all,
-        "filtering by the only transport returns its links"
+        ts.whatami,
+        zenoh_flat::transport_get_whatami(&transport),
+        "whatami"
+    );
+    assert_eq!(ts.is_qos, zenoh_flat::transport_is_qos(&transport));
+    assert_eq!(
+        ts.is_multicast,
+        zenoh_flat::transport_is_multicast(&transport)
     );
 
-    // Same transport, but naming a node we are not connected to: our own zid.
-    let stranger = Transport {
-        zid: session_get_zid(&connector),
-        ..transport
-    };
+    let link = session_get_links(&listener, None)
+        .into_iter()
+        .next()
+        .expect("one link");
+    let ls = link_to_struct(&link);
+    assert_eq!(ls.zid, link_get_zid(&link));
+    assert_eq!(ls.src, link_get_src(&link));
+    assert_eq!(ls.dst, link_get_dst(&link));
+    assert_eq!(ls.group, zenoh_flat::link_get_group(&link));
+    assert_eq!(ls.mtu, link_get_mtu(&link));
+    assert_eq!(ls.is_streamed, zenoh_flat::link_is_streamed(&link));
+    assert_eq!(ls.interfaces, zenoh_flat::link_get_interfaces(&link));
+    assert_eq!(
+        ls.auth_identifier,
+        zenoh_flat::link_get_auth_identifier(&link)
+    );
+    assert_eq!(ls.priorities, zenoh_flat::link_get_priorities(&link));
+    assert_eq!(ls.reliability, zenoh_flat::link_get_reliability(&link));
+}
+
+/// With two peers connected to the same session, filtering that session's links
+/// by one peer's transport returns that peer's links and not the other's.
+///
+/// Two peers are what makes this a test of the filter rather than of the call:
+/// with one peer, an implementation that ignored the argument and returned
+/// every link would be indistinguishable from one that honoured it.
+#[test]
+fn links_can_be_filtered_by_transport() {
+    let (hub, endpoint) = listening_session();
+    let first = connecting_session(&endpoint);
+    let second = connecting_session(&endpoint);
+    std::thread::sleep(SETTLE);
+
+    let first_zid = session_get_zid(&first);
+    let second_zid = session_get_zid(&second);
+
+    let all = session_get_links(&hub, None);
     assert!(
-        session_get_links(&connector, Some(stranger))
-            .expect("filtered links")
-            .is_empty(),
-        "filtering by an unconnected transport returns no links"
+        zids_of(&all).contains(&first_zid) && zids_of(&all).contains(&second_zid),
+        "unfiltered links cover both peers"
     );
 
-    drop(listener);
+    for zid in [first_zid, second_zid] {
+        let transport = transport_to(&hub, &zid);
+        let filtered = session_get_links(&hub, Some(&transport));
+        assert!(!filtered.is_empty(), "the peer's links are reported");
+        assert!(
+            zids_of(&filtered).iter().all(|z| z == &zid),
+            "filtering by one peer's transport must exclude the other's links"
+        );
+        assert!(
+            filtered.len() < all.len(),
+            "a filtered list is a strict subset when two peers are connected"
+        );
+    }
 }
 
 /// A link-events listener is notified when a link appears, and reports the same
@@ -200,23 +264,70 @@ fn link_events_listener_reports_a_new_link() {
     )
     .expect("declare link events listener");
 
-    let _connector = connecting_session(&endpoint);
+    let connector = connecting_session(&endpoint);
     std::thread::sleep(SETTLE);
+    let connector_zid = session_get_zid(&connector);
 
-    let seen = events.lock().expect("lock").clone();
+    let seen = events.lock().expect("lock");
     let added: Vec<_> = seen
         .iter()
         .filter(|e| e.kind == LinkEventKind::Added)
         .collect();
     assert!(!added.is_empty(), "a new link should be reported as added");
-
-    let polled = session_get_links(&listener, None).expect("links");
     assert!(
-        added.iter().any(|e| polled.contains(&e.link)),
-        "the reported link should be one the accessor also reports"
+        added.iter().any(|e| link_get_zid(&e.link) == connector_zid),
+        "the reported link names the node that connected"
     );
 
+    let polled = session_get_links(&listener, None);
+    let polled_dsts: Vec<_> = polled.iter().map(link_get_dst).collect();
+    assert!(
+        added
+            .iter()
+            .any(|e| polled_dsts.contains(&link_get_dst(&e.link))),
+        "the reported link should be one the accessor also reports"
+    );
+    drop(seen);
+
     link_events_listener_undeclare(handle).expect("undeclare link events listener");
+}
+
+/// The link listener takes the same transport filter the accessor does, and it
+/// is applied: with two peers connected, a listener filtered to one peer's
+/// transport is told about that peer's links only.
+#[test]
+fn link_events_listener_can_be_filtered_by_transport() {
+    let (hub, endpoint) = listening_session();
+    let first = connecting_session(&endpoint);
+    let _second = connecting_session(&endpoint);
+    std::thread::sleep(SETTLE);
+
+    let first_zid = session_get_zid(&first);
+    let transport = transport_to(&hub, &first_zid);
+
+    // `history` replays the links that already exist, so the filter can be
+    // observed without racing a fresh connection.
+    let events: Arc<Mutex<Vec<LinkEvent>>> = Arc::new(Mutex::new(Vec::new()));
+    let sink = events.clone();
+    let handle = session_declare_link_events_listener(
+        &hub,
+        move |event| sink.lock().expect("lock").push(event),
+        || {},
+        Some(true),
+        Some(&transport),
+    )
+    .expect("declare filtered link events listener");
+    std::thread::sleep(SETTLE);
+
+    let seen = events.lock().expect("lock");
+    assert!(!seen.is_empty(), "history should replay the peer's links");
+    assert!(
+        seen.iter().all(|e| link_get_zid(&e.link) == first_zid),
+        "a filtered listener must not be told about the other peer's links"
+    );
+    drop(seen);
+
+    link_events_listener_undeclare(handle).expect("undeclare");
 }
 
 /// With `history`, a listener declared *after* the connection still reports the
@@ -285,12 +396,13 @@ fn transport_events_listener_reports_a_new_transport() {
     std::thread::sleep(SETTLE);
     let connector_zid = session_get_zid(&connector);
 
-    let seen = events.lock().expect("lock").clone();
+    let seen = events.lock().expect("lock");
     assert!(
-        seen.iter()
-            .any(|e| e.kind == TransportEventKind::Opened && e.transport.zid == connector_zid),
-        "the transport to the connecting session should be reported as opened, got {seen:?}"
+        seen.iter().any(|e| e.kind == TransportEventKind::Opened
+            && transport_get_zid(&e.transport) == connector_zid),
+        "the transport to the connecting session should be reported as opened"
     );
+    drop(seen);
 
     transport_events_listener_undeclare(handle).expect("undeclare transport events listener");
 }
@@ -318,12 +430,13 @@ fn transport_events_listener_reports_a_closed_transport() {
     zenoh_flat::session_close(&connector).expect("close the connecting session");
     std::thread::sleep(SETTLE);
 
-    let seen = events.lock().expect("lock").clone();
+    let seen = events.lock().expect("lock");
     assert!(
-        seen.iter()
-            .any(|e| e.kind == TransportEventKind::Closed && e.transport.zid == connector_zid),
-        "the transport should be reported as closed, got {seen:?}"
+        seen.iter().any(|e| e.kind == TransportEventKind::Closed
+            && transport_get_zid(&e.transport) == connector_zid),
+        "the transport should be reported as closed"
     );
+    drop(seen);
 
     transport_events_listener_undeclare(handle).expect("undeclare");
 }

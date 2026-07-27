@@ -9,8 +9,8 @@ use prebindgen_proc_macro::prebindgen;
 use zenoh::Wait;
 
 use crate::{
-    Error, LinkEventsListener, Reliability, Session, TransportEventsListener, WhatAmI, ZenohId,
-    util::OnceDrop,
+    Error, Link, LinkEventsListener, Reliability, Session, Transport, TransportEventsListener,
+    WhatAmI, ZenohId, util::OnceDrop,
 };
 
 /// The range of priorities a link carries, as the raw numbers zenoh reports.
@@ -28,69 +28,199 @@ pub struct PriorityRange {
     pub end: u8,
 }
 
-/// A transport established to another Zenoh node, as a plain value.
+/// Identifier of the node at the other end of this transport.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn transport_get_zid(transport: &Transport) -> ZenohId {
+    (*transport.zid()).into()
+}
+
+/// Type of the node at the other end of this transport.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn transport_get_whatami(transport: &Transport) -> WhatAmI {
+    transport.whatami().into()
+}
+
+/// Whether this transport supports QoS.
 ///
-/// A transport is a connection to a peer; several may exist to the same peer
-/// (a unicast and a multicast one, for instance), and each carries one or more
-/// [`Link`]s, which are the actual protocol-level connections.
+/// When it does not, its links report no priorities and no reliability — zenoh
+/// has nothing to report there rather than a default to report.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn transport_is_qos(transport: &Transport) -> bool {
+    transport.is_qos()
+}
+
+/// Whether this transport is multicast.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn transport_is_multicast(transport: &Transport) -> bool {
+    transport.is_multicast()
+}
+
+/// Whether this transport supports shared memory.
 ///
-/// This is a value, not a handle: zenoh hands out an owned snapshot of every
-/// field, there is nothing left to defer, and there is no lifecycle to manage.
+/// Available only when the `shared-memory` feature is enabled, mirroring zenoh:
+/// without it zenoh does not track the fact, so flat has none to report and
+/// says so by having no accessor rather than by reporting `false`.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+#[cfg(feature = "shared-memory")]
+pub fn transport_is_shm(transport: &Transport) -> bool {
+    transport.is_shm()
+}
+
+/// A transport decomposed into a plain value.
+///
+/// Every field is what the matching `transport_*` accessor returns.
 #[prebindgen(cfg = "feature = \"unstable\"")]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Transport {
+pub struct TransportStruct {
     /// Identifier of the node at the other end.
     pub zid: ZenohId,
     /// Type of the node at the other end.
     pub whatami: WhatAmI,
     /// Whether this transport supports QoS.
-    ///
-    /// When it does not, a link of this transport reports no
-    /// [`Link::priorities`] and no [`Link::reliability`] — zenoh has nothing to
-    /// report rather than a default to report.
     pub is_qos: bool,
     /// Whether this transport is multicast.
     pub is_multicast: bool,
-    /// Whether this transport supports shared memory.
-    ///
-    /// Present only when the `shared-memory` feature is enabled, mirroring
-    /// zenoh: without it zenoh does not track the fact, so flat has none to
-    /// report and says so by omitting the field rather than by reporting
-    /// `false`.
+    /// Whether this transport supports shared memory. Present only when the
+    /// `shared-memory` feature is enabled.
     #[cfg(feature = "shared-memory")]
     pub is_shm: bool,
 }
 
-/// A protocol-level connection within a [`Transport`], as a plain value.
+impl From<&Transport> for TransportStruct {
+    fn from(t: &Transport) -> Self {
+        // Delegate to the field accessors so each field has one definition.
+        TransportStruct {
+            zid: transport_get_zid(t),
+            whatami: transport_get_whatami(t),
+            is_qos: transport_is_qos(t),
+            is_multicast: transport_is_multicast(t),
+            #[cfg(feature = "shared-memory")]
+            is_shm: transport_is_shm(t),
+        }
+    }
+}
+
+/// Decompose a transport into its [`TransportStruct`] value form.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn transport_to_struct(transport: &Transport) -> TransportStruct {
+    transport.into()
+}
+
+/// Identifier of the node this link's transport connects to.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn link_get_zid(link: &Link) -> ZenohId {
+    (*link.zid()).into()
+}
+
+/// Local endpoint of this link, rendered as in [`crate::session_get_locators`].
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn link_get_src(link: &Link) -> String {
+    link.src().to_string()
+}
+
+/// Remote endpoint of this link, rendered as in
+/// [`crate::session_get_locators`].
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn link_get_dst(link: &Link) -> String {
+    link.dst().to_string()
+}
+
+/// Group endpoint of this link, present when the link is multicast.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn link_get_group(link: &Link) -> Option<String> {
+    link.group().map(|g| g.to_string())
+}
+
+/// Maximum transmission unit of this link, in bytes.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn link_get_mtu(link: &Link) -> u16 {
+    link.mtu()
+}
+
+/// Whether this link is streamed.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn link_is_streamed(link: &Link) -> bool {
+    link.is_streamed()
+}
+
+/// Network interfaces this link is bound to.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn link_get_interfaces(link: &Link) -> Vec<String> {
+    link.interfaces().to_vec()
+}
+
+/// Authentication identifier of this link, for protocols that carry one.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn link_get_auth_identifier(link: &Link) -> Option<String> {
+    link.auth_identifier().map(str::to_string)
+}
+
+/// Priorities this link carries, absent when its transport has no QoS.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn link_get_priorities(link: &Link) -> Option<PriorityRange> {
+    link.priorities()
+        .map(|(start, end)| PriorityRange { start, end })
+}
+
+/// Reliability of this link, absent when its transport has no QoS.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn link_get_reliability(link: &Link) -> Option<Reliability> {
+    link.reliability().map(Reliability::from)
+}
+
+/// A link decomposed into a plain value.
 ///
-/// Several links may exist to the same node within one transport, using
-/// different protocols (TCP, UDP, QUIC, …).
-///
-/// This is a value even though it carries lists (`interfaces`) and strings:
-/// see the note on snapshots in the crate README's *Choosing a shape*.
+/// Every field is what the matching `link_*` accessor returns. Reading the
+/// whole struct materializes the endpoints and the interface list; a caller who
+/// wants only the cheap fields reads those accessors instead, which is the
+/// reason the handle exists.
 #[prebindgen(cfg = "feature = \"unstable\"")]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Link {
+pub struct LinkStruct {
     /// Identifier of the node this link's transport connects to.
     pub zid: ZenohId,
-    /// Local endpoint, rendered as in [`crate::session_get_locators`].
+    /// Local endpoint.
     pub src: String,
-    /// Remote endpoint, rendered as in [`crate::session_get_locators`].
+    /// Remote endpoint.
     pub dst: String,
     /// Group endpoint, present when the link is multicast.
     pub group: Option<String>,
-    /// Maximum transmission unit of the link, in bytes.
+    /// Maximum transmission unit, in bytes.
     pub mtu: u16,
     /// Whether the link is streamed.
     pub is_streamed: bool,
-    /// Network interfaces this link is bound to.
+    /// Network interfaces the link is bound to.
     pub interfaces: Vec<String>,
-    /// Authentication identifier of the link, for protocols that carry one.
+    /// Authentication identifier, for protocols that carry one.
     pub auth_identifier: Option<String>,
     /// Priorities the link carries, absent when its transport has no QoS.
     pub priorities: Option<PriorityRange>,
     /// Reliability of the link, absent when its transport has no QoS.
     pub reliability: Option<Reliability>,
+}
+
+impl From<&Link> for LinkStruct {
+    fn from(l: &Link) -> Self {
+        // Delegate to the field accessors so each field has one definition.
+        LinkStruct {
+            zid: link_get_zid(l),
+            src: link_get_src(l),
+            dst: link_get_dst(l),
+            group: link_get_group(l),
+            mtu: link_get_mtu(l),
+            is_streamed: link_is_streamed(l),
+            interfaces: link_get_interfaces(l),
+            auth_identifier: link_get_auth_identifier(l),
+            priorities: link_get_priorities(l),
+            reliability: link_get_reliability(l),
+        }
+    }
+}
+
+/// Decompose a link into its [`LinkStruct`] value form.
+#[prebindgen(cfg = "feature = \"unstable\"")]
+pub fn link_to_struct(link: &Link) -> LinkStruct {
+    link.into()
 }
 
 /// What happened to a link.
@@ -123,10 +253,12 @@ pub enum TransportEventKind {
 
 /// A link appearing or disappearing.
 ///
-/// Both kinds carry the same [`Link`], so this is a tag beside a value, not a
-/// sum: there are no alternatives with different payloads to choose between.
+/// Both kinds carry the same link, so this is a tag beside a value, not a sum:
+/// there are no alternatives with different payloads to choose between. The
+/// link is carried as the handle, since a value form carries handles rather
+/// than unwrapping them.
 #[prebindgen(cfg = "feature = \"unstable\"")]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct LinkEvent {
     /// What happened to the link.
     pub kind: LinkEventKind,
@@ -136,65 +268,12 @@ pub struct LinkEvent {
 
 /// A transport opening or closing.
 #[prebindgen(cfg = "feature = \"unstable\"")]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct TransportEvent {
     /// What happened to the transport.
     pub kind: TransportEventKind,
     /// The transport it happened to.
     pub transport: Transport,
-}
-
-impl From<&zenoh::session::Transport> for Transport {
-    fn from(t: &zenoh::session::Transport) -> Self {
-        Transport {
-            zid: (*t.zid()).into(),
-            whatami: t.whatami().into(),
-            is_qos: t.is_qos(),
-            is_multicast: t.is_multicast(),
-            #[cfg(feature = "shared-memory")]
-            is_shm: t.is_shm(),
-        }
-    }
-}
-
-impl TryFrom<&Transport> for zenoh::session::Transport {
-    type Error = Error;
-
-    /// Rebuild zenoh's own transport, so a transport read back from a session
-    /// can be handed to the calls that filter by one.
-    ///
-    /// Every field round-trips unchanged; the only way this fails is an
-    /// identifier that is not one (all-zero bytes), which cannot come from a
-    /// transport zenoh reported.
-    fn try_from(t: &Transport) -> Result<Self, Self::Error> {
-        Ok(zenoh::session::Transport::new_from_fields(
-            (&t.zid).try_into()?,
-            t.whatami.into(),
-            t.is_qos,
-            t.is_multicast,
-            #[cfg(feature = "shared-memory")]
-            t.is_shm,
-        ))
-    }
-}
-
-impl From<&zenoh::session::Link> for Link {
-    fn from(l: &zenoh::session::Link) -> Self {
-        Link {
-            zid: (*l.zid()).into(),
-            src: l.src().to_string(),
-            dst: l.dst().to_string(),
-            group: l.group().map(|g| g.to_string()),
-            mtu: l.mtu(),
-            is_streamed: l.is_streamed(),
-            interfaces: l.interfaces().to_vec(),
-            auth_identifier: l.auth_identifier().map(str::to_string),
-            priorities: l
-                .priorities()
-                .map(|(start, end)| PriorityRange { start, end }),
-            reliability: l.reliability().map(Reliability::from),
-        }
-    }
 }
 
 impl From<zenoh::sample::SampleKind> for LinkEventKind {
@@ -219,7 +298,7 @@ impl From<&zenoh::session::LinkEvent> for LinkEvent {
     fn from(e: &zenoh::session::LinkEvent) -> Self {
         LinkEvent {
             kind: e.kind().into(),
-            link: e.link().into(),
+            link: e.link().clone(),
         }
     }
 }
@@ -228,7 +307,7 @@ impl From<&zenoh::session::TransportEvent> for TransportEvent {
     fn from(e: &zenoh::session::TransportEvent) -> Self {
         TransportEvent {
             kind: e.kind().into(),
-            transport: e.transport().into(),
+            transport: e.transport().clone(),
         }
     }
 }
@@ -238,33 +317,25 @@ impl From<&zenoh::session::TransportEvent> for TransportEvent {
 /// Available only when unstable features are enabled.
 #[prebindgen(cfg = "feature = \"unstable\"")]
 pub fn session_get_transports(session: &Session) -> Vec<Transport> {
-    session
-        .info()
-        .transports()
-        .wait()
-        .map(|t| Transport::from(&t))
-        .collect()
+    session.info().transports().wait().collect()
 }
 
 /// Return the links this session currently has established.
 ///
 /// Links of every transport are returned unless `transport` selects one, in
-/// which case only that transport's links are. Pass a transport obtained from
-/// [`session_get_transports`]; the error is reported only for a transport whose
-/// identifier is not one, which cannot happen for a transport zenoh reported.
+/// which case only that transport's links are. The transport passed is one
+/// obtained from [`session_get_transports`]: zenoh selects on the object it
+/// handed out, so nothing has to be rebuilt from parts in order to name it.
 ///
 /// Available only when unstable features are enabled.
 #[prebindgen(cfg = "feature = \"unstable\"")]
-pub fn session_get_links(
-    session: &Session,
-    transport: Option<Transport>,
-) -> Result<Vec<Link>, Error> {
+pub fn session_get_links(session: &Session, transport: Option<&Transport>) -> Vec<Link> {
     let info = session.info();
     let mut builder = info.links();
     if let Some(t) = transport {
-        builder = builder.transport((&t).try_into()?);
+        builder = builder.transport(t.clone());
     }
-    Ok(builder.wait().map(|l| Link::from(&l)).collect())
+    builder.wait().collect()
 }
 
 /// Declare a listener notified when a link is added or removed.
@@ -280,7 +351,7 @@ pub fn session_declare_link_events_listener(
     callback: impl Fn(LinkEvent) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
     history: Option<bool>,
-    transport: Option<Transport>,
+    transport: Option<&Transport>,
 ) -> Result<LinkEventsListener, Error> {
     let on_close = OnceDrop::new(on_close);
     let info = session.info();
@@ -289,7 +360,7 @@ pub fn session_declare_link_events_listener(
         builder = builder.history(v);
     }
     if let Some(t) = transport {
-        builder = builder.transport((&t).try_into()?);
+        builder = builder.transport(t.clone());
     }
     builder
         .callback(move |event| {
@@ -309,7 +380,7 @@ pub fn session_declare_background_link_events_listener(
     callback: impl Fn(LinkEvent) + Send + Sync + 'static,
     on_close: impl Fn() + Send + Sync + 'static,
     history: Option<bool>,
-    transport: Option<Transport>,
+    transport: Option<&Transport>,
 ) -> Result<(), Error> {
     let on_close = OnceDrop::new(on_close);
     let info = session.info();
@@ -318,7 +389,7 @@ pub fn session_declare_background_link_events_listener(
         builder = builder.history(v);
     }
     if let Some(t) = transport {
-        builder = builder.transport((&t).try_into()?);
+        builder = builder.transport(t.clone());
     }
     builder
         .callback(move |event| {

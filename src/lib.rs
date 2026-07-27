@@ -108,6 +108,14 @@ pub type AdvancedSubscriber = zenoh_ext::AdvancedSubscriber<()>;
 /// when unstable features are enabled.
 #[cfg(feature = "unstable")]
 pub type SampleMissListener = zenoh_ext::SampleMissListener<()>;
+/// A transport established to another Zenoh node. Available only when unstable
+/// features are enabled.
+#[cfg(feature = "unstable")]
+pub type Transport = zenoh::session::Transport;
+/// A protocol-level connection within a [`Transport`]. Available only when
+/// unstable features are enabled.
+#[cfg(feature = "unstable")]
+pub type Link = zenoh::session::Link;
 /// A listener reporting links being added to and removed from a session.
 /// Available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
@@ -176,13 +184,19 @@ pub use crate::base::sample::{
     sample_get_reliability, sample_get_timestamp_stack,
     source_info::{SourceInfo, sample_get_source_info},
 };
+#[cfg(all(feature = "unstable", feature = "shared-memory"))]
+pub use crate::base::session::info::transport_is_shm;
 #[cfg(feature = "unstable")]
 pub use crate::base::session::info::{
-    Link, LinkEvent, LinkEventKind, PriorityRange, Transport, TransportEvent, TransportEventKind,
-    link_events_listener_undeclare, session_declare_background_link_events_listener,
+    LinkEvent, LinkEventKind, LinkStruct, PriorityRange, TransportEvent, TransportEventKind,
+    TransportStruct, link_events_listener_undeclare, link_get_auth_identifier, link_get_dst,
+    link_get_group, link_get_interfaces, link_get_mtu, link_get_priorities, link_get_reliability,
+    link_get_src, link_get_zid, link_is_streamed, link_to_struct,
+    session_declare_background_link_events_listener,
     session_declare_background_transport_events_listener, session_declare_link_events_listener,
     session_declare_transport_events_listener, session_get_links, session_get_transports,
-    transport_events_listener_undeclare,
+    transport_events_listener_undeclare, transport_get_whatami, transport_get_zid,
+    transport_is_multicast, transport_is_qos, transport_to_struct,
 };
 #[cfg(feature = "unstable")]
 pub use crate::base::session::session_get_locators;
