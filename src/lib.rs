@@ -286,8 +286,8 @@ pub use crate::base::{
         queryable::{queryable_get_key_expr, queryable_undeclare},
         reply::{
             ReplyErrorStruct, ReplyResult, ReplyStruct, reply_error_get_encoding,
-            reply_error_get_payload, reply_error_to_struct, reply_get_err, reply_get_sample,
-            reply_is_ok, reply_to_struct,
+            reply_error_get_payload, reply_error_to_struct, reply_get_err, reply_get_result,
+            reply_get_sample, reply_into_struct, reply_is_ok, reply_to_struct,
         },
         reply_key_expr::ReplyKeyExpr,
         selector::Selector,
@@ -295,8 +295,8 @@ pub use crate::base::{
     sample::{
         SampleStruct, sample_get_attachment, sample_get_congestion_control, sample_get_encoding,
         sample_get_express, sample_get_key_expr, sample_get_kind, sample_get_payload,
-        sample_get_priority, sample_get_timestamp, sample_kind::SampleKind, sample_new_delete,
-        sample_new_put, sample_to_struct,
+        sample_get_priority, sample_get_timestamp, sample_into_struct, sample_kind::SampleKind,
+        sample_new_delete, sample_new_put, sample_to_struct,
     },
     scouting::{
         hello::{

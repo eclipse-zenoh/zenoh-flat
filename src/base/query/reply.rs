@@ -125,21 +125,34 @@ pub struct ReplyStruct {
     pub replier_id: Option<EntityGlobalId>,
 }
 
-impl From<&Reply> for ReplyStruct {
-    fn from(r: &Reply) -> Self {
+impl From<Reply> for ReplyStruct {
+    fn from(r: Reply) -> Self {
+        // `replier_id` is `Copy`, so read it before the reply is consumed.
+        #[cfg(feature = "unstable")]
+        let replier_id = reply_get_replier_id(&r);
         ReplyStruct {
-            // `Reply::result` is the one source for the outcome. The
-            // `reply_is_ok` / `reply_get_sample` / `reply_get_err` accessors are
-            // projections of that same call rather than independent readings,
+            // `Reply::into_result` is zenoh's own by-value exit and the one
+            // source for the outcome: a pure move. The `reply_is_ok` /
+            // `reply_get_sample` / `reply_get_err` accessors are projections of
+            // the borrowing `Reply::result` rather than independent readings,
             // and `reply_struct_mismatches` in `tests/queryable.rs` pins this
             // field in agreement with all three.
-            result: match r.result() {
-                Ok(s) => ReplyResult::Sample(s.clone()),
-                Err(e) => ReplyResult::Error(e.clone()),
+            result: match r.into_result() {
+                Ok(s) => ReplyResult::Sample(s),
+                Err(e) => ReplyResult::Error(e),
             },
             #[cfg(feature = "unstable")]
-            replier_id: reply_get_replier_id(r),
+            replier_id,
         }
+    }
+}
+
+impl From<&Reply> for ReplyStruct {
+    fn from(r: &Reply) -> Self {
+        // The consuming form is the single body — README §One source of truth
+        // per field. Cloning the reply costs the same clone of the sample or
+        // error this form used to pay directly.
+        r.clone().into()
     }
 }
 
@@ -147,4 +160,22 @@ impl From<&Reply> for ReplyStruct {
 #[prebindgen]
 pub fn reply_to_struct(r: &Reply) -> ReplyStruct {
     r.into()
+}
+
+/// Decompose a reply into its [`ReplyStruct`] value form, consuming it.
+///
+/// Unlike [`reply_to_struct`] this destroys the reply, which lets its sample or
+/// error **move** into the value form instead of being cloned. Prefer it
+/// wherever the reply is owned and not needed afterwards — a query callback,
+/// which is handed its reply by value.
+#[prebindgen]
+pub fn reply_into_struct(r: Reply) -> ReplyStruct {
+    r.into()
+}
+
+/// Return the reply's outcome: the sample of a successful reply, or the error
+/// of an unsuccessful one.
+#[prebindgen]
+pub fn reply_get_result(r: &Reply) -> ReplyResult {
+    reply_to_struct(r).result
 }

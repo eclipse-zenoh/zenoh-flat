@@ -26,9 +26,9 @@ use std::{
 use zenoh_flat::{
     KeyExpr, Reply, ReplyResult, Selector, Session, config_new_default, keyexpr_new_try_from, open,
     query_reply_error, query_reply_success, reply_error_get_encoding, reply_error_get_payload,
-    reply_error_to_struct, reply_get_err, reply_get_sample, reply_is_ok, reply_to_struct,
-    sample_get_encoding, sample_get_key_expr, sample_get_payload, session_declare_queryable,
-    session_get, zbytes_new_from_slice, zbytes_to_bytes,
+    reply_error_to_struct, reply_get_err, reply_get_result, reply_get_sample, reply_into_struct,
+    reply_is_ok, reply_to_struct, sample_get_encoding, sample_get_key_expr, sample_get_payload,
+    session_declare_queryable, session_get, zbytes_new_from_slice, zbytes_to_bytes,
 };
 #[cfg(feature = "unstable")]
 use zenoh_flat::{reply_error_get_timestamp_stack, reply_get_replier_id};
@@ -47,6 +47,21 @@ fn ke(s: &str) -> KeyExpr {
 fn reply_struct_mismatches(r: &Reply) -> Vec<String> {
     let rs = reply_to_struct(r);
     let mut bad = Vec::new();
+
+    // The consuming form is the single body and the other two routes delegate
+    // to it (README §One source of truth per field), so all three must report
+    // the same outcome. This is also where the by-value form is actually
+    // exercised on a live reply.
+    let variant = |result: &ReplyResult| match result {
+        ReplyResult::Sample(_) => "sample",
+        ReplyResult::Error(_) => "error",
+    };
+    if variant(&reply_get_result(r)) != variant(&rs.result) {
+        bad.push("reply_get_result disagrees with reply_to_struct".to_string());
+    }
+    if variant(&reply_into_struct(r.clone()).result) != variant(&rs.result) {
+        bad.push("reply_into_struct disagrees with reply_to_struct".to_string());
+    }
 
     // The live `ReplyResult` variant must agree with all three opaque-tier
     // accessors at once. Since `ReplyResult` is a sum, "both present" and

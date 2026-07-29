@@ -6,8 +6,6 @@ use prebindgen_proc_macro::prebindgen;
 use zenoh::sample::SampleBuilder;
 
 use self::sample_kind::SampleKind;
-#[cfg(feature = "unstable")]
-use self::source_info::sample_get_source_info;
 use crate::{CongestionControl, Encoding, Error, KeyExpr, Priority, Sample, Timestamp, ZBytes};
 #[cfg(feature = "unstable")]
 use crate::{Reliability, SourceInfo, TimestampStack};
@@ -219,28 +217,46 @@ pub struct SampleStruct {
     pub timestamp_stack: Option<TimestampStack>,
 }
 
+impl From<Sample> for SampleStruct {
+    fn from(s: Sample) -> Self {
+        // `zenoh::sample::SampleFields` is zenoh's own by-value exit: it exists,
+        // in zenoh's words, so a sample can be deconstructed to its fields
+        // without cloning. Every field below is therefore a move.
+        //
+        // Every field but `timestamp_stack`, which zenoh keeps `pub(crate)` with
+        // only a `&`-accessor — so read that one out before the move. No test
+        // catches a regression that drops this line: flat cannot build a sample
+        // carrying a non-`None` timestamp stack, so the assertions that pin this
+        // field compare `None` against `None`.
+        #[cfg(feature = "unstable")]
+        let timestamp_stack = sample_get_timestamp_stack(&s).cloned();
+        let f = zenoh::sample::SampleFields::from(s);
+        SampleStruct {
+            key_expr: f.key_expr,
+            payload: f.payload,
+            encoding: f.encoding,
+            kind: f.kind.into(),
+            timestamp: f.timestamp.as_ref().map(Timestamp::from),
+            express: f.express,
+            priority: f.priority.into(),
+            congestion_control: f.congestion_control.into(),
+            attachment: f.attachment,
+            #[cfg(feature = "unstable")]
+            reliability: f.reliability.into(),
+            #[cfg(feature = "unstable")]
+            source_info: f.source_info.as_ref().map(SourceInfo::from),
+            #[cfg(feature = "unstable")]
+            timestamp_stack,
+        }
+    }
+}
+
 impl From<&Sample> for SampleStruct {
     fn from(s: &Sample) -> Self {
-        // Delegate to the field accessors so each field has one definition.
-        // The accessors that lend a field (`&KeyExpr`, `&ZBytes`, `&Encoding`)
-        // are cloned here, since the value form owns its fields.
-        SampleStruct {
-            key_expr: sample_get_key_expr(s).clone(),
-            payload: sample_get_payload(s).clone(),
-            encoding: sample_get_encoding(s).clone(),
-            kind: sample_get_kind(s),
-            timestamp: sample_get_timestamp(s),
-            express: sample_get_express(s),
-            priority: sample_get_priority(s),
-            congestion_control: sample_get_congestion_control(s),
-            attachment: sample_get_attachment(s).cloned(),
-            #[cfg(feature = "unstable")]
-            reliability: sample_get_reliability(s),
-            #[cfg(feature = "unstable")]
-            source_info: sample_get_source_info(s),
-            #[cfg(feature = "unstable")]
-            timestamp_stack: sample_get_timestamp_stack(s).cloned(),
-        }
+        // The consuming form is the single body — README §One source of truth
+        // per field. Cloning the sample costs the same field clones this form
+        // used to pay one by one.
+        s.clone().into()
     }
 }
 
@@ -250,8 +266,21 @@ pub fn sample_to_struct(s: &Sample) -> SampleStruct {
     s.into()
 }
 
+/// Decompose a sample into its [`SampleStruct`] value form, consuming it.
+///
+/// Unlike [`sample_to_struct`] this destroys the sample, which lets each field
+/// **move** into the value form instead of being cloned. Prefer it wherever the
+/// sample is owned and not needed afterwards — a subscriber callback, which is
+/// handed its sample by value.
+#[prebindgen]
+pub fn sample_into_struct(s: Sample) -> SampleStruct {
+    s.into()
+}
+
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "unstable")]
+    use super::source_info::sample_get_source_info;
     use super::*;
     use crate::{encoding_const_text_plain, keyexpr_new_try_from, zbytes_new_from_slice};
 

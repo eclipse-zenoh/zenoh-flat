@@ -58,6 +58,12 @@ type is the central design decision in this crate, so the rules are written out 
   Such a type gets a handle *and* a value form: the handle keeps zenoh's name (`Sample`, `Encoding`)
   and the value form adds a `Struct` suffix (`SampleStruct`, `EncodingStruct`), reached with a
   `<type>_to_struct` accessor. Examples: `Sample`, `Reply`, `ReplyError`, `Hello`, `Encoding`.
+  Where zenoh offers a **by-value exit** for the type, the twin also gets
+  `<type>_into_struct`, which consumes the handle and *moves* each field into the value form
+  instead of cloning it — see [One source of truth per field](#one-source-of-truth-per-field).
+  Today that is `Sample` (zenoh's `SampleFields`) and `Reply` (`Reply::into_result`); the other
+  twins have no such exit, so a consuming form would clone exactly as the borrowing one does and
+  none is offered.
   A type is *not* a twin when it hides state a caller cannot read back (`KeyExpr`, `Error`), nor when
   its value form would hold a **single** field, since then the accessor already is that value form
   (`ZBytes`) — see [Choosing a shape](#choosing-a-shape).
@@ -200,6 +206,10 @@ domain sum is always a named enum.
   `sample_get_key_expr`. The same holds for value-struct fields: `CacheConfig::replies_config`
   keeps zenoh's field name. Where zenoh spells a name as one word, so does flat
   (`Session::declare_keyexpr` → `session_declare_keyexpr`).
+- **`into_` marks a reader that consumes its subject.** `sample_into_struct` takes the sample by
+  value and destroys it; `sample_to_struct` borrows it and leaves it intact. Until these, every
+  by-value function in flat was an `_undeclare` or a `_new_`, where destruction is already in the
+  verb — a *reader* that eats its argument has to say so.
 
 ### Be faithful to zenoh — the most important rule
 
@@ -229,6 +239,18 @@ What the rule forbids is those two routes being *computed* independently. Where 
 both through a value form and through an accessor, one must **delegate** to the other; likewise a
 convenience shortcut for a nested field must delegate to the same path rather than re-deriving the
 value. Two independent bodies reading the same field eventually disagree.
+
+**The delegation runs towards the consuming form.** A twin with a `<type>_into_struct` has two
+value forms, and the **consuming** one is the single body: the borrowing form is
+`<type>_to_struct(x) = <type>_into_struct(x.clone())`, and any accessor that only projects the
+value form (`reply_get_result`) delegates to that in turn. The clone is not a new cost — it clones
+the same fields the borrowing form was cloning one by one.
+
+This does put the moved fields' definition in zenoh's by-value exit rather than in flat's own
+per-field accessors, which is the one place the two routes are genuinely separate bodies (both
+zenoh's). That is what `assert_struct_mirrors_accessors` in `src/base/sample/mod.rs` and
+`reply_struct_mismatches` in `tests/queryable.rs` exist to pin: they compare every field of the
+value form against the accessor for that same field, and fail the moment the two disagree.
 
 ### Construction mirrors zenoh
 
