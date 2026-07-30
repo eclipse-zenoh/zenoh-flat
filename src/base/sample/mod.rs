@@ -222,14 +222,6 @@ impl From<Sample> for SampleStruct {
         // `zenoh::sample::SampleFields` is zenoh's own by-value exit: it exists,
         // in zenoh's words, so a sample can be deconstructed to its fields
         // without cloning. Every field below is therefore a move.
-        //
-        // Every field but `timestamp_stack`, which zenoh keeps `pub(crate)` with
-        // only a `&`-accessor — so read that one out before the move. No test
-        // catches a regression that drops this line: flat cannot build a sample
-        // carrying a non-`None` timestamp stack, so the assertions that pin this
-        // field compare `None` against `None`.
-        #[cfg(feature = "unstable")]
-        let timestamp_stack = sample_get_timestamp_stack(&s).cloned();
         let f = zenoh::sample::SampleFields::from(s);
         SampleStruct {
             key_expr: f.key_expr,
@@ -246,7 +238,7 @@ impl From<Sample> for SampleStruct {
             #[cfg(feature = "unstable")]
             source_info: f.source_info.as_ref().map(SourceInfo::from),
             #[cfg(feature = "unstable")]
-            timestamp_stack,
+            timestamp_stack: f.timestamp_stack,
         }
     }
 }
