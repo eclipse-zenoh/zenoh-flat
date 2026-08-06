@@ -48,6 +48,8 @@
 //! reliability selection, entity identifiers, detailed key-expression
 //! relations, and sample source information.
 
+use prebindgen_proc_macro::prebindgen;
+
 /// Directory containing the binding metadata captured while compiling this crate.
 pub const PREBINDGEN_OUT_DIR: &str = prebindgen_proc_macro::prebindgen_out_dir!();
 /// Features enabled while capturing the binding metadata.
@@ -60,77 +62,104 @@ pub(crate) mod util;
 
 // Public names for the Zenoh types used by this API.
 /// An error reported by a Zenoh operation.
+#[prebindgen]
 pub type Error = zenoh::Error;
 /// A validated expression that identifies one or more keys.
+#[prebindgen]
 pub type KeyExpr = zenoh::key_expr::KeyExpr<'static>;
 /// Settings used to configure Zenoh operations and sessions.
+#[prebindgen]
 pub type Config = zenoh::Config;
 /// A discovery announcement received while scouting.
+#[prebindgen]
 pub type Hello = zenoh::scouting::Hello;
 /// An active node-discovery operation.
+#[prebindgen]
 pub type Scout = zenoh::scouting::Scout<()>;
 /// A payload or attachment carried by Zenoh.
+#[prebindgen]
 pub type ZBytes = zenoh::bytes::ZBytes;
 /// Format information associated with a payload.
+#[prebindgen]
 pub type Encoding = zenoh::bytes::Encoding;
 /// A reusable declaration for publishing on a key expression.
+#[prebindgen]
 pub type Publisher = zenoh::pubsub::Publisher<'static>;
 /// A subscription that receives matching samples.
+#[prebindgen]
 pub type Subscriber = zenoh::pubsub::Subscriber<()>;
 /// A declaration that receives and answers matching queries.
+#[prebindgen]
 pub type Queryable = zenoh::query::Queryable<()>;
 /// A reusable declaration for sending queries.
+#[prebindgen]
 pub type Querier = zenoh::query::Querier<'static>;
 /// A request received by a queryable.
+#[prebindgen]
 pub type Query = zenoh::query::Query;
 /// A published value or deletion notification.
+#[prebindgen]
 pub type Sample = zenoh::sample::Sample;
 /// A response to a query.
+#[prebindgen]
 pub type Reply = zenoh::query::Reply;
 /// An application error carried by a query reply.
+#[prebindgen]
 pub type ReplyError = zenoh::query::ReplyError;
 /// A connection to the Zenoh network.
+#[prebindgen]
 pub type Session = zenoh::Session;
 /// A declaration that asserts application liveliness.
+#[prebindgen]
 pub type LivelinessToken = zenoh::liveliness::LivelinessToken;
 /// A publisher with advanced features (caching, sample-miss detection,
 /// publisher detection). Available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
 pub type AdvancedPublisher = zenoh_ext::AdvancedPublisher<'static>;
 /// A listener notified when the matching status of a publisher or a querier
 /// changes.
+#[prebindgen]
 pub type MatchingListener = zenoh::matching::MatchingListener<()>;
 /// A subscription with advanced features (history query, missed-sample
 /// recovery, subscriber detection). Available only when unstable features are
 /// enabled.
 #[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
 pub type AdvancedSubscriber = zenoh_ext::AdvancedSubscriber<()>;
 /// A listener reporting samples missed from advanced publishers. Available only
 /// when unstable features are enabled.
 #[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
 pub type SampleMissListener = zenoh_ext::SampleMissListener<()>;
 /// A transport established to another Zenoh node. Available only when unstable
 /// features are enabled.
 #[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
 pub type Transport = zenoh::session::Transport;
 /// A protocol-level connection within a [`Transport`]. Available only when
 /// unstable features are enabled.
 #[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
 pub type Link = zenoh::session::Link;
 /// A listener reporting links being added to and removed from a session.
 /// Available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
 pub type LinkEventsListener = zenoh::session::LinkEventsListener<()>;
 /// A listener reporting transports being opened and closed by a session.
 /// Available only when unstable features are enabled.
 #[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
 pub type TransportEventsListener = zenoh::session::TransportEventsListener<()>;
 /// The interception timestamps a message accumulated along its path. Available
 /// only when unstable features are enabled.
 #[cfg(feature = "unstable")]
+#[prebindgen(cfg = "feature = \"unstable\"")]
 pub type TimestampStack = zenoh::timestamp_stack::TimestampStack;
 /// A span of time, used by configuration options such as heartbeat periods.
-pub use std::time::Duration;
+#[prebindgen]
+pub type Duration = std::time::Duration;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public API surface — the single source of truth for what `zenoh-flat` exports.
