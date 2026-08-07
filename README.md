@@ -13,7 +13,7 @@ session_put(&session, &ke, zbytes_new_from_slice(b"hello"), /* … */)?;
 ```
 
 Every public function is annotated with `#[prebindgen]`, so
-[`prebindgen`](../prebindgen) captures this surface and generates idiomatic
+[`prebindgen`](https://crates.io/crates/prebindgen) captures this surface and generates idiomatic
 bindings for other languages (C via `lang::Cbindgen`, Kotlin/JNI via
 `lang::JniGen`, …) — no hand-written FFI layer per target language.
 

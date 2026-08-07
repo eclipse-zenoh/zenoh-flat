@@ -25,12 +25,6 @@ env:
   RUSTUP_WINDOWS_PATH_ADD_BIN: 1
   # Nightly toolchain identifier used by cargo invocations (rustfmt only).
   NIGHTLY_TOOLCHAIN: "nightly"
-  # `zenoh-flat` depends on `prebindgen` through a relative path
-  # (`../prebindgen/prebindgen`), so CI must check it out as a sibling directory.
-  # `PREBINDGEN_REF` must track the `prebindgen` branch this `zenoh-flat` branch
-  # builds against (it is not yet published to crates.io).
-  PREBINDGEN_REPO: milyin/prebindgen
-  PREBINDGEN_REF: main
 
 jobs:
   determine-runner:
@@ -67,13 +61,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: zenoh-flat
-
-      - name: Clone prebindgen (path dependency)
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.PREBINDGEN_REPO }}
-          ref: ${{ env.PREBINDGEN_REF }}
-          path: prebindgen
 
       - name: Update Stable Rust toolchain
         run: rustup update stable
@@ -148,13 +135,6 @@ jobs:
         with:
           path: zenoh-flat
 
-      - name: Clone prebindgen (path dependency)
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.PREBINDGEN_REPO }}
-          ref: ${{ env.PREBINDGEN_REF }}
-          path: prebindgen
-
       - name: Install latest Rust toolchain
         run: rustup show
 
@@ -197,13 +177,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: zenoh-flat
-
-      - name: Clone prebindgen (path dependency)
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.PREBINDGEN_REPO }}
-          ref: ${{ env.PREBINDGEN_REF }}
-          path: prebindgen
 
       - name: Install latest Rust toolchain
         run: rustup show
