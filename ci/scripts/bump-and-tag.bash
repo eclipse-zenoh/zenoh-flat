@@ -19,7 +19,7 @@ readonly git_user_email=${GIT_USER_EMAIL:?input GIT_USER_EMAIL is required}
 # Install toml-cli if not present
 ensure_toml_cli() {
     if ! command -v toml &> /dev/null; then
-        echo "Installing toml-cli..."
+        echo "Installing toml-cli2..."
         cargo +stable install toml-cli2
     fi
 }
