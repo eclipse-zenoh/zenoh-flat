@@ -46,9 +46,14 @@ export GIT_COMMITTER_EMAIL=$git_user_email
 # Bump Cargo version
 toml_set_in_place Cargo.toml "package.version" "$version"
 
+# Cargo.lock records the crate's *own* version, so it goes stale the instant the
+# manifest is bumped, and any later `--locked` build refuses to run. `cargo
+# metadata` re-resolves and rewrites the lockfile minimally without compiling.
+cargo metadata --format-version 1 > /dev/null
+
 # Show the changes to be committed
-git diff Cargo.toml
-git commit Cargo.toml -m "chore: Bump version to \`$version\`"
+git diff Cargo.toml Cargo.lock
+git commit Cargo.toml Cargo.lock -m "chore: Bump version to \`$version\`"
 
 # Select all dependencies that match $bump_deps_pattern and bump them to $bump_deps_version.
 #
