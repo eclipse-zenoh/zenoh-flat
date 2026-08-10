@@ -281,8 +281,10 @@ mod tests {
     const NTP64_MARKER: u64 = (i64::MAX as u64) + 12_345;
 
     /// A distinctive node id, so a timestamp whose id was fabricated rather
-    /// than carried through is visible.
-    const ID_MARKER: [u8; 4] = [0xde, 0xad, 0xbe, 0xef];
+    /// than carried through is visible. Written in the form a timestamp
+    /// carries: little-endian, zero-padded to the full identifier width.
+    const ID_MARKER: [u8; crate::ZENOH_ID_MAX_SIZE] =
+        [0xde, 0xad, 0xbe, 0xef, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
     fn marker_timestamp() -> Timestamp {
         Timestamp {
