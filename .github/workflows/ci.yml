@@ -18,6 +18,16 @@ on:
     branches: ["**"]
   pull_request:
     branches: ["**"]
+  # Callable, so the release workflow validates the exact commit it is about to
+  # tag with these very checks instead of a thinner copy of them. `ref` is empty
+  # for push and pull-request runs, which is what `actions/checkout` already
+  # takes to mean "the commit that triggered this run".
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        description: Commit to check out; defaults to the triggering commit
+        required: false
 
 env:
   CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
@@ -34,6 +44,8 @@ jobs:
     steps:
       - name: Clone this repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Determine which runner to use
         id: set-runner
@@ -61,6 +73,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: zenoh-flat
+          ref: ${{ inputs.ref }}
 
       - name: Update Stable Rust toolchain
         run: rustup update stable
@@ -134,6 +147,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: zenoh-flat
+          ref: ${{ inputs.ref }}
 
       - name: Install latest Rust toolchain
         run: rustup show
@@ -177,6 +191,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: zenoh-flat
+          ref: ${{ inputs.ref }}
 
       - name: Install latest Rust toolchain
         run: rustup show
@@ -209,6 +224,8 @@ jobs:
     steps:
       - name: Clone this repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Check spelling
         uses: crate-ci/typos@master
@@ -218,6 +235,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
       - uses: DavidAnson/markdownlint-cli2-action@v18
         with:
           config: ".markdownlint.yaml"

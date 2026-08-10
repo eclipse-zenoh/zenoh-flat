@@ -93,10 +93,18 @@ if [[ "$bump_deps_pattern" != '' ]]; then
   fi
 fi
 
-if [[ ${live_run} ]]; then
-  git tag --force "$version" -m "v$version"
-fi
 git log -10
 git show-ref --tags
 git push origin
-git push --force origin "$version"
+
+# A release tag is created and pushed only by a live run, and never with
+# `--force`. Note `== true` rather than a bare `[[ ${live_run} ]]`: the string
+# `false` is non-empty, so the bare test is true for a dry run too — which is
+# how a rehearsal could retarget the tag of a version already released.
+#
+# Without `--force`, a version that has already been tagged fails the push here,
+# before anything is published, instead of silently moving a released tag.
+if [[ ${live_run} == true ]]; then
+  git tag "$version" -m "v$version"
+  git push origin "$version"
+fi
