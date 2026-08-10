@@ -36,8 +36,8 @@ on:
         required: false
 
 jobs:
-  tag:
-    name: Branch, Bump & tag
+  prepare:
+    name: Branch & bump
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.create-release-branch.outputs.version }}
@@ -74,10 +74,9 @@ jobs:
           ref: ${{ steps.create-release-branch.outputs.branch }}
           token: ${{ secrets.BOT_TOKEN_WORKFLOW }}
 
-      - name: Bump and tag project
-        run: bash ci/scripts/bump-and-tag.bash
+      - name: Bump the release branch
+        run: bash ci/scripts/bump.bash
         env:
-          LIVE_RUN: ${{ inputs.live-run || false }}
           VERSION: ${{ steps.create-release-branch.outputs.version }}
           BUMP_DEPS_VERSION: ${{ inputs.zenoh-version }}
           BUMP_DEPS_PATTERN: ${{ inputs.zenoh-version && 'zenoh.*' || '' }}
@@ -85,8 +84,8 @@ jobs:
           GIT_USER_NAME: eclipse-zenoh-bot
           GIT_USER_EMAIL: eclipse-zenoh-bot@users.noreply.github.com
 
-      # The commit the tag points at, so validation runs on exactly what is
-      # being released rather than on whatever the branch holds by then.
+      # The release candidate's identity. Everything downstream refers to this
+      # commit rather than to the branch, which could move under them.
       - id: release-commit
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
@@ -95,19 +94,49 @@ jobs:
   # three platforms — rather than by a second, thinner definition of "valid".
   validate:
     name: Validate the release commit
-    needs: tag
+    needs: prepare
     uses: ./.github/workflows/ci.yml
     with:
-      ref: ${{ needs.tag.outputs.sha }}
+      ref: ${{ needs.prepare.outputs.sha }}
+
+  # Tagging is the last thing before publication, and deliberately not part of
+  # `prepare`: a tag that exists means the commit under it passed validation.
+  # Tagging first would leave a public tag on a candidate that failed — and,
+  # since tags here are never force-moved, the retry would then collide with it
+  # and need a manual deletion to recover.
+  tag:
+    name: Tag the validated commit
+    needs: [prepare, validate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the release commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          token: ${{ secrets.BOT_TOKEN_WORKFLOW }}
+
+      # No `--force` on either command: a version that already carries a tag
+      # fails here instead of having its tag retargeted. A dry run rehearses
+      # every other step and skips this one — `publish-crates-github` needs no
+      # tag unless it is creating a release.
+      - name: Tag the release commit
+        if: ${{ inputs.live-run }}
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          git -c user.name=eclipse-zenoh-bot \
+              -c user.email=eclipse-zenoh-bot@users.noreply.github.com \
+              tag "$VERSION" -m "v$VERSION"
+          git push origin "$VERSION"
 
   publish-github:
-    needs: [tag, validate]
+    needs: [prepare, tag]
     runs-on: ubuntu-latest
     steps:
       - uses: eclipse-zenoh/ci/publish-crates-github@main
         with:
           repo: ${{ github.repository }}
           live-run: ${{ inputs.live-run || false }}
-          version: ${{ needs.tag.outputs.version }}
-          branch: ${{ needs.tag.outputs.branch }}
+          version: ${{ needs.prepare.outputs.version }}
+          branch: ${{ needs.prepare.outputs.branch }}
           github-token: ${{ secrets.BOT_TOKEN_WORKFLOW }}

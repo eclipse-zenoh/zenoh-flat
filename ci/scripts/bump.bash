@@ -2,7 +2,6 @@
 
 set -xeo pipefail
 
-readonly live_run=${LIVE_RUN:-false}
 # Release number
 readonly version=${VERSION:?input VERSION is required}
 # Dependencies' pattern
@@ -94,17 +93,8 @@ if [[ "$bump_deps_pattern" != '' ]]; then
 fi
 
 git log -10
-git show-ref --tags
 git push origin
 
-# A release tag is created and pushed only by a live run, and never with
-# `--force`. Note `== true` rather than a bare `[[ ${live_run} ]]`: the string
-# `false` is non-empty, so the bare test is true for a dry run too — which is
-# how a rehearsal could retarget the tag of a version already released.
-#
-# Without `--force`, a version that has already been tagged fails the push here,
-# before anything is published, instead of silently moving a released tag.
-if [[ ${live_run} == true ]]; then
-  git tag "$version" -m "v$version"
-  git push origin "$version"
-fi
+# This script does not tag. The release workflow tags the commit it leaves here
+# only once that commit has passed validation, so a release tag never points at
+# something that was not checked.
