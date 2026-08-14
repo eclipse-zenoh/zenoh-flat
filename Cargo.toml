@@ -3,7 +3,7 @@ edition = "2024"
 license = "EPL-2.0 OR Apache-2.0"
 name = "zenoh-flat"
 readme = "README.md"
-version = "1.9.0"
+version = "1.10.0"
 
 # `tracing` is pulled in only to enable its `log` feature: that bridges zenoh's
 # internal `tracing` events to the `log` facade consumed by `android_logd_logger`
