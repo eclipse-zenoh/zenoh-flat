@@ -14,7 +14,9 @@ ignored = ["tracing"]
 
 [dependencies]
 android-logd-logger = "0.4.0"
-prebindgen-proc-macro = { version = "0.5", features = ["inline"] }
+prebindgen-proc-macro = { version = "0.5", git = "https://github.com/milyin/prebindgen.git", branch = "main", features = [
+  "inline",
+] }
 serde_yaml = "0.9.19"
 tracing = { version = "0.1", features = ["log"] }
 zenoh = { version = "1.9.0", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", features = [
@@ -26,7 +28,7 @@ zenoh = { version = "1.9.0", git = "https://github.com/eclipse-zenoh/zenoh.git",
 zenoh-ext = { version = "1.9.0", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", default-features = false, optional = true }
 
 [build-dependencies]
-prebindgen = "0.5"
+prebindgen = { version = "0.5", git = "https://github.com/milyin/prebindgen.git", branch = "main" }
 
 # Feature flags mirror eclipse-zenoh/zenoh-c (forwarding to the `zenoh` crate),
 # with zenoh-c's exact default set. `unstable` / `shared-memory` are OFF by
