@@ -17,13 +17,13 @@ android-logd-logger = "0.4.0"
 prebindgen-proc-macro = { version = "0.5", features = ["inline"] }
 serde_yaml = "0.9.19"
 tracing = { version = "0.1", features = ["log"] }
-zenoh = { version = "1.10.0", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "release/1.10.0", features = [
+zenoh = { version = "1.10.0", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", features = [
   "internal",
 ], default-features = false }
 # Advanced pub/sub lives in zenoh-ext and is entirely `unstable`; pulled in only
 # when the `unstable` feature is on (see `unstable` below). Same git pin as
 # zenoh so Cargo unifies the instances with zenoh-flat-jni's zenoh-ext dep.
-zenoh-ext = { version = "1.10.0", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "release/1.10.0", default-features = false, optional = true }
+zenoh-ext = { version = "1.10.0", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", default-features = false, optional = true }
 
 [build-dependencies]
 prebindgen = "0.5"
