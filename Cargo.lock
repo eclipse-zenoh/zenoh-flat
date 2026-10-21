@@ -2148,9 +2148,9 @@ dependencies = [
 
 [[package]]
 name = "prebindgen"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df70aa887ea86326a03ccd4ddffcad0858c5c1ade86a9b25047f0b6b27222ce2"
+checksum = "49957c13e4915599711d3f1551a21a4fb41b5180e9b9af5382c40995378db9c1"
 dependencies = [
  "if_rust_version",
  "itertools",
@@ -2168,9 +2168,9 @@ dependencies = [
 
 [[package]]
 name = "prebindgen-proc-macro"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4ec12eecd2811fd1395a20bdd40e3740026be0603bf2812172445fc524c98e7"
+checksum = "031bbf398c31f9a0acf400040aa92379272ac9cea40aff736a8cfde9c6c10b5c"
 dependencies = [
  "prebindgen",
  "proc-macro2",
